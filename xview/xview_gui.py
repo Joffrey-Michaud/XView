@@ -167,6 +167,7 @@ class ExperimentViewer(QMainWindow):
 
         # Variables pour le stockage temporaire
         self.current_scores = {}
+        self.current_flags = {}
         self.current_train_loss = []
         self.current_val_loss = []
 
@@ -233,7 +234,7 @@ class ExperimentViewer(QMainWindow):
                 if len(values) == 1:
                     y.append(float(values[0]))
                 else:
-                    x.append(int(values[0]))
+                    x.append(float(values[0]))
                     y.append(float(values[1]))
             return (x, y)
 
@@ -253,6 +254,16 @@ class ExperimentViewer(QMainWindow):
                     x, y = self.read_scores(file_path)
                     self.current_scores[score] = (x, y)
 
+    def read_current_flags(self):
+        flags_folder_path = os.path.join(self.experiments_dir, self.current_experiment_name, "flags")
+        if os.path.exists(flags_folder_path):
+            for file_name in os.listdir(flags_folder_path):
+                flag = file_name.split(".")[0]
+                if file_name.endswith(".txt"):
+                    file_path = os.path.join(flags_folder_path, file_name)
+                    _, x = self.read_scores(file_path)
+                    self.current_flags[flag] = x
+
     def display_experiment(self, item_or_name):
         """Affiche le graphique de l'expérience sélectionnée."""
         if isinstance(item_or_name, str):
@@ -268,6 +279,7 @@ class ExperimentViewer(QMainWindow):
 
         # Charger les données des courbes
         self.read_current_scores()
+        self.read_current_flags()
         # if os.path.exists(train_loss_file) and os.path.exists(val_loss_file):
         #     self.current_train_loss = read_file(train_loss_file)
         #     self.current_val_loss = read_file(val_loss_file)
@@ -382,6 +394,17 @@ class ExperimentViewer(QMainWindow):
             else:
                 ax.plot(y, label=score)
                 ax.plot(y_ma, label=f"{score} (MA)", ls="--")
+
+        for flag in self.current_flags:
+            print("FLAG", flag)
+            x = self.current_flags[flag]
+            print(x)
+            if len(x) > 0:
+                # ax.vlines(x=x, color="red", linestyle="--", label=flag)
+                ax.vlines(x=x, ymin=0, ymax=1,color="red", transform=ax.get_xaxis_transform(), linestyle="--", label=flag)
+
+
+        
             
 
         # Afficher les courbes si les cases sont cochées
