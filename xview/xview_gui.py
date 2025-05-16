@@ -11,10 +11,11 @@ from utils.utils import read_file, read_json, compute_moving_average, write_file
 
 
 class ExperimentViewer(QMainWindow):
-    def __init__(self, experiments_dir):
+    def __init__(self, config_file_path):
         super().__init__()
+        self.config_file_path = config_file_path
 
-        self.experiments_dir = experiments_dir
+        self.experiments_dir = read_json(config_file_path)["data_folder"]
         self.current_experiment_name = ""
 
         self.dark_mode_enabled = False
@@ -273,8 +274,8 @@ class ExperimentViewer(QMainWindow):
         
         exp_path = os.path.join(self.experiments_dir, self.current_experiment_name)
 
-        train_loss_file = os.path.join(exp_path, "scores_training.txt")
-        val_loss_file = os.path.join(exp_path, "scores_validation.txt")
+        # train_loss_file = os.path.join(exp_path, "scores_training.txt")
+        # val_loss_file = os.path.join(exp_path, "scores_validation.txt")
         exp_info_file = os.path.join(exp_path, "exp_infos.json")
 
         # Charger les données des courbes
@@ -353,6 +354,22 @@ class ExperimentViewer(QMainWindow):
             self.model_image_label.clear()
             self.model_image_label.setText("Image non trouvée")
 
+    def get_curves_colors(self):
+        if self.dark_mode_enabled:
+            colors = read_json(self.config_file_path)["dark_mode_curves"]
+            print("GET CURVES COLORS DARK :", colors)
+            return colors
+        else:
+            colors = read_json(self.config_file_path)["light_mode_curves"]
+            print("GET CURVES COLORS LIGHT :", colors)
+            return colors
+        
+    def get_flags_colors(self):
+        if self.dark_mode_enabled:
+            return read_json(self.config_file_path)["dark_mode_flags"]
+        else:
+            return read_json(self.config_file_path)["light_mode_flags"]
+
     def update_plot(self):
         """Met à jour le graphique avec les données actuelles et les cases cochées."""
         self.figure.clear()
@@ -384,24 +401,31 @@ class ExperimentViewer(QMainWindow):
         ax.title.set_color(text_color)
         # ax.grid(True, color=grid_color)
 
-        for score in self.current_scores:
-            print("SCORE", score)
+        # Couleurs des courbes
+        curves_colors = self.get_curves_colors()
+        # Couleurs des flags
+        flags_colors = self.get_flags_colors()
+
+        print('CURVE COLORS', curves_colors)
+
+        for i, score in enumerate(self.current_scores):
+            print("SCORE", score, "COLORS", curves_colors[i])
             x, y = self.current_scores[score]
             y_ma = compute_moving_average(y)
             if len(x) > 0:
-                ax.plot(x, y, label=score)
-                ax.plot(x, y_ma, label=f"{score} (MA)", ls="--")
+                ax.plot(x, y, label=score, color=curves_colors[i])
+                ax.plot(x, y_ma, label=f"{score} (MA)", ls="--", color=curves_colors[i])
             else:
-                ax.plot(y, label=score)
-                ax.plot(y_ma, label=f"{score} (MA)", ls="--")
+                ax.plot(y, label=score, color=curves_colors[i])
+                ax.plot(y_ma, label=f"{score} (MA)", ls="--", color=curves_colors[i])
 
-        for flag in self.current_flags:
+        for i, flag in enumerate(self.current_flags):
             print("FLAG", flag)
             x = self.current_flags[flag]
             print(x)
             if len(x) > 0:
                 # ax.vlines(x=x, color="red", linestyle="--", label=flag)
-                ax.vlines(x=x, ymin=0, ymax=1,color="red", transform=ax.get_xaxis_transform(), linestyle="--", label=flag)
+                ax.vlines(x=x, ymin=0, ymax=1, transform=ax.get_xaxis_transform(), linestyle="--", label=flag, color=flags_colors[i])
 
 
         
@@ -499,15 +523,17 @@ class ExperimentViewer(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
+    app.setStyle("Fusion")
+
     curr_dir = os.path.abspath(os.path.dirname(__file__))
     config_path = os.path.join("config", "config.json")
     config_file_path = os.path.join(curr_dir, config_path)
-    experiments_dir = read_json(config_file_path)["data_folder"]
+    # experiments_dir = read_json(config_file_path)["data_folder"]
 
     # Dossier contenant les expériences
     # experiments_dir = os.path.join("..", "EXPERIMENTS")  # À modifier selon l'emplacement réel
 
-    viewer = ExperimentViewer(experiments_dir)
+    viewer = ExperimentViewer(config_file_path)
     viewer.show()
 
     sys.exit(app.exec_())
