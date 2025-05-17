@@ -174,3 +174,4 @@ cython_debug/
 .pypirc
 /xview/exp_folder
 /xview/config
+/todo.txt

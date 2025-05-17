@@ -11,9 +11,6 @@ from utils.utils import read_file, read_json, compute_moving_average, write_file
 from tree_widget import MyTreeWidget
 
 
-def coucou(item):
-        print(f"Item cliqué : {item.text(0)}")
-
 class ExperimentViewer(QMainWindow):
     def __init__(self, config_file_path):
         super().__init__()

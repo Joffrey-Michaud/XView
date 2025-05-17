@@ -505,6 +505,25 @@ class ConfigManager(QMainWindow):
 
 
 if __name__ == '__main__':
+
+    config_path = os.path.join("xview", "config", "config.json")
+    if not os.path.isfile(config_path):
+        # Create the config file with default values
+        default_config = {
+            "data_folder": os.path.join(os.getcwd(), "exps"),
+            "dark_mode_curves": ["#A2D2DF", "#F6EFBD", "#E4C087", "#BC7C7C", "#FF00FF"],
+            "dark_mode_flags": ["#fafafa", "#fafafa", "#fafafa"],
+            "light_mode_curves": ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF"],
+            "light_mode_flags": ["#000000", "#000000", "#000000"],
+            "curves_ls": "-",
+            "curves_alpha": 1.0,
+            "flags_ls": "-",
+            "flags_alpha": 1.0,
+            "ma_curves_ls": "--",
+            "ma_curves_alpha": 0.5
+        }
+        write_json(config_path, default_config)
+
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     ex = ConfigManager()
