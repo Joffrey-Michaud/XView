@@ -545,7 +545,8 @@ if __name__ == '__main__':
             "flags_ls": "-",
             "flags_alpha": 1.0,
             "ma_curves_ls": "--",
-            "ma_curves_alpha": 0.5
+            "ma_curves_alpha": 0.5,
+            "update_interval": 60
         }
         write_json(config_path, default_config)
 
