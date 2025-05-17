@@ -18,7 +18,7 @@ class ExperimentViewer(QMainWindow):
 
         self.experiments_dir = read_json(config_file_path)["data_folder"]
         self.current_experiment_name = ""
-
+        
         self.dark_mode_enabled = False
         self.model_image_file = None
 
