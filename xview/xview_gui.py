@@ -66,7 +66,6 @@ class ExperimentViewer(QMainWindow):
 
         left_layout.addWidget(save_finish_widget, 2, 0)
 
-
         # self.save_graph_button = QPushButton("Save Graph")
         # self.save_graph_button.clicked.connect(self.save_graph)
         # left_layout.addWidget(self.save_graph_button, 2, 0)
@@ -211,7 +210,7 @@ class ExperimentViewer(QMainWindow):
                             training_exps.append(entry)
                         elif status == "finished":
                             finished_exps.append(entry)
-                    
+
                     else:
                         sub_training_exps, sub_finished_exps = build(entry_path)
                         if sub_training_exps:
@@ -220,7 +219,6 @@ class ExperimentViewer(QMainWindow):
                             finished_exps.append({entry: sub_finished_exps})
             return training_exps, finished_exps
         return build(path)
-
 
     def update_experiment_list(self):
         """Met à jour les listes des expériences affichées."""
@@ -269,8 +267,8 @@ class ExperimentViewer(QMainWindow):
             with open(file_path, "r") as f:
                 lines = f.readlines()
                 # print(lines)
-            x =[]
-            y =[]
+            x = []
+            y = []
             for line in lines:
                 values = line.strip().split(",")
                 if len(values) == 1:
@@ -312,7 +310,7 @@ class ExperimentViewer(QMainWindow):
         # print("DISPOLAY EXPERIMENT")
         # print("ITEM :", item_or_name, "COL :", column)
         # print("ITEM TEXT:", item_or_name.text(0), "COL :", column)
-        
+
         # if isinstance(item_or_name, str):
         #     self.current_experiment_name = item_or_name
         # else:
@@ -321,7 +319,7 @@ class ExperimentViewer(QMainWindow):
 
         # print("CURRENT EXPERIMENT NAME :", self.current_experiment_name)
         # # exit(0)
-        
+
         exp_path = os.path.join(self.experiments_dir, path)
         print("EXP PATH :", exp_path)
         exp_info_file = os.path.join(exp_path, "exp_infos.json")
@@ -341,7 +339,7 @@ class ExperimentViewer(QMainWindow):
 
             # if os.path.exists(model_image_file):
             #     pixmap = QPixmap(model_image_file)
-            #     self.model_image_label.setPixmap(pixmap.scaled(self.model_image_label.size(), 
+            #     self.model_image_label.setPixmap(pixmap.scaled(self.model_image_label.size(),
             #                                                    aspectRatioMode=1))  # Preserve aspect ratio
             # else:
             #     self.model_image_label.clear()
@@ -358,23 +356,23 @@ class ExperimentViewer(QMainWindow):
 
             for row, key in enumerate(sorted_keys):
                 value = exp_info[key]
-                
+
                 # Création des cellules
                 key_item = QTableWidgetItem(str(key))
                 value_item = QTableWidgetItem(str(value))
-                
+
                 # Aligner la clé à droite
                 key_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-                
+
                 # Appliquer un fond gris clair sur une ligne sur deux
                 # if row % 2 == 1:
                 #     key_item.setBackground(QBrush(QColor(230, 230, 230)))  # Gris clair
                 #     value_item.setBackground(QBrush(QColor(230, 230, 230)))
-                
+
                 # Ajouter les items dans le tableau
                 self.exp_info_table.setItem(row, 0, key_item)
                 self.exp_info_table.setItem(row, 1, value_item)
-                
+
                 # Réduire la hauteur des lignes
                 self.exp_info_table.setRowHeight(row, 20)
         else:
@@ -392,13 +390,13 @@ class ExperimentViewer(QMainWindow):
                 self.model_image_label.setStyleSheet("border: 1px solid black; background-color: white")
             pixmap = QPixmap.fromImage(image)
             # pixmap = QPixmap(self.model_image_file)
-            self.model_image_label.setPixmap(pixmap.scaled(self.model_image_label.size(), 
-                                                            aspectRatioMode=Qt.KeepAspectRatio,
-                                                            transformMode=Qt.SmoothTransformation))  # Preserve aspect ratio
+            self.model_image_label.setPixmap(pixmap.scaled(self.model_image_label.size(),
+                                                           aspectRatioMode=Qt.KeepAspectRatio,
+                                                           transformMode=Qt.SmoothTransformation))  # Preserve aspect ratio
         else:
             self.model_image_label.clear()
             self.model_image_label.setText("Image non trouvée")
-    
+
     def get_curves_style(self):
         # colors
         if self.dark_mode_enabled:
@@ -408,7 +406,7 @@ class ExperimentViewer(QMainWindow):
         ls = read_json(self.config_file_path)["curves_ls"]  # linestyle
         alpha = read_json(self.config_file_path)["curves_alpha"]  # linestyle
         return colors, ls, alpha
-    
+
     def get_ma_curves_style(self):
         # colors
         if self.dark_mode_enabled:
@@ -418,7 +416,7 @@ class ExperimentViewer(QMainWindow):
         ls = read_json(self.config_file_path)["ma_curves_ls"]  # linestyle
         alpha = read_json(self.config_file_path)["ma_curves_alpha"]  # linestyle
         return colors, ls, alpha
-    
+
     def get_flags_style(self):
         # colors
         if self.dark_mode_enabled:
@@ -428,7 +426,7 @@ class ExperimentViewer(QMainWindow):
         ls = read_json(self.config_file_path)["flags_ls"]  # linestyle
         alpha = read_json(self.config_file_path)["flags_alpha"]  # linestyle
         return colors, ls, alpha
-        
+
     def update_plot(self):
         """Met à jour le graphique avec les données actuelles et les cases cochées."""
         self.figure.clear()
@@ -440,7 +438,7 @@ class ExperimentViewer(QMainWindow):
             tr_color = "cyan"
             val_color = "magenta"
             best_epoch_color = text_color
-            
+
         else:
             bg_color = "white"
             text_color = "black"
@@ -465,7 +463,6 @@ class ExperimentViewer(QMainWindow):
         flags_colors, flags_ls, flags_alpha = self.get_flags_style()
         _, ma_curves_ls, ma_curves_alpha = self.get_ma_curves_style()
 
-
         # print('CURVE COLORS', curves_colors)
 
         for i, score in enumerate(self.current_scores):
@@ -487,18 +484,17 @@ class ExperimentViewer(QMainWindow):
                 # ax.vlines(x=x, color="red", linestyle="--", label=flag)
                 ax.vlines(x=x, ymin=0, ymax=1, transform=ax.get_xaxis_transform(), linestyle=flags_ls, label=flag, color=flags_colors[i], alpha=flags_alpha)
 
-
         # Afficher les courbes si les cases sont cochées
         # if self.show_train_cb.isChecked() and len(self.current_train_loss) > 0:
         #     ax.plot(self.current_train_loss, label="Train Loss", color=tr_color)
-        
+
         # if self.show_train_ma_cb.isChecked() and len(self.current_train_loss) > 0:
         #     train_ma = compute_moving_average(self.current_train_loss)
         #     ax.plot(range(len(train_ma)), train_ma, label="Train Loss (MA)", color=tr_color, ls="--")
 
         # if self.show_val_cb.isChecked() and len(self.current_val_loss) > 0:
         #     ax.plot(self.current_val_loss, label="Validation Loss", color=val_color)
-        
+
         # if self.show_val_ma_cb.isChecked() and len(self.current_val_loss) > 0:
         #     val_ma = compute_moving_average(self.current_val_loss)
         #     ax.plot(range(len(val_ma)), val_ma, label="Validation Loss (MA)", color=val_color, ls="--")
@@ -512,6 +508,8 @@ class ExperimentViewer(QMainWindow):
         ax.set_xlabel("Epochs")
         ax.set_ylabel("Loss")
         ax.legend(facecolor=bg_color, edgecolor=text_color, labelcolor=text_color)
+
+        self.figure.tight_layout()
 
         self.canvas.draw()
 
@@ -576,6 +574,7 @@ class ExperimentViewer(QMainWindow):
             print(f"Le fichier de statut '{status_file}' n'existe pas.")
         # Mettre à jour la liste des expériences
         self.update_experiment_list()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
