@@ -22,5 +22,6 @@ sudo apt install libxcb-xinerama0 libxcb-xinput0 libegl1-mesa libxcb-icccm4 libx
 # more QT systems
 sudo apt install build-essential libgl1-mesa-glx libx11-xcb1 libfontconfig1 libdbus-1-3 libx11-6 libxext6 libxrender1 libxcb1 libxkbcommon0 libxcb-xfixes0
 
+chmod 0700 /run/user/$(id -u)
 ```
 
