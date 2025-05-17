@@ -66,11 +66,6 @@ class ExperimentViewer(QMainWindow):
 
         left_layout.addWidget(save_finish_widget, 2, 0)
 
-
-        # self.save_graph_button = QPushButton("Save Graph")
-        # self.save_graph_button.clicked.connect(self.save_graph)
-        # left_layout.addWidget(self.save_graph_button, 2, 0)
-
         # show infos et dark mode
         boxes_widget = QWidget()
         boxes_layout = QGridLayout()
@@ -238,30 +233,6 @@ class ExperimentViewer(QMainWindow):
         self.training_list.populate(training_experiments)
         self.finished_list.populate(finished_experiments)
 
-        # training_experiments = []
-        # finished_experiments = []
-
-        # for exp_name in os.listdir(self.experiments_dir):
-        #     exp_path = os.path.join(self.experiments_dir, exp_name)
-        #     if os.path.isdir(exp_path):
-        #         status_file = os.path.join(exp_path, "status.txt")
-        #         if os.path.exists(status_file):
-        #             status = read_file(status_file, return_str=True)
-        #             if status == "training":
-        #                 training_experiments.append(exp_name)
-        #             elif status == "finished":
-        #                 finished_experiments.append(exp_name)
-
-        # self.full_experiment_list = sorted(finished_experiments)
-
-        # for exp_name in sorted(training_experiments):
-        #     self.training_list.addItem(exp_name)
-
-        # for exp_name in sorted(finished_experiments):
-        #     self.finished_list.addItem(exp_name)
-
-        # self.filter_experiments()
-
     @staticmethod
     def read_scores(file_path):
         """Lit les scores à partir d'un fichier et retourne une liste de tuples (x, y)."""
@@ -280,8 +251,6 @@ class ExperimentViewer(QMainWindow):
                     y.append(float(values[1]))
             return (x, y)
 
-        #     scores = [tuple(map(float, line.strip().split(","))) for line in lines]
-        #     return scores
         else:
             print(f"Le fichier {file_path} n'existe pas.")
             return []
@@ -422,9 +391,9 @@ class ExperimentViewer(QMainWindow):
     def get_flags_style(self):
         # colors
         if self.dark_mode_enabled:
-            colors = read_json(self.config_file_path)["dark_mode_curves"]
+            colors = read_json(self.config_file_path)["dark_mode_flags"]
         else:
-            colors = read_json(self.config_file_path)["light_mode_curves"]
+            colors = read_json(self.config_file_path)["light_mode_flags"]
         ls = read_json(self.config_file_path)["flags_ls"]  # linestyle
         alpha = read_json(self.config_file_path)["flags_alpha"]  # linestyle
         return colors, ls, alpha

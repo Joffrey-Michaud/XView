@@ -25,3 +25,7 @@ sudo apt install build-essential libgl1-mesa-glx libx11-xcb1 libfontconfig1 libd
 chmod 0700 /run/user/$(id -u)
 ```
 
+## First use
+
+Run config.py, configure your experiment folder, and modify the graph style if you want.
+
