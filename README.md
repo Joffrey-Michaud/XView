@@ -5,7 +5,7 @@ Python library to help visualize your learning processes experiments.
 
 ```shell
 git clone git@github.com:Joffrey-Michaud/XView.git
-cd WView
+cd XView
 pip install -r requirements.txt
 pip install -e
 ```
