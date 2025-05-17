@@ -1,15 +1,17 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget, QPushButton, QVBoxLayout, QSplitter, QGridLayout, QMainWindow, QHBoxLayout, QColorDialog
+from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget, QPushButton, QVBoxLayout, QSplitter, QGridLayout, QMainWindow, QHBoxLayout, QColorDialog, QComboBox, QLineEdit
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor
 from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from xview.utils.utils import write_json, read_json
+from xview.utils.utils import write_json, read_json, compute_moving_average
 import os
 import numpy as np
+import time
 
 
+# ------------------------------------------------------------------ COLOR PICKER
 # region - ColorPickerWidget
 class ColorPickerWidget(QWidget):
     def __init__(self, colors=["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF"], on_color_change=None):
@@ -55,8 +57,65 @@ class ColorPickerWidget(QWidget):
             btn.setStyleSheet(f"background-color: {color}; border: 1px solid black;")
 
 
+# ------------------------------------------------------------------ STYLE SETTER
+# region - StyleSetter
+class StyleSetter(QWidget):
+    # widget pour choisir le style de ligne plt, et le alpha
+    def __init__(self, ls, alpha, set_ls_callbak, set_alpha_callback):
+        super().__init__()
+        self.ls = ls
+        self.alpha = alpha
+        self.set_ls_callbak = set_ls_callbak
+        self.set_alpha_callback = set_alpha_callback
 
-class FolderSelector(QMainWindow):
+        self.layout = QHBoxLayout()
+
+        self.combo_box = QComboBox()
+        self.combo_box.addItems([
+            "Ligne continue (-)",
+            "Tirets (--)",
+            "Tiret-point (-.)",
+            "Points (:)",
+        ])
+        # connect combo box to select_ls_callback
+        self.combo_box.currentIndexChanged.connect(self.select_ls_callback)
+        self.layout.addWidget(self.combo_box)
+
+        style_map = {
+            "-": 0,
+            "--": 1,
+            "-.": 2,
+            ":": 3
+            }
+        
+        self.inverted_style_map = {v: k for k, v in style_map.items()}
+        
+        if ls in style_map:
+            self.combo_box.setCurrentIndex(style_map[ls])
+
+        self.alpha_label = QLabel("Alpha :")
+        self.alpha_input = QLineEdit()
+        self.alpha_input.setPlaceholderText(f"{alpha}")
+        # self.alpha_input.textChanged.connect(self.select_alpha_callback)
+        self.alpha_input.editingFinished.connect(self.select_alpha_callback)
+
+        self.layout.addWidget(self.alpha_label)
+        self.layout.addWidget(self.alpha_input)
+
+        self.setLayout(self.layout)
+
+    def select_ls_callback(self, index):
+        self.set_ls_callbak(self.inverted_style_map[index])
+
+    def select_alpha_callback(self):
+        alpha = self.alpha_input.text()
+        self.set_alpha_callback(float(alpha))
+
+
+
+# ------------------------------------------------------------------ CONFIG MANAGER
+# region - ConfigManager
+class ConfigManager(QMainWindow):
     def __init__(self):
         super().__init__()
         self.initUI()
@@ -74,6 +133,10 @@ class FolderSelector(QMainWindow):
 
         self.current_exp_folder = self.get_current_exps_folder()
 
+        self.curves_ls, self.curves_alpha = self.get_curves_style()
+        self.ma_curves_ls, self.ma_curves_alpha = self.get_ma_curves_style()
+        self.flags_ls, self.flags_alpha = self.get_flags_style()
+
         self.dark_mode_enabled = False
 
         main_widget = QWidget()
@@ -89,6 +152,11 @@ class FolderSelector(QMainWindow):
         left_layout = QGridLayout()
         left_widget.setLayout(left_layout)
         splitter.addWidget(left_widget)
+
+        # figure widget
+        self.figure = Figure()
+        self.canvas = FigureCanvas(self.figure)
+        splitter.addWidget(self.canvas)
 
         layout = QVBoxLayout()
 
@@ -106,6 +174,8 @@ class FolderSelector(QMainWindow):
 
         left_layout.addWidget(logo_label, 0, 0)
 
+        # ------------------------------------------------------------------------------------------
+        # region - Exps folder
         self.exp_folder_label = QLabel(f"Current exps folder :\n{self.current_exp_folder}")
         self.exp_folder_label.setWordWrap(True)
         self.exp_folder_label.setStyleSheet("font-size: 15px;")
@@ -121,7 +191,12 @@ class FolderSelector(QMainWindow):
         left_layout.addWidget(self.dark_mode_btn, 3, 0)
         # self.setLayout(layout)
 
-        section_label = QLabel("Choose the colors of the curves")
+        # ------------------------------------------------------------------------------------------
+        # region - Colors and styles
+
+        # ----------------------------------------------------------- CURVES
+        # section_label = QLabel("Choose the colors of the curves")
+        section_label = QLabel("Choose the style of the curves")
         section_label.setStyleSheet("font-size: 15px;")
         section_label.setAlignment(Qt.AlignCenter)
         left_layout.addWidget(section_label, 4, 0)
@@ -129,23 +204,43 @@ class FolderSelector(QMainWindow):
         self.color_widget = ColorPickerWidget(colors=self.light_mode_curves, on_color_change=self.update_curves_colors)
         left_layout.addWidget( self.color_widget, 5, 0)
 
-        section_label_2 = QLabel("Choose the colors of the flags")
+        self.curves_style_setter = StyleSetter(self.curves_ls, self.curves_alpha,
+                                               set_ls_callbak=self.set_curves_ls,
+                                               set_alpha_callback=self.set_curves_alpha)
+        left_layout.addWidget(self.curves_style_setter, 6, 0)
+
+        # ----------------------------------------------------------- MA CURVES
+        self.ma_label = QLabel("Choose the style of the moving average curves")
+        self.ma_label.setStyleSheet("font-size: 15px;")
+        self.ma_label.setAlignment(Qt.AlignCenter)
+        left_layout.addWidget(self.ma_label, 7, 0)
+
+        
+        self.ma_curves_style_setter = StyleSetter(self.ma_curves_ls, self.ma_curves_alpha,
+                                                  set_ls_callbak=self.set_ma_curves_ls,
+                                                  set_alpha_callback=self.set_ma_curves_alpha)
+        left_layout.addWidget(self.ma_curves_style_setter, 8, 0)
+
+        # ----------------------------------------------------------- FLAGS
+        section_label_2 = QLabel("Choose the style of the flags")
         section_label_2.setStyleSheet("font-size: 15px;")
         section_label_2.setAlignment(Qt.AlignCenter)
-        left_layout.addWidget(section_label_2, 6, 0)
+        left_layout.addWidget(section_label_2, 9, 0)
 
         self.color_widget_2 = ColorPickerWidget(colors=self.light_mode_flags, on_color_change=self.update_flags_colors)
-        left_layout.addWidget( self.color_widget_2, 7, 0)
+        left_layout.addWidget( self.color_widget_2, 10, 0)
 
-        # save button
+        
+
+        self.flags_style_setter = StyleSetter(self.flags_ls, self.flags_alpha,
+                                              set_ls_callbak=self.set_flags_ls,
+                                              set_alpha_callback=self.set_flags_alpha)
+        left_layout.addWidget(self.flags_style_setter, 11, 0)
+
+        # region - save button
         save_btn = QPushButton('Save')
         save_btn.clicked.connect(self.save_config)
-        left_layout.addWidget(save_btn, 8, 0)
-
-        # figure widget
-        self.figure = Figure()
-        self.canvas = FigureCanvas(self.figure)
-        splitter.addWidget(self.canvas)
+        left_layout.addWidget(save_btn, 12, 0)
 
         self.plot_example()
 
@@ -163,20 +258,28 @@ class FolderSelector(QMainWindow):
         #     write_json(os.path.join("xview", "config", "config.json"), config)
 
         # self.close()
-
+    
+    # region - save_config
     def save_config(self):
         config = {
             "data_folder": self.current_exp_folder,
             "dark_mode_curves": self.dark_mode_curves,
             "dark_mode_flags": self.dark_mode_flags,
             "light_mode_curves": self.light_mode_curves,
-            "light_mode_flags": self.light_mode_flags
+            "light_mode_flags": self.light_mode_flags,
+            "curves_ls": self.curves_ls,
+            "curves_alpha": self.curves_alpha,
+            "flags_ls": self.flags_ls,
+            "flags_alpha": self.flags_alpha,
+            "ma_curves_ls": self.ma_curves_ls,
+            "ma_curves_alpha": self.ma_curves_alpha
         }
         os.makedirs(os.path.join("xview", "config"), exist_ok=True)
         write_json(os.path.join("xview", "config", "config.json"), config)
         print("Configuration saved to config.json")
         self.close()
 
+    # region - plot_example
     def plot_example(self):
         if self.dark_mode_enabled:
             curves_colors = self.dark_mode_curves
@@ -217,12 +320,15 @@ class FolderSelector(QMainWindow):
         amplitudes = [1, 2, 0.5, 1.5, 0.8]
         for i, (color, amp) in enumerate(zip(curves_colors, amplitudes)):
             y = amp * np.sin(x + i)
-            ax.plot(x, y, color=color, label=f"Curve {i+1}")
+            ax.plot(x, y, color=color, label=f"Curve {i+1}", ls=self.curves_ls, alpha=self.curves_alpha)
+
+            ax.plot(x, compute_moving_average(y, 10), color=color, label=f"MA Curve {i+1}", ls=self.ma_curves_ls, alpha=self.ma_curves_alpha)
+
 
         coords = np.linspace(0, 2 * np.pi, 5)
         for i, (color, x)  in enumerate(zip(flags_colors, coords[1:-1])):
             y = amp * np.sin(x + i)
-            ax.axvline(x, color=color, label=f"Flag {i+1}")
+            ax.axvline(x, color=color, label=f"Flag {i+1}", ls=self.flags_ls, alpha=self.flags_alpha)
 
 
         # x = np.linspace(0, 2 * np.pi, 200)
@@ -327,6 +433,53 @@ class FolderSelector(QMainWindow):
                 else:
                     return ["#000000", "#000000", "#000000"]
                 
+    def get_curves_style(self):
+        if os.path.isfile(os.path.join("xview", "config", "config.json")):
+            config = read_json(os.path.join("xview", "config", "config.json"))
+            return config["curves_ls"], config["curves_alpha"]
+        
+    def get_ma_curves_style(self):
+        if os.path.isfile(os.path.join("xview", "config", "config.json")):
+            config = read_json(os.path.join("xview", "config", "config.json"))
+            return config["ma_curves_ls"], config["ma_curves_alpha"]
+        
+    def get_flags_style(self):
+        if os.path.isfile(os.path.join("xview", "config", "config.json")):
+            config = read_json(os.path.join("xview", "config", "config.json"))
+            return config["flags_ls"], config["flags_alpha"]
+        
+    
+        
+    def set_curves_ls(self, ls):
+        self.curves_ls = ls
+        print("NOUVEAU LS CURVES :", self.curves_ls)
+        self.plot_example()
+
+    def set_ma_curves_ls(self, ls):
+        self.ma_curves_ls = ls
+        print("NOUVEAU MA LS CURVES :", self.ma_curves_ls)
+        self.plot_example()
+    
+    def set_flags_ls(self, ls):
+        self.flags_ls = ls
+        print("NOUVEAU LS FLAGS :", self.flags_ls)
+        self.plot_example()
+
+    def set_curves_alpha(self, alpha):
+        self.curves_alpha = alpha
+        print("NOUVEAU ALPHA CURVES :", self.curves_alpha)
+        self.plot_example()
+
+    def set_ma_curves_alpha(self, alpha):
+        self.ma_curves_alpha = alpha
+        print("NOUVEAU MA ALPHA CURVES :", self.ma_curves_alpha)
+        self.plot_example()
+    
+    def set_flags_alpha(self, alpha):
+        self.flags_alpha = alpha
+        print("NOUVEAU ALPHA FLAGS :", self.flags_alpha)
+        self.plot_example()
+                
     def get_current_exps_folder(self):
         if os.path.isfile(os.path.join("xview", "config", "config.json")):
             # Read the JSON file
@@ -350,13 +503,9 @@ class FolderSelector(QMainWindow):
 
         self.plot_example()
 
-    
-
-
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
-    ex = FolderSelector()
+    ex = ConfigManager()
     sys.exit(app.exec_())
