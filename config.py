@@ -277,7 +277,6 @@ class ConfigManager(QMainWindow):
         os.makedirs(os.path.join("xview", "config"), exist_ok=True)
         write_json(os.path.join("xview", "config", "config.json"), config)
         print("Configuration saved to config.json")
-        self.close()
 
     # region - plot_example
     def plot_example(self):
