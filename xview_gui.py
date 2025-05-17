@@ -6,7 +6,7 @@ from PyQt5.QtGui import QPixmap, QImage, QBrush, QColor, QFont, QIcon, QPalette
 from PyQt5.QtCore import QTimer, Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from xview.utils.utils import read_file, read_json, compute_moving_average, write_file
+from xview.utils.utils import read_file, read_json, compute_moving_average, write_file, write_json
 from xview.tree_widget import MyTreeWidget
 from config import ConfigManager
 
@@ -18,8 +18,9 @@ class ExperimentViewer(QMainWindow):
 
         self.experiments_dir = read_json(config_file_path)["data_folder"]
         self.current_experiment_name = ""
-        
+
         self.dark_mode_enabled = False
+        
         self.model_image_file = None
 
         # Configurer l'interface principale
@@ -189,10 +190,22 @@ class ExperimentViewer(QMainWindow):
         self.current_train_loss = []
         self.current_val_loss = []
 
+        if not os.path.isfile(os.path.join("xview", "config", "dark_mode.json")):
+            write_json(os.path.join("xview", "config", "dark_mode.json"), {"dark_mode": False})
+        # self.dark_mode_enabled = self.read_dark_mode_state()
+        # print("DARK MODE ENABLED :", self.dark_mode_enabled)
+        if self.read_dark_mode_state():
+            self.toggle_dark_mode()
+
         # Mise à jour initiale
         self.update_experiment_list()
 
-    def get_interval(self):
+    def read_dark_mode_state(self):
+        """Lit l'état du mode sombre à partir du fichier JSON."""
+        dark_mode_state = read_json(os.path.join("xview", "config", "dark_mode.json"))
+        return dark_mode_state["dark_mode"]
+
+    def get_interval(self): 
         interval = read_json(self.config_file_path)["update_interval"]
         return int(interval * 1000)
 
@@ -336,7 +349,8 @@ class ExperimentViewer(QMainWindow):
             model_image_file = os.path.join(exp_path, f"{model_name}.png")
             self.model_image_file = model_image_file
 
-            self.display_model_image()
+            if os.path.exists(self.model_image_file):
+                self.display_model_image()
 
             # if os.path.exists(model_image_file):
             #     pixmap = QPixmap(model_image_file)
@@ -382,21 +396,22 @@ class ExperimentViewer(QMainWindow):
         self.update_plot()
 
     def display_model_image(self):
-        if os.path.exists(self.model_image_file):
-            image = QImage(self.model_image_file)
-            if self.dark_mode_enabled:
-                image.invertPixels()
-                self.model_image_label.setStyleSheet("border: 1px solid black; background-color: black")
+        if self.model_image_file is not None:
+            if os.path.exists(self.model_image_file):
+                image = QImage(self.model_image_file)
+                if self.dark_mode_enabled:
+                    image.invertPixels()
+                    self.model_image_label.setStyleSheet("border: 1px solid black; background-color: black")
+                else:
+                    self.model_image_label.setStyleSheet("border: 1px solid black; background-color: white")
+                pixmap = QPixmap.fromImage(image)
+                # pixmap = QPixmap(self.model_image_file)
+                self.model_image_label.setPixmap(pixmap.scaled(self.model_image_label.size(),
+                                                            aspectRatioMode=Qt.KeepAspectRatio,
+                                                            transformMode=Qt.SmoothTransformation))  # Preserve aspect ratio
             else:
-                self.model_image_label.setStyleSheet("border: 1px solid black; background-color: white")
-            pixmap = QPixmap.fromImage(image)
-            # pixmap = QPixmap(self.model_image_file)
-            self.model_image_label.setPixmap(pixmap.scaled(self.model_image_label.size(),
-                                                           aspectRatioMode=Qt.KeepAspectRatio,
-                                                           transformMode=Qt.SmoothTransformation))  # Preserve aspect ratio
-        else:
-            self.model_image_label.clear()
-            self.model_image_label.setText("Image non trouvée")
+                self.model_image_label.clear()
+                self.model_image_label.setText("Image non trouvée")
 
     def get_curves_style(self):
         # colors
@@ -534,7 +549,7 @@ class ExperimentViewer(QMainWindow):
         self.figure.savefig(save_path, dpi=300)  # Enregistrer en haute qualité
         print(f"Graph enregistré dans : {save_path}")
 
-    def toggle_dark_mode(self, state):
+    def toggle_dark_mode(self):
         if not self.dark_mode_enabled:
             self.set_dark_mode()
             self.dark_mode_enabled = True
@@ -545,6 +560,8 @@ class ExperimentViewer(QMainWindow):
             self.dark_mode_enabled = False
             self.setWindowIcon(QIcon("logo_light.png"))
             self.dark_mode_button.setText("Dark mode")
+
+        write_json(os.path.join("xview", "config", "dark_mode.json"), {"dark_mode": self.dark_mode_enabled})
         self.update_plot()
         self.display_model_image()
 
