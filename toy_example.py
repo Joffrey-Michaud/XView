@@ -1,0 +1,31 @@
+from xview.experiment import Experiment
+import numpy as np
+
+
+A1,A2 = np.random.rand(2)
+
+my_exp = Experiment("toy_experiment",  # give a name to the experiment
+                    infos={"A1": A1, "A2": A2},  # you can add any information you want to the experiment in dict format
+                    group="examples_group"  # possible to set a group for the experiment, to group them in one folder
+                    )
+
+my_exp.set_train_status()  # set the status of the experiment to training
+
+points = np.linspace(0, 2 * np.pi, 200)
+
+best_val = 100000
+
+for i, x in enumerate(points):
+    y1 = A1 * np.sin(x + 1)
+    y2 = A2 * np.sin(x + 2)
+    my_exp.add_score(name="Train_loss", x=x, y=y1)  # add a score with x and y values. The x value is not mandatory, you can add only y values
+    my_exp.add_score(name="Val_loss", x=x, y=y2)  # 
+
+    if i in [50, 75, 150]:
+        my_exp.add_flag(name="flag_1", x=x)  # add a flag at specific points. It will be displayedd with vertical lines in the plot
+
+    if y2 < best_val:
+        best_val = y2
+        my_exp.add_flag(name="best_val", x=x, unique=True)  # add a flag with unique=True to keep only the last one
+
+# my_exp.set_finished_status()  # set the status of the experiment to finished
