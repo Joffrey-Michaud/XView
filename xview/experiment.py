@@ -3,8 +3,9 @@ from xview.utils.utils import *
 from xview.score import MultiScores
 
 class Experiment(object):
-    def __init__(self, name, infos=None):
+    def __init__(self, name, infos=None, group=None):
         self.name = name
+        self.group = group
 
         # chemin vers le fichier de config
         curr_dir = os.path.abspath(os.path.dirname(__file__))
@@ -13,6 +14,10 @@ class Experiment(object):
 
         # lecture du fichier de config et création du dossier de l'expérience
         self.data_folder = read_json(abs_config_path)["data_folder"]
+        
+        if self.group is not None:
+            self.data_folder = os.path.join(self.data_folder, self.group)
+
         self.experiment_folder = os.path.join(self.data_folder, self.name)
         os.makedirs(self.experiment_folder, exist_ok=True)
 

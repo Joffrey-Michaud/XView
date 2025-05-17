@@ -8,7 +8,11 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 # from xview.utils.utils import read_file, read_json, compute_moving_average, write_file
 from utils.utils import read_file, read_json, compute_moving_average, write_file
+from tree_widget import MyTreeWidget
 
+
+def coucou(item):
+        print(f"Item cliqué : {item.text(0)}")
 
 class ExperimentViewer(QMainWindow):
     def __init__(self, config_file_path):
@@ -89,15 +93,18 @@ class ExperimentViewer(QMainWindow):
         boxes_layout.addWidget(self.box_dark_mode, 0, 1)
 
         # Listes des expériences
-        self.training_list = QListWidget()
-        self.finished_list = QListWidget()
+        # self.training_list = QListWidget()
+        # self.finished_list = QListWidget()
+        self.training_list = MyTreeWidget(self, display_exp=self.display_experiment)
+        self.finished_list = MyTreeWidget(self, display_exp=self.display_experiment)
         left_layout.addWidget(QLabel("Experiments in progress"), 4, 0)
         left_layout.addWidget(self.training_list, 5, 0)
         left_layout.addWidget(QLabel("Finished experiments"), 6, 0)
 
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("Search for an experiment...")
-        self.search_bar.textChanged.connect(self.filter_experiments)
+        # self.search_bar.textChanged.connect(self.filter_experiments)
+        self.search_bar.textChanged.connect(self.finished_list.filter_items)
         left_layout.addWidget(self.search_bar, 7, 0)  # Ajout sous le titre "Expériences terminées"
 
         left_layout.addWidget(self.finished_list, 8, 0)  # Liste des expériences terminées sous la barre de recherche
@@ -152,8 +159,8 @@ class ExperimentViewer(QMainWindow):
         left_layout.addWidget(self.show_val_ma_cb, 12, 0)
 
         # Connexion des signaux
-        self.training_list.itemClicked.connect(self.display_experiment)
-        self.finished_list.itemClicked.connect(self.display_experiment)
+        # self.training_list.itemClicked.connect(self.display_experiment)
+        # self.finished_list.itemClicked.connect(self.display_experiment)
         self.show_train_cb.stateChanged.connect(self.update_plot)
         self.show_val_cb.stateChanged.connect(self.update_plot)
         self.show_train_ma_cb.stateChanged.connect(self.update_plot)
@@ -191,35 +198,72 @@ class ExperimentViewer(QMainWindow):
             if search_text in exp_name.lower():
                 self.finished_list.addItem(exp_name)
 
+    @staticmethod
+    def build_exp_tree(path):
+        def build(path):
+            training_exps = []
+            finished_exps = []
+
+            for entry in os.listdir(path):
+                entry_path = os.path.join(path, entry)
+                if os.path.isdir(entry_path):
+                    status_file = os.path.join(entry_path, "status.txt")
+                    if os.path.exists(status_file):
+                        status = read_file(status_file, return_str=True)
+                        if status == "training":
+                            training_exps.append(entry)
+                        elif status == "finished":
+                            finished_exps.append(entry)
+                    
+                    else:
+                        sub_training_exps, sub_finished_exps = build(entry_path)
+                        if sub_training_exps:
+                            training_exps.append({entry: sub_training_exps})
+                        if sub_finished_exps:
+                            finished_exps.append({entry: sub_finished_exps})
+            return training_exps, finished_exps
+        return build(path)
+
+
     def update_experiment_list(self):
         """Met à jour les listes des expériences affichées."""
         self.training_list.clear()
         self.finished_list.clear()
         self.full_experiment_list = []
 
-        training_experiments = []
-        finished_experiments = []
+        training_experiments, finished_experiments = self.build_exp_tree(self.experiments_dir)
+        self.training_list.all_items = training_experiments
+        self.finished_list.all_items = finished_experiments
 
-        for exp_name in os.listdir(self.experiments_dir):
-            exp_path = os.path.join(self.experiments_dir, exp_name)
-            if os.path.isdir(exp_path):
-                status_file = os.path.join(exp_path, "status.txt")
-                if os.path.exists(status_file):
-                    status = read_file(status_file, return_str=True)
-                    if status == "training":
-                        training_experiments.append(exp_name)
-                    elif status == "finished":
-                        finished_experiments.append(exp_name)
+        print("Training experiments:", training_experiments)
+        print("Finished experiments:", finished_experiments)
 
-        self.full_experiment_list = sorted(finished_experiments)
+        self.training_list.populate(training_experiments)
+        self.finished_list.populate(finished_experiments)
 
-        for exp_name in sorted(training_experiments):
-            self.training_list.addItem(exp_name)
+        # training_experiments = []
+        # finished_experiments = []
 
-        for exp_name in sorted(finished_experiments):
-            self.finished_list.addItem(exp_name)
+        # for exp_name in os.listdir(self.experiments_dir):
+        #     exp_path = os.path.join(self.experiments_dir, exp_name)
+        #     if os.path.isdir(exp_path):
+        #         status_file = os.path.join(exp_path, "status.txt")
+        #         if os.path.exists(status_file):
+        #             status = read_file(status_file, return_str=True)
+        #             if status == "training":
+        #                 training_experiments.append(exp_name)
+        #             elif status == "finished":
+        #                 finished_experiments.append(exp_name)
 
-        self.filter_experiments()
+        # self.full_experiment_list = sorted(finished_experiments)
+
+        # for exp_name in sorted(training_experiments):
+        #     self.training_list.addItem(exp_name)
+
+        # for exp_name in sorted(finished_experiments):
+        #     self.finished_list.addItem(exp_name)
+
+        # self.filter_experiments()
 
     @staticmethod
     def read_scores(file_path):
@@ -265,25 +309,29 @@ class ExperimentViewer(QMainWindow):
                     _, x = self.read_scores(file_path)
                     self.current_flags[flag] = x
 
-    def display_experiment(self, item_or_name):
+    def display_experiment(self, path):
         """Affiche le graphique de l'expérience sélectionnée."""
-        if isinstance(item_or_name, str):
-            self.current_experiment_name = item_or_name
-        else:
-            self.current_experiment_name = item_or_name.text()
+        self.current_experiment_name = path
+        # print("DISPOLAY EXPERIMENT")
+        # print("ITEM :", item_or_name, "COL :", column)
+        # print("ITEM TEXT:", item_or_name.text(0), "COL :", column)
         
-        exp_path = os.path.join(self.experiments_dir, self.current_experiment_name)
+        # if isinstance(item_or_name, str):
+        #     self.current_experiment_name = item_or_name
+        # else:
+        #     print("OUI")
+        #     self.current_experiment_name = item_or_name.text(0)
 
-        # train_loss_file = os.path.join(exp_path, "scores_training.txt")
-        # val_loss_file = os.path.join(exp_path, "scores_validation.txt")
+        # print("CURRENT EXPERIMENT NAME :", self.current_experiment_name)
+        # # exit(0)
+        
+        exp_path = os.path.join(self.experiments_dir, path)
+        print("EXP PATH :", exp_path)
         exp_info_file = os.path.join(exp_path, "exp_infos.json")
 
         # Charger les données des courbes
         self.read_current_scores()
         self.read_current_flags()
-        # if os.path.exists(train_loss_file) and os.path.exists(val_loss_file):
-        #     self.current_train_loss = read_file(train_loss_file)
-        #     self.current_val_loss = read_file(val_loss_file)
 
         # Charger et afficher l'image du modèle
         if os.path.exists(exp_info_file):
@@ -357,11 +405,11 @@ class ExperimentViewer(QMainWindow):
     def get_curves_colors(self):
         if self.dark_mode_enabled:
             colors = read_json(self.config_file_path)["dark_mode_curves"]
-            print("GET CURVES COLORS DARK :", colors)
+            # print("GET CURVES COLORS DARK :", colors)
             return colors
         else:
             colors = read_json(self.config_file_path)["light_mode_curves"]
-            print("GET CURVES COLORS LIGHT :", colors)
+            # print("GET CURVES COLORS LIGHT :", colors)
             return colors
         
     def get_flags_colors(self):
@@ -406,10 +454,10 @@ class ExperimentViewer(QMainWindow):
         # Couleurs des flags
         flags_colors = self.get_flags_colors()
 
-        print('CURVE COLORS', curves_colors)
+        # print('CURVE COLORS', curves_colors)
 
         for i, score in enumerate(self.current_scores):
-            print("SCORE", score, "COLORS", curves_colors[i])
+            # print("SCORE", score, "COLORS", curves_colors[i])
             x, y = self.current_scores[score]
             y_ma = compute_moving_average(y)
             if len(x) > 0:
@@ -420,7 +468,7 @@ class ExperimentViewer(QMainWindow):
                 ax.plot(y_ma, label=f"{score} (MA)", ls="--", color=curves_colors[i])
 
         for i, flag in enumerate(self.current_flags):
-            print("FLAG", flag)
+            # print("FLAG", flag)
             x = self.current_flags[flag]
             print(x)
             if len(x) > 0:
