@@ -107,6 +107,34 @@ class MyTreeWidget(QTreeWidget):
 
         self.populate(filtered)
 
+    def get_expanded_items(self):
+        expanded_items = []
+
+        def recurse(item):
+            if item.isExpanded():
+                expanded_items.append(self.get_item_identifier(item))
+            for i in range(item.childCount()):
+                recurse(item.child(i))
+
+        for i in range(self.topLevelItemCount()):
+            recurse(self.topLevelItem(i))
+        return expanded_items
+
+    def get_item_identifier(self, item):
+        # Ex: return a tuple with column texts
+        return tuple(item.text(i) for i in range(item.columnCount()))
+    
+    def restore_expanded_items(self, expanded_ids):
+        def recurse(item):
+            if self.get_item_identifier(item) in expanded_ids:
+                item.setExpanded(True)
+            for i in range(item.childCount()):
+                recurse(item.child(i))
+
+        for i in range(self.topLevelItemCount()):
+            recurse(self.topLevelItem(i))
+
+
     # def add_top_level_items(self):
     #     item_a = QTreeWidgetItem(["A"])
     #     item_b = QTreeWidgetItem(["B"])

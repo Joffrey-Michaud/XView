@@ -266,6 +266,9 @@ class ExperimentViewer(QMainWindow):
 
     def update_experiment_list(self):
         """Met à jour les listes des expériences affichées."""
+        tr_ids = self.training_list.get_expanded_items()
+        finished_ids = self.finished_list.get_expanded_items()
+
         self.training_list.clear()
         self.finished_list.clear()
         self.full_experiment_list = []
@@ -279,6 +282,10 @@ class ExperimentViewer(QMainWindow):
 
         self.training_list.populate(training_experiments)
         self.finished_list.populate(finished_experiments)
+
+        self.training_list.restore_expanded_items(tr_ids)
+        self.finished_list.restore_expanded_items(finished_ids)
+        print("LIST UPDATED")
 
     @staticmethod
     def read_scores(file_path):
