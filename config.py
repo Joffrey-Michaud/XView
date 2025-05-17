@@ -136,6 +136,7 @@ class ConfigManager(QMainWindow):
         self.curves_ls, self.curves_alpha = self.get_curves_style()
         self.ma_curves_ls, self.ma_curves_alpha = self.get_ma_curves_style()
         self.flags_ls, self.flags_alpha = self.get_flags_style()
+        self.interval = self.get_interval()
 
         self.dark_mode_enabled = False
 
@@ -186,9 +187,25 @@ class ConfigManager(QMainWindow):
         exp_btn.clicked.connect(self.change_exp_folder)
         left_layout.addWidget(exp_btn, 2, 0)
 
+        # ------------------------------------------------------------------------------------------
+        # region - upd interval
+        self.inteval_widget = QWidget()
+        self.interval_layout = QHBoxLayout()
+
+        self.interval_label = QLabel("Graph update interval (s) :")
+        self.interval_input = QLineEdit()
+        self.interval_layout.addWidget(self.interval_label)
+        self.interval_layout.addWidget(self.interval_input)
+        self.inteval_widget.setLayout(self.interval_layout)
+
+        self.interval_input.setPlaceholderText(f"{self.interval}")
+        self.interval_input.editingFinished.connect(self.set_interval)
+        left_layout.addWidget(self.inteval_widget, 3, 0)
+
+
         self.dark_mode_btn = QPushButton('Dark Mode', self)
         self.dark_mode_btn.clicked.connect(self.toggle_dark_mode)
-        left_layout.addWidget(self.dark_mode_btn, 3, 0)
+        left_layout.addWidget(self.dark_mode_btn, 4, 0)
         # self.setLayout(layout)
 
         # ------------------------------------------------------------------------------------------
@@ -199,48 +216,48 @@ class ConfigManager(QMainWindow):
         section_label = QLabel("Choose the style of the curves")
         section_label.setStyleSheet("font-size: 15px;")
         section_label.setAlignment(Qt.AlignCenter)
-        left_layout.addWidget(section_label, 4, 0)
+        left_layout.addWidget(section_label, 5, 0)
 
         self.color_widget = ColorPickerWidget(colors=self.light_mode_curves, on_color_change=self.update_curves_colors)
-        left_layout.addWidget( self.color_widget, 5, 0)
+        left_layout.addWidget( self.color_widget, 6, 0)
 
         self.curves_style_setter = StyleSetter(self.curves_ls, self.curves_alpha,
                                                set_ls_callbak=self.set_curves_ls,
                                                set_alpha_callback=self.set_curves_alpha)
-        left_layout.addWidget(self.curves_style_setter, 6, 0)
+        left_layout.addWidget(self.curves_style_setter, 7, 0)
 
         # ----------------------------------------------------------- MA CURVES
         self.ma_label = QLabel("Choose the style of the moving average curves")
         self.ma_label.setStyleSheet("font-size: 15px;")
         self.ma_label.setAlignment(Qt.AlignCenter)
-        left_layout.addWidget(self.ma_label, 7, 0)
+        left_layout.addWidget(self.ma_label, 8, 0)
 
         
         self.ma_curves_style_setter = StyleSetter(self.ma_curves_ls, self.ma_curves_alpha,
                                                   set_ls_callbak=self.set_ma_curves_ls,
                                                   set_alpha_callback=self.set_ma_curves_alpha)
-        left_layout.addWidget(self.ma_curves_style_setter, 8, 0)
+        left_layout.addWidget(self.ma_curves_style_setter, 9, 0)
 
         # ----------------------------------------------------------- FLAGS
         section_label_2 = QLabel("Choose the style of the flags")
         section_label_2.setStyleSheet("font-size: 15px;")
         section_label_2.setAlignment(Qt.AlignCenter)
-        left_layout.addWidget(section_label_2, 9, 0)
+        left_layout.addWidget(section_label_2, 10, 0)
 
         self.color_widget_2 = ColorPickerWidget(colors=self.light_mode_flags, on_color_change=self.update_flags_colors)
-        left_layout.addWidget( self.color_widget_2, 10, 0)
+        left_layout.addWidget( self.color_widget_2, 11, 0)
 
         
 
         self.flags_style_setter = StyleSetter(self.flags_ls, self.flags_alpha,
                                               set_ls_callbak=self.set_flags_ls,
                                               set_alpha_callback=self.set_flags_alpha)
-        left_layout.addWidget(self.flags_style_setter, 11, 0)
+        left_layout.addWidget(self.flags_style_setter, 12, 0)
 
         # region - save button
         save_btn = QPushButton('Save')
         save_btn.clicked.connect(self.save_config)
-        left_layout.addWidget(save_btn, 12, 0)
+        left_layout.addWidget(save_btn, 13, 0)
 
         self.plot_example()
 
@@ -272,7 +289,8 @@ class ConfigManager(QMainWindow):
             "flags_ls": self.flags_ls,
             "flags_alpha": self.flags_alpha,
             "ma_curves_ls": self.ma_curves_ls,
-            "ma_curves_alpha": self.ma_curves_alpha
+            "ma_curves_alpha": self.ma_curves_alpha,
+            "update_interval": self.interval
         }
         os.makedirs(os.path.join("xview", "config"), exist_ok=True)
         write_json(os.path.join("xview", "config", "config.json"), config)
@@ -447,7 +465,15 @@ class ConfigManager(QMainWindow):
             config = read_json(os.path.join("xview", "config", "config.json"))
             return config["flags_ls"], config["flags_alpha"]
         
-    
+    def get_interval(self):
+        if os.path.isfile(os.path.join("xview", "config", "config.json")):
+            config = read_json(os.path.join("xview", "config", "config.json"))
+            return config["update_interval"]
+        
+    def set_interval(self):
+        interval = self.interval_input.text()
+        self.interval = float(interval)
+        print("NOUVEAU INTERVAL :", self.interval)
         
     def set_curves_ls(self, ls):
         self.curves_ls = ls
