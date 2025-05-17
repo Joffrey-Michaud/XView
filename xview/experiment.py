@@ -1,24 +1,30 @@
 import os
 from xview.utils.utils import *
 from xview.score import MultiScores
+import shutil
+
 
 class Experiment(object):
-    def __init__(self, name, infos=None, group=None):
+    def __init__(self, name, infos=None, group=None, clear=None):
         self.name = name
         self.group = group
 
-        # chemin vers le fichier de config
+        #  chemin vers le fichier de config
         curr_dir = os.path.abspath(os.path.dirname(__file__))
         config_path = os.path.join("config", "config.json")
         abs_config_path = os.path.join(curr_dir, config_path)
 
         # lecture du fichier de config et création du dossier de l'expérience
         self.data_folder = read_json(abs_config_path)["data_folder"]
-        
+
         if self.group is not None:
             self.data_folder = os.path.join(self.data_folder, self.group)
 
         self.experiment_folder = os.path.join(self.data_folder, self.name)
+
+        if clear == True and os.path.exists(self.experiment_folder):
+            shutil.rmtree(self.experiment_folder)
+
         os.makedirs(self.experiment_folder, exist_ok=True)
 
         # créer le fichier d'infos si donné
@@ -37,12 +43,12 @@ class Experiment(object):
         # fichier de score validation
         self.score_file_validation = os.path.join(self.experiment_folder, "scores_validation.txt")
 
-        # dossier de scores
+        #  dossier de scores
         self.scores_folder = os.path.join(self.experiment_folder, "scores")
         os.makedirs(self.scores_folder, exist_ok=True)
         self.scores = MultiScores(self.scores_folder)
 
-        # dossier de flags
+        #  dossier de flags
         self.flags_folder = os.path.join(self.experiment_folder, "flags")
         os.makedirs(self.flags_folder, exist_ok=True)
         self.flags = MultiScores(self.flags_folder)
@@ -72,8 +78,3 @@ class Experiment(object):
         if name not in self.flags.scores:
             self.flags.add_score(name)
         self.flags.add_score_point(name, x=x, unique=unique)
-
-    
-
-
-    
