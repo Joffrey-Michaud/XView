@@ -505,9 +505,9 @@ class ConfigManager(QMainWindow):
 
 
 if __name__ == '__main__':
-
     config_path = os.path.join("xview", "config", "config.json")
     if not os.path.isfile(config_path):
+        os.makedirs(os.path.join("xview", "config"), exist_ok=True)
         # Create the config file with default values
         default_config = {
             "data_folder": os.path.join(os.getcwd(), "exps"),
