@@ -74,7 +74,9 @@ class Experiment(object):
             self.scores.add_score(name)
         self.scores.add_score_point(name, y, x)
 
-    def add_flag(self, name, x, unique=False):
+    def add_flag(self, name, x=None, unique=False):
         if name not in self.flags.scores:
             self.flags.add_score(name)
+        if x is None:
+            x = max(len(self.scores), len(self.flags))
         self.flags.add_score_point(name, x=x, unique=unique)
