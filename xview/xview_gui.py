@@ -398,23 +398,37 @@ class ExperimentViewer(QMainWindow):
         else:
             self.model_image_label.clear()
             self.model_image_label.setText("Image non trouvée")
-
-    def get_curves_colors(self):
+    
+    def get_curves_style(self):
+        # colors
         if self.dark_mode_enabled:
             colors = read_json(self.config_file_path)["dark_mode_curves"]
-            # print("GET CURVES COLORS DARK :", colors)
-            return colors
         else:
             colors = read_json(self.config_file_path)["light_mode_curves"]
-            # print("GET CURVES COLORS LIGHT :", colors)
-            return colors
-        
-    def get_flags_colors(self):
+        ls = read_json(self.config_file_path)["curves_ls"]  # linestyle
+        alpha = read_json(self.config_file_path)["curves_alpha"]  # linestyle
+        return colors, ls, alpha
+    
+    def get_ma_curves_style(self):
+        # colors
         if self.dark_mode_enabled:
-            return read_json(self.config_file_path)["dark_mode_flags"]
+            colors = read_json(self.config_file_path)["dark_mode_curves"]
         else:
-            return read_json(self.config_file_path)["light_mode_flags"]
-
+            colors = read_json(self.config_file_path)["light_mode_curves"]
+        ls = read_json(self.config_file_path)["ma_curves_ls"]  # linestyle
+        alpha = read_json(self.config_file_path)["ma_curves_alpha"]  # linestyle
+        return colors, ls, alpha
+    
+    def get_flags_style(self):
+        # colors
+        if self.dark_mode_enabled:
+            colors = read_json(self.config_file_path)["dark_mode_curves"]
+        else:
+            colors = read_json(self.config_file_path)["light_mode_curves"]
+        ls = read_json(self.config_file_path)["flags_ls"]  # linestyle
+        alpha = read_json(self.config_file_path)["flags_alpha"]  # linestyle
+        return colors, ls, alpha
+        
     def update_plot(self):
         """Met à jour le graphique avec les données actuelles et les cases cochées."""
         self.figure.clear()
@@ -446,10 +460,11 @@ class ExperimentViewer(QMainWindow):
         ax.title.set_color(text_color)
         # ax.grid(True, color=grid_color)
 
-        # Couleurs des courbes
-        curves_colors = self.get_curves_colors()
-        # Couleurs des flags
-        flags_colors = self.get_flags_colors()
+        # Loading the styles
+        curves_colors, curves_ls, curves_alpha = self.get_curves_style()
+        flags_colors, flags_ls, flags_alpha = self.get_flags_style()
+        _, ma_curves_ls, ma_curves_alpha = self.get_ma_curves_style()
+
 
         # print('CURVE COLORS', curves_colors)
 
@@ -458,11 +473,11 @@ class ExperimentViewer(QMainWindow):
             x, y = self.current_scores[score]
             y_ma = compute_moving_average(y)
             if len(x) > 0:
-                ax.plot(x, y, label=score, color=curves_colors[i])
-                ax.plot(x, y_ma, label=f"{score} (MA)", ls="--", color=curves_colors[i])
+                ax.plot(x, y, label=score, ls=curves_ls, color=curves_colors[i], alpha=curves_alpha)
+                ax.plot(x, y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha)
             else:
-                ax.plot(y, label=score, color=curves_colors[i])
-                ax.plot(y_ma, label=f"{score} (MA)", ls="--", color=curves_colors[i])
+                ax.plot(y, label=score, ls=curves_ls, color=curves_colors[i], alpha=curves_alpha)
+                ax.plot(y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha)
 
         for i, flag in enumerate(self.current_flags):
             # print("FLAG", flag)
@@ -470,11 +485,8 @@ class ExperimentViewer(QMainWindow):
             print(x)
             if len(x) > 0:
                 # ax.vlines(x=x, color="red", linestyle="--", label=flag)
-                ax.vlines(x=x, ymin=0, ymax=1, transform=ax.get_xaxis_transform(), linestyle="--", label=flag, color=flags_colors[i])
+                ax.vlines(x=x, ymin=0, ymax=1, transform=ax.get_xaxis_transform(), linestyle=flags_ls, label=flag, color=flags_colors[i], alpha=flags_alpha)
 
-
-        
-            
 
         # Afficher les courbes si les cases sont cochées
         # if self.show_train_cb.isChecked() and len(self.current_train_loss) > 0:
@@ -573,10 +585,6 @@ if __name__ == "__main__":
     curr_dir = os.path.abspath(os.path.dirname(__file__))
     config_path = os.path.join("config", "config.json")
     config_file_path = os.path.join(curr_dir, config_path)
-    # experiments_dir = read_json(config_file_path)["data_folder"]
-
-    # Dossier contenant les expériences
-    # experiments_dir = os.path.join("..", "EXPERIMENTS")  # À modifier selon l'emplacement réel
 
     viewer = ExperimentViewer(config_file_path)
     viewer.show()
