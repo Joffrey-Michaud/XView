@@ -68,10 +68,10 @@ class Experiment(object):
             self.scores.add_score(name)
         self.scores.add_score_point(name, y, x)
 
-    def add_flag(self, name, x):
+    def add_flag(self, name, x, unique=False):
         if name not in self.flags.scores:
             self.flags.add_score(name)
-        self.flags.add_score_point(name, x=x)
+        self.flags.add_score_point(name, x=x, unique=unique)
 
     
 
