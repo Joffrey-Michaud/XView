@@ -17,7 +17,7 @@ class ExperimentViewer(QMainWindow):
         self.config_file_path = config_file_path
 
         self.experiments_dir = read_json(config_file_path)["data_folder"]
-        self.current_experiment_name = ""
+        self.current_experiment_name = None
 
         self.dark_mode_enabled = False
         
@@ -169,14 +169,13 @@ class ExperimentViewer(QMainWindow):
         left_layout.addWidget(self.show_train_ma_cb, 11, 0)
         left_layout.addWidget(self.show_val_ma_cb, 12, 0)
 
-        # Connexion des signaux
-        # self.training_list.itemClicked.connect(self.display_experiment)
-        # self.finished_list.itemClicked.connect(self.display_experiment)
+        # Connexion des signaux)
         self.show_train_cb.stateChanged.connect(self.update_plot)
         self.show_val_cb.stateChanged.connect(self.update_plot)
         self.show_train_ma_cb.stateChanged.connect(self.update_plot)
         self.show_val_ma_cb.stateChanged.connect(self.update_plot)
 
+        # region - QTIMER
         # Timers pour mise à jour
         self.list_update_timer = QTimer(self)
         self.list_update_timer.timeout.connect(self.update_experiment_list)
@@ -250,7 +249,7 @@ class ExperimentViewer(QMainWindow):
                     status_file = os.path.join(entry_path, "status.txt")
                     if os.path.exists(status_file):
                         status = read_file(status_file, return_str=True)
-                        if status == "training":
+                        if status == "training" or status == "init":
                             training_exps.append(entry)
                         elif status == "finished":
                             finished_exps.append(entry)
@@ -277,15 +276,11 @@ class ExperimentViewer(QMainWindow):
         self.training_list.all_items = training_experiments
         self.finished_list.all_items = finished_experiments
 
-        print("Training experiments:", training_experiments)
-        print("Finished experiments:", finished_experiments)
-
         self.training_list.populate(training_experiments)
         self.finished_list.populate(finished_experiments)
 
         self.training_list.restore_expanded_items(tr_ids)
         self.finished_list.restore_expanded_items(finished_ids)
-        print("LIST UPDATED")
 
     @staticmethod
     def read_scores(file_path):
@@ -311,6 +306,7 @@ class ExperimentViewer(QMainWindow):
 
     def read_current_scores(self):
         scores_folder_path = os.path.join(self.experiments_dir, self.current_experiment_name, "scores")
+        self.current_scores = {}
         if os.path.exists(scores_folder_path):
             for file_name in os.listdir(scores_folder_path):
                 score = file_name.split(".")[0]
@@ -321,6 +317,7 @@ class ExperimentViewer(QMainWindow):
 
     def read_current_flags(self):
         flags_folder_path = os.path.join(self.experiments_dir, self.current_experiment_name, "flags")
+        self.current_flags = {}
         if os.path.exists(flags_folder_path):
             for file_name in os.listdir(flags_folder_path):
                 flag = file_name.split(".")[0]
@@ -332,21 +329,8 @@ class ExperimentViewer(QMainWindow):
     def display_experiment(self, path):
         """Affiche le graphique de l'expérience sélectionnée."""
         self.current_experiment_name = path
-        # print("DISPOLAY EXPERIMENT")
-        # print("ITEM :", item_or_name, "COL :", column)
-        # print("ITEM TEXT:", item_or_name.text(0), "COL :", column)
-
-        # if isinstance(item_or_name, str):
-        #     self.current_experiment_name = item_or_name
-        # else:
-        #     print("OUI")
-        #     self.current_experiment_name = item_or_name.text(0)
-
-        # print("CURRENT EXPERIMENT NAME :", self.current_experiment_name)
-        # # exit(0)
 
         exp_path = os.path.join(self.experiments_dir, path)
-        print("EXP PATH :", exp_path)
         exp_info_file = os.path.join(exp_path, "exp_infos.json")
 
         # Charger les données des courbes
@@ -404,7 +388,12 @@ class ExperimentViewer(QMainWindow):
         else:
             self.exp_info_text.setText("Aucune information disponible")
 
-        self.update_plot()
+        scores_files = os.path.join(self.experiments_dir, self.current_experiment_name, "scores")
+        if len(os.listdir(scores_files)) > 0:
+            self.update_plot()
+        else:
+            self.figure.clear()
+            self.canvas.draw()
 
     def display_model_image(self):
         if self.model_image_file is not None:
@@ -457,13 +446,10 @@ class ExperimentViewer(QMainWindow):
     def get_plt_args(self, score_name):
         score_dir = os.path.join(self.experiments_dir, self.current_experiment_name, "scores")
         plt_args_file = os.path.join(score_dir, f"{score_name}_plt_args.json")
-        print("PLT ARGS FILE", plt_args_file)
         if os.path.exists(plt_args_file):
             plt_args = read_json(plt_args_file)
-            print("TROUVÉ")
             return plt_args
         else:
-            print("PAS TROUVÉ")
             return None
 
     # region - UPDATE PLOT
@@ -528,7 +514,6 @@ class ExperimentViewer(QMainWindow):
             else:
                 ax.plot(y, label=score, ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
                 ax.plot(y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha, **plt_args)
-            print("SCORE :", score, " -> OK")
 
         for i, flag in enumerate(self.current_flags):
             # print("FLAG", flag)
@@ -569,9 +554,31 @@ class ExperimentViewer(QMainWindow):
 
     def refresh_graph(self):
         """Met à jour manuellement le graphique."""
+        print("CURRENT FLAGS :", self.current_flags)
+        print("CURRENT SCORES :", self.current_scores)
         self.list_update_timer.setInterval(self.get_interval())
-        if self.current_experiment_name:  # Vérifie si une expérience est sélectionnée
-            self.display_experiment(self.current_experiment_name)
+        if self.current_experiment_name is not None:
+            if os.path.exists(os.path.join(self.experiments_dir, self.current_experiment_name)):
+                self.display_experiment(self.current_experiment_name)
+            else:
+                print("Aucune expérience sélectionnée. Veuillez en sélectionner une dans la liste.")
+                self.figure.clear()
+                self.canvas.draw()
+                self.current_experiment_name = None
+            # print("EXP NAME NOT NONE")
+            # scores_files = os.path.join(self.experiments_dir, self.current_experiment_name, "scores")
+            # if len(os.listdir(scores_files)) > 0:
+            # # if os.path.exists(os.path.join(self.experiments_dir, self.current_experiment_name)):
+            # # if self.current_experiment_name:  # Vérifie si une expérience est sélectionnée
+            #     print("DOSSIER EXISTE")
+            #     self.display_experiment(self.current_experiment_name)
+            # else:
+            #     print("DOSSIER EXISTE PAS")
+            #     self.figure.clear()
+            #     self.canvas.draw()
+            #     print("FIGURE CLEARED")
+            #     self.current_experiment_name = None
+            #     print("Aucune expérience sélectionnée. Veuillez en sélectionner une dans la liste.")
         else:
             print("Aucune expérience sélectionnée. Veuillez en sélectionner une dans la liste.")
 
