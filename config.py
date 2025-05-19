@@ -125,6 +125,8 @@ class ConfigManager(QMainWindow):
         self.setWindowIcon(QIcon("logo_light.png"))
         self.setGeometry(300, 300, 1500, 750)
 
+        self.dark_mode_enabled = False
+
         self.dark_mode_curves = self.get_color_theme("curves", dark_mode=True)
         self.dark_mode_flags = self.get_color_theme("flags", dark_mode=True)
 
@@ -137,8 +139,6 @@ class ConfigManager(QMainWindow):
         self.ma_curves_ls, self.ma_curves_alpha = self.get_ma_curves_style()
         self.flags_ls, self.flags_alpha = self.get_flags_style()
         self.interval = self.get_interval()
-
-        self.dark_mode_enabled = False
 
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
@@ -261,6 +261,9 @@ class ConfigManager(QMainWindow):
 
         self.plot_example()
 
+        if self.dark_mode_enabled != read_json(os.path.join("xview", "config", "dark_mode.json"))["dark_mode"]:
+            self.toggle_dark_mode()
+
         self.show()
 
     def change_exp_folder(self):
@@ -292,6 +295,7 @@ class ConfigManager(QMainWindow):
             "ma_curves_alpha": self.ma_curves_alpha,
             "update_interval": self.interval
         }
+        os.makedirs(self.current_exp_folder, exist_ok=True)
         os.makedirs(os.path.join("xview", "config"), exist_ok=True)
         write_json(os.path.join("xview", "config", "config.json"), config)
         print("Configuration saved to config.json")
@@ -374,6 +378,8 @@ class ConfigManager(QMainWindow):
             self.setWindowIcon(QIcon("logo_light.png"))
             self.dark_mode_btn.setText("Dark mode")
         self.plot_example()
+        dark_mode = {"dark_mode": self.dark_mode_enabled}
+        write_json(os.path.join("xview", "config", "dark_mode.json"), dark_mode)
         # self.display_model_image()
 
     def set_dark_mode(self):
@@ -537,6 +543,9 @@ if __name__ == '__main__':
             "update_interval": 60
         }
         write_json(config_path, default_config)
+
+        dark_mode = {"dark_mode": False}
+        write_json(os.path.join("xview", "config", "dark_mode.json"), dark_mode)
 
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
