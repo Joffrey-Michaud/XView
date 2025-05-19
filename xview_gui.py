@@ -8,6 +8,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from xview.utils.utils import read_file, read_json, compute_moving_average, write_file, write_json
 from xview.tree_widget import MyTreeWidget
+from xview.curves_selector import CurvesSelector
 from config import ConfigManager
 
 
@@ -108,6 +109,7 @@ class ExperimentViewer(QMainWindow):
         # self.finished_list = QListWidget()
         self.training_list = MyTreeWidget(self, display_exp=self.display_experiment)
         self.finished_list = MyTreeWidget(self, display_exp=self.display_experiment)
+
         left_layout.addWidget(QLabel("Experiments in progress"), 4, 0)
         left_layout.addWidget(self.training_list, 5, 0)
         left_layout.addWidget(QLabel("Finished experiments"), 6, 0)
@@ -155,25 +157,31 @@ class ExperimentViewer(QMainWindow):
         right_widget.setStretchFactor(1, 2)  # Zone des infos
 
         # Cases à cocher pour les courbes
-        self.show_train_cb = QCheckBox("Display Train Loss")
-        self.show_train_cb.setChecked(True)
-        self.show_val_cb = QCheckBox("Display Validation Loss")
-        self.show_val_cb.setChecked(True)
-        self.show_train_ma_cb = QCheckBox("Display Train Loss (MA)")
-        self.show_train_ma_cb.setChecked(True)
-        self.show_val_ma_cb = QCheckBox("Display Validation Loss (MA)")
-        self.show_val_ma_cb.setChecked(True)
+        self.curve_selector_btn = QPushButton("Select Curves")
+        self.curve_selector_btn.clicked.connect(self.open_curve_selector)
+        left_layout.addWidget(self.curve_selector_btn, 9, 0)
 
-        left_layout.addWidget(self.show_train_cb, 9, 0)
-        left_layout.addWidget(self.show_val_cb, 10, 0)
-        left_layout.addWidget(self.show_train_ma_cb, 11, 0)
-        left_layout.addWidget(self.show_val_ma_cb, 12, 0)
+        self.curve_selector_window = CurvesSelector(self)
 
-        # Connexion des signaux)
-        self.show_train_cb.stateChanged.connect(self.update_plot)
-        self.show_val_cb.stateChanged.connect(self.update_plot)
-        self.show_train_ma_cb.stateChanged.connect(self.update_plot)
-        self.show_val_ma_cb.stateChanged.connect(self.update_plot)
+        # self.show_train_cb = QCheckBox("Display Train Loss")
+        # self.show_train_cb.setChecked(True)
+        # self.show_val_cb = QCheckBox("Display Validation Loss")
+        # self.show_val_cb.setChecked(True)
+        # self.show_train_ma_cb = QCheckBox("Display Train Loss (MA)")
+        # self.show_train_ma_cb.setChecked(True)
+        # self.show_val_ma_cb = QCheckBox("Display Validation Loss (MA)")
+        # self.show_val_ma_cb.setChecked(True)
+
+        # left_layout.addWidget(self.show_train_cb, 9, 0)
+        # left_layout.addWidget(self.show_val_cb, 10, 0)
+        # left_layout.addWidget(self.show_train_ma_cb, 11, 0)
+        # left_layout.addWidget(self.show_val_ma_cb, 12, 0)
+
+        # # Connexion des signaux)
+        # self.show_train_cb.stateChanged.connect(self.update_plot)
+        # self.show_val_cb.stateChanged.connect(self.update_plot)
+        # self.show_train_ma_cb.stateChanged.connect(self.update_plot)
+        # self.show_val_ma_cb.stateChanged.connect(self.update_plot)
 
         # region - QTIMER
         # Timers pour mise à jour
@@ -220,6 +228,20 @@ class ExperimentViewer(QMainWindow):
             if self.dark_mode_enabled:
                 self.config_window.toggle_dark_mode()
             self.config_window.raise_()
+
+    def open_curve_selector(self):
+        if self.curve_selector_window is None or not self.curve_selector_window.isVisible():
+            # self.curve_selector_window = CurvesSelector(
+            #     self, 
+            #     # curves_list=list(self.current_scores.keys()), flags_list=list(self.current_flags.keys())
+            #     )
+            if self.dark_mode_enabled != self.curve_selector_window.dark_mode_enabled:
+                self.curve_selector_window.toggle_dark_mode()
+            self.curve_selector_window.show()
+        else:
+            if self.dark_mode_enabled != self.curve_selector_window.dark_mode_enabled:
+                self.curve_selector_window.toggle_dark_mode()
+            self.curve_selector_window.raise_()
 
     def toggle_model_image(self):
         """Affiche ou masque l'image du modèle et les infos en fonction de l'état de la case à cocher."""
@@ -337,6 +359,18 @@ class ExperimentViewer(QMainWindow):
         self.read_current_scores()
         self.read_current_flags()
 
+        if exp_path != self.curve_selector_window.current_path:
+            self.curve_selector_window.reset_window(exp_path)
+            self.curve_selector_window.init_boxes(
+                self.current_scores.keys(), self.current_flags.keys()
+                )
+        else:
+            self.curve_selector_window.update_boxes(
+                 self.current_scores.keys(), self.current_flags.keys()
+            )
+            # self.curve_selector_window.reset_window(exp_path)
+
+
         # Charger et afficher l'image du modèle
         if os.path.exists(exp_info_file):
             exp_info = read_json(exp_info_file)
@@ -346,18 +380,6 @@ class ExperimentViewer(QMainWindow):
 
             if os.path.exists(self.model_image_file):
                 self.display_model_image()
-
-            # if os.path.exists(model_image_file):
-            #     pixmap = QPixmap(model_image_file)
-            #     self.model_image_label.setPixmap(pixmap.scaled(self.model_image_label.size(),
-            #                                                    aspectRatioMode=1))  # Preserve aspect ratio
-            # else:
-            #     self.model_image_label.clear()
-            #     self.model_image_label.setText("Image non trouvée")
-
-            # Afficher les informations du fichier JSON
-            # info_text = "\n".join([f"{key} = {value}" for key, value in exp_info.items()])
-            # self.exp_info_text.setText(info_text)
 
             sorted_keys = sorted(exp_info.keys())
 
@@ -373,11 +395,6 @@ class ExperimentViewer(QMainWindow):
 
                 # Aligner la clé à droite
                 key_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-
-                # Appliquer un fond gris clair sur une ligne sur deux
-                # if row % 2 == 1:
-                #     key_item.setBackground(QBrush(QColor(230, 230, 230)))  # Gris clair
-                #     value_item.setBackground(QBrush(QColor(230, 230, 230)))
 
                 # Ajouter les items dans le tableau
                 self.exp_info_table.setItem(row, 0, key_item)
@@ -505,43 +522,27 @@ class ExperimentViewer(QMainWindow):
                     plt_args.pop("alpha")
             else:
                 plt_args = {}
-            # print("SCORE", score, "COLORS", curves_colors[i])
+
             x, y = self.current_scores[score]
             y_ma = compute_moving_average(y)
+
             if len(x) > 0:
-                ax.plot(x, y, label=score, ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
-                ax.plot(x, y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha, **plt_args)
+                if self.curve_selector_window.boxes[score][0].isChecked():
+                    ax.plot(x, y, label=score, ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
+                if self.curve_selector_window.boxes[f"{score} (MA)"][0].isChecked():
+                    ax.plot(x, y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha, **plt_args)
             else:
-                ax.plot(y, label=score, ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
-                ax.plot(y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha, **plt_args)
+                if self.curve_selector_window.boxes[score][0].isChecked():
+                    ax.plot(y, label=score, ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
+                if self.curve_selector_window.boxes[f"{score} (MA)"][0].isChecked():
+                    ax.plot(y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha, **plt_args)
 
         for i, flag in enumerate(self.current_flags):
             # print("FLAG", flag)
             x = self.current_flags[flag]
-            print(x)
-            if len(x) > 0:
-                # ax.vlines(x=x, color="red", linestyle="--", label=flag)
+            if self.curve_selector_window.boxes[flag][0].isChecked():
+            # ax.vlines(x=x, color="red", linestyle="--", label=flag)
                 ax.vlines(x=x, ymin=0, ymax=1, transform=ax.get_xaxis_transform(), linestyle=flags_ls, label=flag, color=flags_colors[i], alpha=flags_alpha)
-
-        # Afficher les courbes si les cases sont cochées
-        # if self.show_train_cb.isChecked() and len(self.current_train_loss) > 0:
-        #     ax.plot(self.current_train_loss, label="Train Loss", color=tr_color)
-
-        # if self.show_train_ma_cb.isChecked() and len(self.current_train_loss) > 0:
-        #     train_ma = compute_moving_average(self.current_train_loss)
-        #     ax.plot(range(len(train_ma)), train_ma, label="Train Loss (MA)", color=tr_color, ls="--")
-
-        # if self.show_val_cb.isChecked() and len(self.current_val_loss) > 0:
-        #     ax.plot(self.current_val_loss, label="Validation Loss", color=val_color)
-
-        # if self.show_val_ma_cb.isChecked() and len(self.current_val_loss) > 0:
-        #     val_ma = compute_moving_average(self.current_val_loss)
-        #     ax.plot(range(len(val_ma)), val_ma, label="Validation Loss (MA)", color=val_color, ls="--")
-
-        # Ajouter une barre verticale au minimum de Validation Loss
-        if len(self.current_val_loss) > 0:
-            min_index = int(self.current_val_loss.argmin())  # Utilisation de numpy pour trouver l'indice du minimum
-            ax.axvline(x=min_index, color=best_epoch_color, linestyle="--", label="Min Validation Loss")
 
         ax.set_title(self.current_experiment_name)
         ax.set_xlabel("Epochs")
@@ -554,8 +555,6 @@ class ExperimentViewer(QMainWindow):
 
     def refresh_graph(self):
         """Met à jour manuellement le graphique."""
-        print("CURRENT FLAGS :", self.current_flags)
-        print("CURRENT SCORES :", self.current_scores)
         self.list_update_timer.setInterval(self.get_interval())
         if self.current_experiment_name is not None:
             if os.path.exists(os.path.join(self.experiments_dir, self.current_experiment_name)):
@@ -565,20 +564,6 @@ class ExperimentViewer(QMainWindow):
                 self.figure.clear()
                 self.canvas.draw()
                 self.current_experiment_name = None
-            # print("EXP NAME NOT NONE")
-            # scores_files = os.path.join(self.experiments_dir, self.current_experiment_name, "scores")
-            # if len(os.listdir(scores_files)) > 0:
-            # # if os.path.exists(os.path.join(self.experiments_dir, self.current_experiment_name)):
-            # # if self.current_experiment_name:  # Vérifie si une expérience est sélectionnée
-            #     print("DOSSIER EXISTE")
-            #     self.display_experiment(self.current_experiment_name)
-            # else:
-            #     print("DOSSIER EXISTE PAS")
-            #     self.figure.clear()
-            #     self.canvas.draw()
-            #     print("FIGURE CLEARED")
-            #     self.current_experiment_name = None
-            #     print("Aucune expérience sélectionnée. Veuillez en sélectionner une dans la liste.")
         else:
             print("Aucune expérience sélectionnée. Veuillez en sélectionner une dans la liste.")
 

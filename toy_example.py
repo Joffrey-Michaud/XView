@@ -2,10 +2,10 @@ from xview.experiment import Experiment
 import numpy as np
 
 
-A1,A2 = np.random.rand(2)
+A1,A2, A3 = np.random.rand(3)
 
-my_exp = Experiment("toy_experiment",  # give a name to the experiment
-                    infos={"A1": A1, "A2": A2},  # you can add any information you want to the experiment in dict format
+my_exp = Experiment("toy_experiment_3",  # give a name to the experiment
+                    infos={"A1": A1, "A2": A2, "A3": A3},  # you can add any information you want to the experiment in dict format
                     group="examples_group"  # possible to set a group for the experiment, to group them in one folder
                     )
 
@@ -18,8 +18,11 @@ best_val = 100000
 for i, x in enumerate(points):
     y1 = A1 * np.sin(x + 1)
     y2 = A2 * np.sin(x + 2)
+    y3 = A3 * np.sin(x + 3)
+
     my_exp.add_score(name="Train_loss", x=x, y=y1, plt_args={"lw": 5})  # add a score with x and y values. The x value is not mandatory, you can add only y values
     my_exp.add_score(name="Val_loss", x=x, y=y2)  # 
+    my_exp.add_score(name="Test_loss", x=x, y=y3)  # 
 
     if i in [50, 75, 150]:
         my_exp.add_flag(name="flag_1", x=x)  # add a flag at specific points. It will be displayedd with vertical lines in the plot
