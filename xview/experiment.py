@@ -63,14 +63,14 @@ class Experiment(object):
         self.status = status
         write_file(self.status_file, self.status, flag="w")
 
-    def add_score(self, name, y, x=None, plt_args:dict=None):
+    def add_score(self, name, y, x=None, plt_args:dict=None, label_value=None):
         if name not in self.scores.scores:
             self.scores.add_score(name, plt_args=plt_args)
-        self.scores.add_score_point(name, y, x)
+        self.scores.add_score_point(name, y, x, label_value=label_value)
 
-    def add_flag(self, name, x=None, unique=False, plt_args:dict=None):
+    def add_flag(self, name, x=None, unique=False, plt_args:dict=None, label_value=None):
         if name not in self.flags.scores:
             self.flags.add_score(name, plt_args=plt_args)
         if x is None:
             x = max(len(self.scores), len(self.flags))
-        self.flags.add_score_point(name, x=x, unique=unique)
+        self.flags.add_score_point(name, x=x, unique=unique, label_value=label_value)

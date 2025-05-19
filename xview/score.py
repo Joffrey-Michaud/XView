@@ -12,7 +12,7 @@ class Score(object):
             plt_args_file = os.path.join(self.score_dir, f"{self.name}_plt_args.json")
             write_json(plt_args_file, self.plt_args)
 
-    def add_score_point(self, x=None, y=None, unique=False):
+    def add_score_point(self, x=None, y=None, unique=False, label_value=None):
         if x is not None and y is not None:
             line = f"{x},{y}"
         elif x is not None:
@@ -21,6 +21,10 @@ class Score(object):
             line = f"{y}"
 
         write_file(self.score_file, line, flag="a" if not unique else "w")
+
+        if label_value is not None:
+            label_file = os.path.join(self.score_dir, f"{self.name}_label_value.txt")
+            write_file(label_file, str(label_value), flag="w")
 
     def __len__(self):
         if os.path.exists(self.score_file):
@@ -49,6 +53,6 @@ class MultiScores(object):
     def __len__(self):
         return self.get_max_len()
 
-    def add_score_point(self, name, x=None, y=None, unique=False):
+    def add_score_point(self, name, x=None, y=None, unique=False, label_value=None):
         assert name in self.scores, f"Score {name} not found. Please add it first."
-        self.scores[name].add_score_point(y, x, unique=unique)
+        self.scores[name].add_score_point(y, x, unique=unique, label_value=label_value)

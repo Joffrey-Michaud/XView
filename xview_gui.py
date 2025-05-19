@@ -26,7 +26,7 @@ class ExperimentViewer(QMainWindow):
 
         # Configurer l'interface principale
         self.setWindowTitle("XView")
-        self.setWindowIcon(QIcon("logo_light.png"))
+        self.setWindowIcon(QIcon(os.path.join("xview", "logo_light.png")))
         self.setGeometry(100, 100, 1200, 800)
 
         main_widget = QWidget()
@@ -238,9 +238,12 @@ class ExperimentViewer(QMainWindow):
             if self.dark_mode_enabled != self.curve_selector_window.dark_mode_enabled:
                 self.curve_selector_window.toggle_dark_mode()
             self.curve_selector_window.show()
+            self.curve_selector_window.move_to_cursor_bottom_left()
+            
         else:
             if self.dark_mode_enabled != self.curve_selector_window.dark_mode_enabled:
                 self.curve_selector_window.toggle_dark_mode()
+            self.curve_selector_window.move_to_cursor_bottom_left()
             self.curve_selector_window.raise_()
 
     def toggle_model_image(self):
@@ -526,9 +529,18 @@ class ExperimentViewer(QMainWindow):
             x, y = self.current_scores[score]
             y_ma = compute_moving_average(y)
 
+            if os.path.exists(
+                os.path.join(self.experiments_dir, self.current_experiment_name, "scores", f"{score}_label_value.txt")
+            ):
+                label_file = os.path.join(self.experiments_dir, self.current_experiment_name, "scores", f"{score}_label_value.txt")
+                label_value = read_file(label_file)[0]
+                label_value = f"{label_value:.4f}"
+            else:
+                label_value = ""
+
             if len(x) > 0:
                 if self.curve_selector_window.boxes[score][0].isChecked():
-                    ax.plot(x, y, label=score, ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
+                    ax.plot(x, y, label=f"{label_value} {score}", ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
                 if self.curve_selector_window.boxes[f"{score} (MA)"][0].isChecked():
                     ax.plot(x, y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha, **plt_args)
             else:
@@ -538,11 +550,20 @@ class ExperimentViewer(QMainWindow):
                     ax.plot(y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha, **plt_args)
 
         for i, flag in enumerate(self.current_flags):
+            if os.path.exists(
+                os.path.join(self.experiments_dir, self.current_experiment_name, "flags", f"{flag}_label_value.txt")
+            ):
+                label_file = os.path.join(self.experiments_dir, self.current_experiment_name, "flags", f"{flag}_label_value.txt")
+                label_value = read_file(label_file)[0]
+                label_value = f"{label_value:.4f}"
+            else:
+                label_value = ""
+
             # print("FLAG", flag)
             x = self.current_flags[flag]
             if self.curve_selector_window.boxes[flag][0].isChecked():
             # ax.vlines(x=x, color="red", linestyle="--", label=flag)
-                ax.vlines(x=x, ymin=0, ymax=1, transform=ax.get_xaxis_transform(), linestyle=flags_ls, label=flag, color=flags_colors[i], alpha=flags_alpha)
+                ax.vlines(x=x, ymin=0, ymax=1, transform=ax.get_xaxis_transform(), linestyle=flags_ls, label=f"{label_value} {flag}", color=flags_colors[i], alpha=flags_alpha)
 
         ax.set_title(self.current_experiment_name)
         ax.set_xlabel("Epochs")
@@ -583,12 +604,12 @@ class ExperimentViewer(QMainWindow):
         if not self.dark_mode_enabled:
             self.set_dark_mode()
             self.dark_mode_enabled = True
-            self.setWindowIcon(QIcon("logo_dark.png"))
+            self.setWindowIcon(QIcon(os.path.join("xview", "logo_dark.png")))
             self.dark_mode_button.setText("Light mode")
         else:
             self.set_light_mode()
             self.dark_mode_enabled = False
-            self.setWindowIcon(QIcon("logo_light.png"))
+            self.setWindowIcon(QIcon(os.path.join("xview", "logo_light.png")))
             self.dark_mode_button.setText("Dark mode")
 
         write_json(os.path.join("xview", "config", "dark_mode.json"), {"dark_mode": self.dark_mode_enabled})

@@ -6,7 +6,8 @@ A1,A2, A3 = np.random.rand(3)
 
 my_exp = Experiment("toy_experiment_3",  # give a name to the experiment
                     infos={"A1": A1, "A2": A2, "A3": A3},  # you can add any information you want to the experiment in dict format
-                    group="examples_group"  # possible to set a group for the experiment, to group them in one folder
+                    group="examples_group",  # possible to set a group for the experiment, to group them in one folder
+                    clear=True
                     )
 
 my_exp.set_train_status()  # set the status of the experiment to training
@@ -29,6 +30,7 @@ for i, x in enumerate(points):
 
     if y2 < best_val:
         best_val = y2
-        my_exp.add_flag(name="best_val", x=x, unique=True)  # add a flag with unique=True to keep only the last one
+        print(f"New best val: {best_val} at x={x}")
+        my_exp.add_flag(name="best_val", x=x, unique=True, label_value=best_val)  # add a flag with unique=True to keep only the last one
 
 # my_exp.set_finished_status()  # set the status of the experiment to finished

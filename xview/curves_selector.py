@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QCheckBox, QScrollArea, QPushButton
-from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor
-from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor, QCursor
+from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtWidgets import QSizePolicy
 import os
 
@@ -111,6 +111,12 @@ class CurvesSelector(QWidget):
 
     def set_light_mode(self):
         self.setPalette(QApplication.style().standardPalette())
+
+    def move_to_cursor_bottom_left(self):
+        mouse_pos = QCursor.pos()
+        window_size = self.size()
+        new_pos = QPoint(mouse_pos.x(), mouse_pos.y() - window_size.height())
+        self.move(new_pos)
 
 
 
