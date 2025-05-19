@@ -362,7 +362,6 @@ class ConfigManager(QMainWindow):
 
 
     def toggle_dark_mode(self):
-        print("DARK MODE STATE :", self.dark_mode_enabled)
         if not self.dark_mode_enabled:
             self.dark_mode_enabled = True
             self.set_dark_mode()
@@ -420,20 +419,16 @@ class ConfigManager(QMainWindow):
         if color_section == "curves":
             if dark_mode:
                 if os.path.isfile(os.path.join("xview", "config", "config.json")):
-                    print("dark mode, curves")
                     # Read the JSON file
                     return read_json(os.path.join("xview", "config", "config.json"))[f"dark_mode_curves"]
                 else:
-                    print("dark mode, curves, default")
                     return ["#A2D2DF", "#F6EFBD", "#E4C087", "#BC7C7C", "#FF00FF"]
             else:
                 if os.path.isfile(os.path.join("xview", "config", "config.json")):
                     # Read the JSON file
-                    print("light mode, curves")
                     colors = read_json(os.path.join("xview", "config", "config.json"))[f"light_mode_curves"]
                     return read_json(os.path.join("xview", "config", "config.json"))[f"light_mode_curves"]
                 else:
-                    print("light mode, curves, default")
                     return ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF"]
         
         elif color_section == "flags":
@@ -473,36 +468,29 @@ class ConfigManager(QMainWindow):
     def set_interval(self):
         interval = self.interval_input.text()
         self.interval = float(interval)
-        print("NOUVEAU INTERVAL :", self.interval)
         
     def set_curves_ls(self, ls):
         self.curves_ls = ls
-        print("NOUVEAU LS CURVES :", self.curves_ls)
         self.plot_example()
 
     def set_ma_curves_ls(self, ls):
         self.ma_curves_ls = ls
-        print("NOUVEAU MA LS CURVES :", self.ma_curves_ls)
         self.plot_example()
     
     def set_flags_ls(self, ls):
         self.flags_ls = ls
-        print("NOUVEAU LS FLAGS :", self.flags_ls)
         self.plot_example()
 
     def set_curves_alpha(self, alpha):
         self.curves_alpha = alpha
-        print("NOUVEAU ALPHA CURVES :", self.curves_alpha)
         self.plot_example()
 
     def set_ma_curves_alpha(self, alpha):
         self.ma_curves_alpha = alpha
-        print("NOUVEAU MA ALPHA CURVES :", self.ma_curves_alpha)
         self.plot_example()
     
     def set_flags_alpha(self, alpha):
         self.flags_alpha = alpha
-        print("NOUVEAU ALPHA FLAGS :", self.flags_alpha)
         self.plot_example()
                 
     def get_current_exps_folder(self):
