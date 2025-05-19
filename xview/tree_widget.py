@@ -23,7 +23,6 @@ class MyTreeWidget(QTreeWidget):
         if item.childCount() == 0:
             # vérifier si il y a un parent
             full_path = self.get_full_path(item)
-            print(f"Item cliqué : {full_path}")
             self.display_exp(full_path)
 
     def expand_parents(self, item):
