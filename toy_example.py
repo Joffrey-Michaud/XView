@@ -18,7 +18,7 @@ best_val = 100000
 for i, x in enumerate(points):
     y1 = A1 * np.sin(x + 1)
     y2 = A2 * np.sin(x + 2)
-    my_exp.add_score(name="Train_loss", x=x, y=y1)  # add a score with x and y values. The x value is not mandatory, you can add only y values
+    my_exp.add_score(name="Train_loss", x=x, y=y1, plt_args={"lw": 5})  # add a score with x and y values. The x value is not mandatory, you can add only y values
     my_exp.add_score(name="Val_loss", x=x, y=y2)  # 
 
     if i in [50, 75, 150]:

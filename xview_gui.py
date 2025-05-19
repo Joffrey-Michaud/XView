@@ -453,7 +453,20 @@ class ExperimentViewer(QMainWindow):
         ls = read_json(self.config_file_path)["flags_ls"]  # linestyle
         alpha = read_json(self.config_file_path)["flags_alpha"]  # linestyle
         return colors, ls, alpha
+    
+    def get_plt_args(self, score_name):
+        score_dir = os.path.join(self.experiments_dir, self.current_experiment_name, "scores")
+        plt_args_file = os.path.join(score_dir, f"{score_name}_plt_args.json")
+        print("PLT ARGS FILE", plt_args_file)
+        if os.path.exists(plt_args_file):
+            plt_args = read_json(plt_args_file)
+            print("TROUVÉ")
+            return plt_args
+        else:
+            print("PAS TROUVÉ")
+            return None
 
+    # region - UPDATE PLOT
     def update_plot(self):
         """Met à jour le graphique avec les données actuelles et les cases cochées."""
         self.figure.clear()
@@ -493,15 +506,29 @@ class ExperimentViewer(QMainWindow):
         # print('CURVE COLORS', curves_colors)
 
         for i, score in enumerate(self.current_scores):
+            plt_args = self.get_plt_args(score)
+            if plt_args is not None:
+                if "color" in plt_args:
+                    curves_colors[i] = plt_args["color"]
+                    plt_args.pop("color")
+                if "ls" in plt_args:
+                    curves_ls = plt_args["ls"]
+                    plt_args.pop("ls")
+                if "alpha" in plt_args:
+                    curves_alpha = plt_args["alpha"]
+                    plt_args.pop("alpha")
+            else:
+                plt_args = {}
             # print("SCORE", score, "COLORS", curves_colors[i])
             x, y = self.current_scores[score]
             y_ma = compute_moving_average(y)
             if len(x) > 0:
-                ax.plot(x, y, label=score, ls=curves_ls, color=curves_colors[i], alpha=curves_alpha)
-                ax.plot(x, y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha)
+                ax.plot(x, y, label=score, ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
+                ax.plot(x, y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha, **plt_args)
             else:
-                ax.plot(y, label=score, ls=curves_ls, color=curves_colors[i], alpha=curves_alpha)
-                ax.plot(y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha)
+                ax.plot(y, label=score, ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
+                ax.plot(y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha, **plt_args)
+            print("SCORE :", score, " -> OK")
 
         for i, flag in enumerate(self.current_flags):
             # print("FLAG", flag)

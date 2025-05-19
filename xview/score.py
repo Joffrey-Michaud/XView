@@ -1,12 +1,16 @@
 import os
-from xview.utils.utils import write_file
+from xview.utils.utils import write_file, write_json
 
 
 class Score(object):
-    def __init__(self, name, score_dir):
+    def __init__(self, name, score_dir, plt_args:dict=None):
         self.name = name
         self.score_dir = score_dir
         self.score_file = os.path.join(self.score_dir, f"{self.name}.txt")
+        self.plt_args = plt_args
+        if self.plt_args is not None:
+            plt_args_file = os.path.join(self.score_dir, f"{self.name}_plt_args.json")
+            write_json(plt_args_file, self.plt_args)
 
     def add_score_point(self, x=None, y=None, unique=False):
         if x is not None and y is not None:
@@ -32,9 +36,9 @@ class MultiScores(object):
         self.score_dir = score_dir
         self.scores = {}
 
-    def add_score(self, name):
+    def add_score(self, name, plt_args=None):
         if name not in self.scores:
-            self.scores[name] = Score(name, self.score_dir)
+            self.scores[name] = Score(name, self.score_dir, plt_args=plt_args)
 
     def get_max_len(self):
         max_len = 0

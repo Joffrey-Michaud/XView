@@ -63,20 +63,14 @@ class Experiment(object):
         self.status = status
         write_file(self.status_file, self.status, flag="w")
 
-    def add_training_score(self, score):
-        write_file(self.score_file_training, str(score), flag="a")
-
-    def add_validation_score(self, score):
-        write_file(self.score_file_validation, str(score), flag="a")
-
-    def add_score(self, name, y, x=None):
+    def add_score(self, name, y, x=None, plt_args:dict=None):
         if name not in self.scores.scores:
-            self.scores.add_score(name)
+            self.scores.add_score(name, plt_args=plt_args)
         self.scores.add_score_point(name, y, x)
 
-    def add_flag(self, name, x=None, unique=False):
+    def add_flag(self, name, x=None, unique=False, plt_args:dict=None):
         if name not in self.flags.scores:
-            self.flags.add_score(name)
+            self.flags.add_score(name, plt_args=plt_args)
         if x is None:
             x = max(len(self.scores), len(self.flags))
         self.flags.add_score_point(name, x=x, unique=unique)
