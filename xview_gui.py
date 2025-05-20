@@ -693,6 +693,7 @@ if __name__ == "__main__":
         dlg.exec_()
         # Si tu fais un git pull + redémarrage, il ne faut pas aller plus loin ici
         # sys.exit(0)
+        # oui
 
     curr_dir = os.path.abspath(os.path.dirname(__file__))
     config_path = os.path.join("xview", "config", "config.json")
