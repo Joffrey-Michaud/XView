@@ -533,8 +533,8 @@ class ExperimentViewer(QMainWindow):
                 os.path.join(self.experiments_dir, self.current_experiment_name, "scores", f"{score}_label_value.txt")
             ):
                 label_file = os.path.join(self.experiments_dir, self.current_experiment_name, "scores", f"{score}_label_value.txt")
-                label_value = read_file(label_file)[0]
-                label_value = f"{label_value:.4f}"
+                label_value = read_file(label_file, return_str=True)
+                # label_value = f"{label_value:.4f}"
             else:
                 label_value = ""
 
@@ -554,8 +554,8 @@ class ExperimentViewer(QMainWindow):
                 os.path.join(self.experiments_dir, self.current_experiment_name, "flags", f"{flag}_label_value.txt")
             ):
                 label_file = os.path.join(self.experiments_dir, self.current_experiment_name, "flags", f"{flag}_label_value.txt")
-                label_value = read_file(label_file)[0]
-                label_value = f"{label_value:.4f}"
+                label_value = read_file(label_file, return_str=True)
+                # label_value = f"{label_value:.4f}"
             else:
                 label_value = ""
 

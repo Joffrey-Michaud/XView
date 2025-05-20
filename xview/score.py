@@ -24,7 +24,7 @@ class Score(object):
 
         if label_value is not None:
             label_file = os.path.join(self.score_dir, f"{self.name}_label_value.txt")
-            write_file(label_file, str(label_value), flag="w")
+            write_file(label_file, label_value, flag="w")
 
     def __len__(self):
         if os.path.exists(self.score_file):
