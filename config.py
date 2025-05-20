@@ -9,6 +9,7 @@ from xview.utils.utils import write_json, read_json, compute_moving_average
 import os
 import numpy as np
 import time
+from xview.update.update_project import warn_if_outdated
 
 
 # ------------------------------------------------------------------ COLOR PICKER
@@ -382,6 +383,7 @@ class ConfigManager(QMainWindow):
         write_json(os.path.join("xview", "config", "dark_mode.json"), dark_mode)
         # self.display_model_image()
 
+    # region - dark/light mode
     def set_dark_mode(self):
         dark_palette = QPalette()
         dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
@@ -399,19 +401,6 @@ class ConfigManager(QMainWindow):
 
         self.color_widget.update_colors(self.dark_mode_curves)
         self.color_widget_2.update_colors(self.dark_mode_flags)
-
-        
-#         self.setStyleSheet("""
-#     QPushButton {
-#         background-color: #353535;
-#         color: white;
-#         border: 1px solid #5c5c5c;
-#         padding: 5px;
-#     }
-#     QPushButton:hover {
-#         background-color: #444444;
-#     }
-# """)
 
         self.setPalette(dark_palette)
 

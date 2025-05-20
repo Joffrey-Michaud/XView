@@ -37,3 +37,8 @@ def compute_moving_average(values, window_size=15):
         current_window = values[low: i + 1]
         means.append(np.mean(current_window))
     return means
+
+
+def is_dark_mode_enabled(config_file):
+    dark_mode_enabled = read_json(config_file)["dark_mode"]
+    return dark_mode_enabled

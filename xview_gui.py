@@ -10,6 +10,8 @@ from xview.utils.utils import read_file, read_json, compute_moving_average, writ
 from xview.tree_widget import MyTreeWidget
 from xview.curves_selector import CurvesSelector
 from config import ConfigManager
+from xview.update.update_window import UpdateWindow
+from xview.update.update_project import is_up_to_date
 
 
 class ExperimentViewer(QMainWindow):
@@ -662,10 +664,35 @@ class ExperimentViewer(QMainWindow):
         self.update_experiment_list()
 
 
+# if __name__ == "__main__":
+#     if is_up_to_date():
+#         app = QApplication(sys.argv)
+
+#         app.setStyle("Fusion")
+#         viewer = UpdateWindow()
+
+#     app = QApplication(sys.argv)
+
+#     app.setStyle("Fusion")
+
+    # curr_dir = os.path.abspath(os.path.dirname(__file__))
+    # config_path = os.path.join("xview", "config", "config.json")
+    # config_file_path = os.path.join(curr_dir, config_path)
+
+    # viewer = ExperimentViewer(config_file_path)
+    # viewer.show()
+
+    # sys.exit(app.exec_())
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-
     app.setStyle("Fusion")
+
+    if not is_up_to_date():
+        dlg = UpdateWindow()
+        dlg.exec_()
+        # Si tu fais un git pull + redémarrage, il ne faut pas aller plus loin ici
+        # sys.exit(0)
 
     curr_dir = os.path.abspath(os.path.dirname(__file__))
     config_path = os.path.join("xview", "config", "config.json")

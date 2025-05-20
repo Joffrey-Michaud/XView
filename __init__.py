@@ -1,4 +1,4 @@
-from update_project import is_up_to_date
+from xview.update.update_project import is_up_to_date
 print("c est l'init de xview")
 
 if not is_up_to_date():
