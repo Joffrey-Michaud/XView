@@ -22,9 +22,10 @@ for i, x in enumerate(points):
     y2 = A2 * np.sin(x + 2)
     y3 = A3 * np.sin(x + 3)
 
-    my_exp.add_score(name="Train_loss", x=x, y=y1, plt_args={"lw": 5})  # add a score with x and y values. The x value is not mandatory, you can add only y values
+    my_exp.add_score(name="Train_loss", x=x, y=y1, plt_args={"lw": 5}, label_value=21)  # add a score with x and y values. The x value is not mandatory, you can add only y values
     my_exp.add_score(name="Val_loss", x=x, y=y2, label_value=f"{y2:.3f}")  # 
-    my_exp.add_score(name="Test_loss", x=x, y=y3)  # 
+    # my_exp.add_score(name="Val_loss", x=x, y=y2, label_value=0.2)  # 
+    my_exp.add_score(name="Test loss", x=x, y=y3, label_value="caca")  # 
 
     # if i in [50, 75, 150]:
     #     my_exp.add_flag(name="flag_1", x=x)  # add a flag at specific points. It will be displayedd with vertical lines in the plot
@@ -35,7 +36,7 @@ for i, x in enumerate(points):
     if y2 < best_val:
         best_val = y2
         print(f"New best val: {best_val} at x={x}")
-        my_exp.add_flag(name="best_val", x=x, unique=True, label_value=f"{best_val:.3f}")  # add a flag with unique=True to keep only the last one
+        my_exp.add_flag(name="best_val", x=x, unique=True, plt_args={"lw": 7}, label_value=f"{best_val:.3f}")  # add a flag with unique=True to keep only the last one
     time.sleep(1)
 
 # my_exp.set_finished_status()  # set the status of the experiment to finished

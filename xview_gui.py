@@ -463,8 +463,8 @@ class ExperimentViewer(QMainWindow):
         alpha = read_json(self.config_file_path)["flags_alpha"]  # linestyle
         return colors, ls, alpha
     
-    def get_plt_args(self, score_name):
-        score_dir = os.path.join(self.experiments_dir, self.current_experiment_name, "scores")
+    def get_plt_args(self, score_name, type):
+        score_dir = os.path.join(self.experiments_dir, self.current_experiment_name, type)
         plt_args_file = os.path.join(score_dir, f"{score_name}_plt_args.json")
         if os.path.exists(plt_args_file):
             plt_args = read_json(plt_args_file)
@@ -512,7 +512,7 @@ class ExperimentViewer(QMainWindow):
         # print('CURVE COLORS', curves_colors)
 
         for i, score in enumerate(self.current_scores):
-            plt_args = self.get_plt_args(score)
+            plt_args = self.get_plt_args(score, type="scores")
             if plt_args is not None:
                 if "color" in plt_args:
                     curves_colors[i] = plt_args["color"]
@@ -545,11 +545,25 @@ class ExperimentViewer(QMainWindow):
                     ax.plot(x, y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha, **plt_args)
             else:
                 if self.curve_selector_window.boxes[score][0].isChecked():
-                    ax.plot(y, label=score, ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
+                    ax.plot(y, label=f"{label_value} {score}", ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
                 if self.curve_selector_window.boxes[f"{score} (MA)"][0].isChecked():
                     ax.plot(y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha, **plt_args)
 
         for i, flag in enumerate(self.current_flags):
+            plt_args = self.get_plt_args(flag, type="flags")
+            if plt_args is not None:
+                if "color" in plt_args:
+                    flags_colors[i] = plt_args["color"]
+                    plt_args.pop("color")
+                if "ls" in plt_args:
+                    flags_ls = plt_args["ls"]
+                    plt_args.pop("ls")
+                if "alpha" in plt_args:
+                    flags_alpha = plt_args["alpha"]
+                    plt_args.pop("alpha")
+            else:
+                plt_args = {}
+
             if os.path.exists(
                 os.path.join(self.experiments_dir, self.current_experiment_name, "flags", f"{flag}_label_value.txt")
             ):
@@ -563,7 +577,7 @@ class ExperimentViewer(QMainWindow):
             x = self.current_flags[flag]
             if self.curve_selector_window.boxes[flag][0].isChecked():
             # ax.vlines(x=x, color="red", linestyle="--", label=flag)
-                ax.vlines(x=x, ymin=0, ymax=1, transform=ax.get_xaxis_transform(), linestyle=flags_ls, label=f"{label_value} {flag}", color=flags_colors[i], alpha=flags_alpha)
+                ax.vlines(x=x, ymin=0, ymax=1, transform=ax.get_xaxis_transform(), linestyle=flags_ls, label=f"{label_value} {flag}", color=flags_colors[i], alpha=flags_alpha, **plt_args)
 
         ax.set_title(self.current_experiment_name)
         ax.set_xlabel("Epochs")
