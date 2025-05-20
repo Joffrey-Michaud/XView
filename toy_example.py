@@ -1,5 +1,6 @@
 from xview.experiment import Experiment
 import numpy as np
+import time
 
 
 A1,A2, A3 = np.random.rand(3)
@@ -22,15 +23,19 @@ for i, x in enumerate(points):
     y3 = A3 * np.sin(x + 3)
 
     my_exp.add_score(name="Train_loss", x=x, y=y1, plt_args={"lw": 5})  # add a score with x and y values. The x value is not mandatory, you can add only y values
-    my_exp.add_score(name="Val_loss", x=x, y=y2)  # 
+    my_exp.add_score(name="Val_loss", x=x, y=y2, label_value=f"{y2:.3f}")  # 
     my_exp.add_score(name="Test_loss", x=x, y=y3)  # 
 
-    if i in [50, 75, 150]:
-        my_exp.add_flag(name="flag_1", x=x)  # add a flag at specific points. It will be displayedd with vertical lines in the plot
+    # if i in [50, 75, 150]:
+    #     my_exp.add_flag(name="flag_1", x=x)  # add a flag at specific points. It will be displayedd with vertical lines in the plot
+
+    if i == 102:
+        my_exp.add_flag(name="Epoch WOW", x=x, unique=True, label_value=i)
 
     if y2 < best_val:
         best_val = y2
         print(f"New best val: {best_val} at x={x}")
-        my_exp.add_flag(name="best_val", x=x, unique=True, label_value=best_val)  # add a flag with unique=True to keep only the last one
+        my_exp.add_flag(name="best_val", x=x, unique=True, label_value=f"{best_val:.3f}")  # add a flag with unique=True to keep only the last one
+    time.sleep(1)
 
 # my_exp.set_finished_status()  # set the status of the experiment to finished
