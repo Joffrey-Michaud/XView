@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QDialog, QWidget, QMainWindow, QHBoxLayout, QLabel, QVBoxLayout, QPushButton, QApplication
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPalette, QColor
+from PyQt5.QtGui import QPalette, QColor, QIcon
 from xview.update.update_project import pull_latest_changes
 from xview.utils.utils import is_dark_mode_enabled
 import sys
@@ -14,6 +14,7 @@ class UpdateWindow(QDialog):
 
     def init_ui(self):
         self.setWindowTitle("Update Warning")
+        self.setWindowIcon(QIcon("logo_light.png"))
         self.setGeometry(100, 100, 150, 100)
 
         # self.central_widget = QWidget()
@@ -55,7 +56,7 @@ class UpdateWindow(QDialog):
         # Set the dark mode palette
         if is_dark_mode_enabled(os.path.join("xview", "config", "dark_mode.json")):
             self.set_dark_mode()
-
+            self.setWindowIcon(QIcon("logo_dark.png"))
 
         self.show()
 
