@@ -2,7 +2,7 @@ import os
 from xview.utils.utils import *
 from xview.score import MultiScores
 import shutil
-from update_project import warn_if_outdated
+from xview.update.update_project import warn_if_outdated
 
 
 @warn_if_outdated
