@@ -20,7 +20,7 @@ class UpdateWindow(QDialog):
         # self.setCentralWidget(self.central_widget)
 
         self.layout = QVBoxLayout()
-        self.label_1 = QLabel("Your version of XView is not up to date! Do you want to upgrade it now ?")
+        self.label_1 = QLabel("Your version of XView is not up to date!")
         self.label_1.setAlignment(Qt.AlignCenter)
         self.label_2 = QLabel("Do you want to upgrade it now ?")
         self.label_2.setAlignment(Qt.AlignCenter)

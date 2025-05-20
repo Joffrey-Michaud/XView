@@ -46,7 +46,7 @@ class ExperimentViewer(QMainWindow):
         splitter.addWidget(left_widget)
 
         # Boutons Refresh (en colonne)
-        self.refresh_graph_button = QPushButton("Refresh Graph")
+        self.refresh_graph_button = QPushButton("Refresh Grapheee")
         self.refresh_graph_button.clicked.connect(self.refresh_graph)
         left_layout.addWidget(self.refresh_graph_button, 0, 0)
 
