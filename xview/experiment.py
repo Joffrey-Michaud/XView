@@ -2,8 +2,10 @@ import os
 from xview.utils.utils import *
 from xview.score import MultiScores
 import shutil
+from update_project import warn_if_outdated
 
 
+@warn_if_outdated
 class Experiment(object):
     def __init__(self, name, infos=None, group=None, clear=None):
         self.name = name
