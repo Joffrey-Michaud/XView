@@ -335,7 +335,7 @@ class ExperimentViewer(QMainWindow):
         if os.path.exists(scores_folder_path):
             for file_name in os.listdir(scores_folder_path):
                 score = file_name.split(".")[0]
-                if file_name.endswith(".txt"):
+                if file_name.endswith(".txt") and not score.endswith("_label_value"):
                     file_path = os.path.join(scores_folder_path, file_name)
                     x, y = self.read_scores(file_path)
                     self.current_scores[score] = (x, y)
@@ -550,9 +550,6 @@ class ExperimentViewer(QMainWindow):
                     ax.plot(y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha, **plt_args)
 
         for i, flag in enumerate(self.current_flags):
-            print("CURRENT FLAGS", self.current_flags)
-            print("FLAG", flag)
-            print(f"FLAG NUMBER {i} / {len(self.current_flags)} | N COLORS : {len(flags_colors)}")
             if os.path.exists(
                 os.path.join(self.experiments_dir, self.current_experiment_name, "flags", f"{flag}_label_value.txt")
             ):
@@ -564,10 +561,7 @@ class ExperimentViewer(QMainWindow):
 
             # print("FLAG", flag)
             x = self.current_flags[flag]
-            print("BOES KEYS", self.curve_selector_window.boxes.keys())
             if self.curve_selector_window.boxes[flag][0].isChecked():
-                print("FLAG COLORS :", flags_colors)
-                print("COULEUR DU FLAG :", flags_colors[i])
             # ax.vlines(x=x, color="red", linestyle="--", label=flag)
                 ax.vlines(x=x, ymin=0, ymax=1, transform=ax.get_xaxis_transform(), linestyle=flags_ls, label=f"{label_value} {flag}", color=flags_colors[i], alpha=flags_alpha)
 
