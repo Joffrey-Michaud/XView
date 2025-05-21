@@ -3,6 +3,7 @@ import sys
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QListWidget, QWidget, QHBoxLayout,
                              QCheckBox, QLabel, QGridLayout, QPushButton, QSplitter, QTextEdit, QLineEdit, QTableWidget, QTableWidgetItem)
 from PyQt5.QtGui import QPixmap, QImage, QBrush, QColor, QFont, QIcon, QPalette
+from PyQt5.QtCore import QDateTime
 from PyQt5.QtCore import QTimer, Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -23,7 +24,7 @@ class ExperimentViewer(QMainWindow):
         self.current_experiment_name = None
 
         self.dark_mode_enabled = False
-        
+
         self.model_image_file = None
 
         # Configurer l'interface principale
@@ -214,7 +215,7 @@ class ExperimentViewer(QMainWindow):
         dark_mode_state = read_json(os.path.join("xview", "config", "dark_mode.json"))
         return dark_mode_state["dark_mode"]
 
-    def get_interval(self): 
+    def get_interval(self):
         interval = read_json(self.config_file_path)["update_interval"]
         return int(interval * 1000)
 
@@ -234,14 +235,14 @@ class ExperimentViewer(QMainWindow):
     def open_curve_selector(self):
         if self.curve_selector_window is None or not self.curve_selector_window.isVisible():
             # self.curve_selector_window = CurvesSelector(
-            #     self, 
+            #     self,
             #     # curves_list=list(self.current_scores.keys()), flags_list=list(self.current_flags.keys())
             #     )
             if self.dark_mode_enabled != self.curve_selector_window.dark_mode_enabled:
                 self.curve_selector_window.toggle_dark_mode()
             self.curve_selector_window.show()
             self.curve_selector_window.move_to_cursor_bottom_left()
-            
+
         else:
             if self.dark_mode_enabled != self.curve_selector_window.dark_mode_enabled:
                 self.curve_selector_window.toggle_dark_mode()
@@ -368,13 +369,12 @@ class ExperimentViewer(QMainWindow):
             self.curve_selector_window.reset_window(exp_path)
             self.curve_selector_window.init_boxes(
                 self.current_scores.keys(), self.current_flags.keys()
-                )
+            )
         else:
             self.curve_selector_window.update_boxes(
-                 self.current_scores.keys(), self.current_flags.keys()
+                self.current_scores.keys(), self.current_flags.keys()
             )
             # self.curve_selector_window.reset_window(exp_path)
-
 
         # Charger et afficher l'image du modèle
         if os.path.exists(exp_info_file):
@@ -429,8 +429,8 @@ class ExperimentViewer(QMainWindow):
                 pixmap = QPixmap.fromImage(image)
                 # pixmap = QPixmap(self.model_image_file)
                 self.model_image_label.setPixmap(pixmap.scaled(self.model_image_label.size(),
-                                                            aspectRatioMode=Qt.KeepAspectRatio,
-                                                            transformMode=Qt.SmoothTransformation))  # Preserve aspect ratio
+                                                               aspectRatioMode=Qt.KeepAspectRatio,
+                                                               transformMode=Qt.SmoothTransformation))  # Preserve aspect ratio
             else:
                 self.model_image_label.clear()
                 self.model_image_label.setText("Image non trouvée")
@@ -464,7 +464,7 @@ class ExperimentViewer(QMainWindow):
         ls = read_json(self.config_file_path)["flags_ls"]  # linestyle
         alpha = read_json(self.config_file_path)["flags_alpha"]  # linestyle
         return colors, ls, alpha
-    
+
     def get_plt_args(self, score_name, type):
         score_dir = os.path.join(self.experiments_dir, self.current_experiment_name, type)
         plt_args_file = os.path.join(score_dir, f"{score_name}_plt_args.json")
@@ -578,7 +578,7 @@ class ExperimentViewer(QMainWindow):
             # print("FLAG", flag)
             x = self.current_flags[flag]
             if self.curve_selector_window.boxes[flag][0].isChecked():
-            # ax.vlines(x=x, color="red", linestyle="--", label=flag)
+                # ax.vlines(x=x, color="red", linestyle="--", label=flag)
                 ax.vlines(x=x, ymin=0, ymax=1, transform=ax.get_xaxis_transform(), linestyle=flags_ls, label=f"{label_value} {flag}", color=flags_colors[i], alpha=flags_alpha, **plt_args)
 
         ax.set_title(self.current_experiment_name)
@@ -610,8 +610,15 @@ class ExperimentViewer(QMainWindow):
             print("Aucune expérience sélectionnée. Veuillez en sélectionner une.")
             return
 
-        exp_path = os.path.join(self.experiments_dir, self.current_experiment_name)
-        save_path = os.path.join(exp_path, f"{self.current_experiment_name}_exp_plot.png")
+        exp_figure_path = os.path.join(self.experiments_dir, self.current_experiment_name, 'figures')
+
+        if not os.path.exists(exp_figure_path):
+            os.makedirs(exp_figure_path)
+
+        # format yyyy-mm-dd_HH-MM-SS
+        figure_date = QDateTime.currentDateTime().toString("yyyy-MM-dd_HH-mm-ss")
+
+        save_path = os.path.join(exp_figure_path, f"{figure_date}.png")
 
         self.figure.savefig(save_path, dpi=300)  # Enregistrer en haute qualité
         print(f"Graph enregistré dans : {save_path}")
