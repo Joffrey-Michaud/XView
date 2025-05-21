@@ -3,6 +3,7 @@ from xview.utils.utils import *
 from xview.score import MultiScores
 import shutil
 from xview.update.update_project import warn_if_outdated
+from xview import get_config_data
 
 
 @warn_if_outdated
@@ -11,13 +12,8 @@ class Experiment(object):
         self.name = name
         self.group = group
 
-        #  chemin vers le fichier de config
-        curr_dir = os.path.abspath(os.path.dirname(__file__))
-        config_path = os.path.join("config", "config.json")
-        abs_config_path = os.path.join(curr_dir, config_path)
-
         # lecture du fichier de config et création du dossier de l'expérience
-        self.data_folder = read_json(abs_config_path)["data_folder"]
+        self.data_folder = get_config_data("data_folder")
 
         if self.group is not None:
             self.data_folder = os.path.join(self.data_folder, self.group)
@@ -65,12 +61,12 @@ class Experiment(object):
         self.status = status
         write_file(self.status_file, self.status, flag="w")
 
-    def add_score(self, name, y, x=None, plt_args:dict=None, label_value=None):
+    def add_score(self, name, y, x=None, plt_args: dict = None, label_value=None):
         if name not in self.scores.scores:
             self.scores.add_score(name, plt_args=plt_args)
         self.scores.add_score_point(name, y, x, label_value=label_value)
 
-    def add_flag(self, name, x=None, unique=False, plt_args:dict=None, label_value=None):
+    def add_flag(self, name, x=None, unique=False, plt_args: dict = None, label_value=None):
         if name not in self.flags.scores:
             self.flags.add_score(name, plt_args=plt_args)
         if x is None:
