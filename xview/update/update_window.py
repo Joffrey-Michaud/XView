@@ -2,9 +2,9 @@ from PyQt5.QtWidgets import QDialog, QWidget, QMainWindow, QHBoxLayout, QLabel, 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPalette, QColor, QIcon
 from xview.update.update_project import pull_latest_changes
-from xview.utils.utils import is_dark_mode_enabled
 import sys
 import os
+from xview import get_config_file
 
 
 class UpdateWindow(QDialog):
@@ -39,9 +39,8 @@ class UpdateWindow(QDialog):
         self.layout.addWidget(self.label_2)
         self.layout.addLayout(self.btn_layout)
 
-        
         # self.central_widget.setLayout(self.layout)
-        
+
         # self.central_widget.setLayout(self.layout)
         self.setLayout(self.layout)
 
@@ -54,7 +53,7 @@ class UpdateWindow(QDialog):
         self.setGeometry(x, y, window_geometry.width(), window_geometry.height())
 
         # Set the dark mode palette
-        if is_dark_mode_enabled(os.path.join("xview", "config", "dark_mode.json")):
+        if get_config_file()["dark_mode"] == True:
             self.set_dark_mode()
             self.setWindowIcon(QIcon("logo_dark.png"))
 

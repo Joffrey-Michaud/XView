@@ -10,6 +10,7 @@ import os
 import numpy as np
 import time
 from xview.update.update_project import warn_if_outdated
+from xview import get_config_file, set_config_file, set_config_data, config_exists
 
 
 # ------------------------------------------------------------------ COLOR PICKER
@@ -87,10 +88,10 @@ class StyleSetter(QWidget):
             "--": 1,
             "-.": 2,
             ":": 3
-            }
-        
+        }
+
         self.inverted_style_map = {v: k for k, v in style_map.items()}
-        
+
         if ls in style_map:
             self.combo_box.setCurrentIndex(style_map[ls])
 
@@ -111,7 +112,6 @@ class StyleSetter(QWidget):
     def select_alpha_callback(self):
         alpha = self.alpha_input.text()
         self.set_alpha_callback(float(alpha))
-
 
 
 # ------------------------------------------------------------------ CONFIG MANAGER
@@ -183,7 +183,7 @@ class ConfigManager(QMainWindow):
         self.exp_folder_label.setStyleSheet("font-size: 15px;")
         self.exp_folder_label.setAlignment(Qt.AlignCenter)
         left_layout.addWidget(self.exp_folder_label, 1, 0)
-        
+
         exp_btn = QPushButton('Choose Exps Folder', self)
         exp_btn.clicked.connect(self.change_exp_folder)
         left_layout.addWidget(exp_btn, 2, 0)
@@ -203,7 +203,6 @@ class ConfigManager(QMainWindow):
         self.interval_input.editingFinished.connect(self.set_interval)
         left_layout.addWidget(self.inteval_widget, 3, 0)
 
-
         self.dark_mode_btn = QPushButton('Dark Mode', self)
         self.dark_mode_btn.clicked.connect(self.toggle_dark_mode)
         left_layout.addWidget(self.dark_mode_btn, 4, 0)
@@ -220,7 +219,7 @@ class ConfigManager(QMainWindow):
         left_layout.addWidget(section_label, 5, 0)
 
         self.color_widget = ColorPickerWidget(colors=self.light_mode_curves, on_color_change=self.update_curves_colors)
-        left_layout.addWidget( self.color_widget, 6, 0)
+        left_layout.addWidget(self.color_widget, 6, 0)
 
         self.curves_style_setter = StyleSetter(self.curves_ls, self.curves_alpha,
                                                set_ls_callbak=self.set_curves_ls,
@@ -233,7 +232,6 @@ class ConfigManager(QMainWindow):
         self.ma_label.setAlignment(Qt.AlignCenter)
         left_layout.addWidget(self.ma_label, 8, 0)
 
-        
         self.ma_curves_style_setter = StyleSetter(self.ma_curves_ls, self.ma_curves_alpha,
                                                   set_ls_callbak=self.set_ma_curves_ls,
                                                   set_alpha_callback=self.set_ma_curves_alpha)
@@ -246,9 +244,7 @@ class ConfigManager(QMainWindow):
         left_layout.addWidget(section_label_2, 10, 0)
 
         self.color_widget_2 = ColorPickerWidget(colors=self.light_mode_flags, on_color_change=self.update_flags_colors)
-        left_layout.addWidget( self.color_widget_2, 11, 0)
-
-        
+        left_layout.addWidget(self.color_widget_2, 11, 0)
 
         self.flags_style_setter = StyleSetter(self.flags_ls, self.flags_alpha,
                                               set_ls_callbak=self.set_flags_ls,
@@ -262,7 +258,7 @@ class ConfigManager(QMainWindow):
 
         self.plot_example()
 
-        if self.dark_mode_enabled != read_json(os.path.join("xview", "config", "dark_mode.json"))["dark_mode"]:
+        if get_config_file()["dark_mode"] != self.dark_mode_enabled:
             self.toggle_dark_mode()
 
         self.show()
@@ -273,13 +269,6 @@ class ConfigManager(QMainWindow):
             self.current_exp_folder = folder_path
             self.exp_folder_label.setText(f"Current exps folder :\n{self.current_exp_folder}")
 
-        # if folder_path:
-        #     config = {"data_folder": folder_path}
-        #     os.makedirs(os.path.join("xview", "config"), exist_ok=True)
-        #     write_json(os.path.join("xview", "config", "config.json"), config)
-
-        # self.close()
-    
     # region - save_config
     def save_config(self):
         config = {
@@ -296,9 +285,7 @@ class ConfigManager(QMainWindow):
             "ma_curves_alpha": self.ma_curves_alpha,
             "update_interval": self.interval
         }
-        os.makedirs(self.current_exp_folder, exist_ok=True)
-        os.makedirs(os.path.join("xview", "config"), exist_ok=True)
-        write_json(os.path.join("xview", "config", "config.json"), config)
+        set_config_file(config)
         print("Configuration saved to config.json")
 
     # region - plot_example
@@ -319,7 +306,7 @@ class ConfigManager(QMainWindow):
             tr_color = "cyan"
             val_color = "magenta"
             best_epoch_color = text_color
-            
+
         else:
             bg_color = "white"
             text_color = "black"
@@ -346,12 +333,10 @@ class ConfigManager(QMainWindow):
 
             ax.plot(x, compute_moving_average(y, 10), color=color, label=f"MA Curve {i+1}", ls=self.ma_curves_ls, alpha=self.ma_curves_alpha)
 
-
         coords = np.linspace(0, 2 * np.pi, 5)
-        for i, (color, x)  in enumerate(zip(flags_colors, coords[1:-1])):
+        for i, (color, x) in enumerate(zip(flags_colors, coords[1:-1])):
             y = amp * np.sin(x + i)
             ax.axvline(x, color=color, label=f"Flag {i+1}", ls=self.flags_ls, alpha=self.flags_alpha)
-
 
         # x = np.linspace(0, 2 * np.pi, 200)
         # for i, color in enumerate(curves_colors):
@@ -364,7 +349,6 @@ class ConfigManager(QMainWindow):
         ax.set_xlabel("X-axis")
         ax.set_ylabel("Y-axis")
         self.canvas.draw()
-
 
     def toggle_dark_mode(self):
         if not self.dark_mode_enabled:
@@ -380,10 +364,10 @@ class ConfigManager(QMainWindow):
             self.dark_mode_btn.setText("Dark mode")
         self.plot_example()
         dark_mode = {"dark_mode": self.dark_mode_enabled}
-        write_json(os.path.join("xview", "config", "dark_mode.json"), dark_mode)
+        set_config_data('dark_mode', dark_mode)
         # self.display_model_image()
 
-    # region - dark/light mode
+    #  region - dark/light mode
     def set_dark_mode(self):
         dark_palette = QPalette()
         dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
@@ -411,59 +395,38 @@ class ConfigManager(QMainWindow):
         # self.setStyleSheet("")
 
     def get_color_theme(self, color_section="curves", dark_mode=False):
+        config = get_config_file()
         if color_section == "curves":
             if dark_mode:
-                if os.path.isfile(os.path.join("xview", "config", "config.json")):
-                    # Read the JSON file
-                    return read_json(os.path.join("xview", "config", "config.json"))[f"dark_mode_curves"]
-                else:
-                    return ["#A2D2DF", "#F6EFBD", "#E4C087", "#BC7C7C", "#FF00FF"]
+                return config.get("dark_mode_curves", ["#A2D2DF", "#F6EFBD", "#E4C087", "#BC7C7C", "#FF00FF"])
             else:
-                if os.path.isfile(os.path.join("xview", "config", "config.json")):
-                    # Read the JSON file
-                    colors = read_json(os.path.join("xview", "config", "config.json"))[f"light_mode_curves"]
-                    return read_json(os.path.join("xview", "config", "config.json"))[f"light_mode_curves"]
-                else:
-                    return ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF"]
-        
+                return config.get("light_mode_curves", ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF"])
         elif color_section == "flags":
             if dark_mode:
-                if os.path.isfile(os.path.join("xview", "config", "config.json")):
-                    # Read the JSON file
-                    return read_json(os.path.join("xview", "config", "config.json"))[f"dark_mode_flags"]
-                else:
-                    return ["#fafafa", "#fafafa", "#fafafa"]
+                return config.get("dark_mode_flags", ["#fafafa", "#fafafa", "#fafafa"])
             else:
-                if os.path.isfile(os.path.join("xview", "config", "config.json")):
-                    # Read the JSON file
-                    return read_json(os.path.join("xview", "config", "config.json"))[f"light_mode_flags"]
-                else:
-                    return ["#000000", "#000000", "#000000"]
-                
+                return config.get("light_mode_flags", ["#000000", "#000000", "#000000"])
+
     def get_curves_style(self):
-        if os.path.isfile(os.path.join("xview", "config", "config.json")):
-            config = read_json(os.path.join("xview", "config", "config.json"))
-            return config["curves_ls"], config["curves_alpha"]
-        
+        config = get_config_file()
+        return config["curves_ls"], config["curves_alpha"]
+
     def get_ma_curves_style(self):
-        if os.path.isfile(os.path.join("xview", "config", "config.json")):
-            config = read_json(os.path.join("xview", "config", "config.json"))
-            return config["ma_curves_ls"], config["ma_curves_alpha"]
-        
+        config = get_config_file()
+        return config["ma_curves_ls"], config["ma_curves_alpha"]
+
     def get_flags_style(self):
-        if os.path.isfile(os.path.join("xview", "config", "config.json")):
-            config = read_json(os.path.join("xview", "config", "config.json"))
-            return config["flags_ls"], config["flags_alpha"]
-        
+        config = get_config_file()
+        return config["flags_ls"], config["flags_alpha"]
+
     def get_interval(self):
-        if os.path.isfile(os.path.join("xview", "config", "config.json")):
-            config = read_json(os.path.join("xview", "config", "config.json"))
-            return config["update_interval"]
-        
+        config = get_config_file()
+        return config["update_interval"]
+
     def set_interval(self):
         interval = self.interval_input.text()
         self.interval = float(interval)
-        
+
     def set_curves_ls(self, ls):
         self.curves_ls = ls
         self.plot_example()
@@ -471,7 +434,7 @@ class ConfigManager(QMainWindow):
     def set_ma_curves_ls(self, ls):
         self.ma_curves_ls = ls
         self.plot_example()
-    
+
     def set_flags_ls(self, ls):
         self.flags_ls = ls
         self.plot_example()
@@ -483,18 +446,15 @@ class ConfigManager(QMainWindow):
     def set_ma_curves_alpha(self, alpha):
         self.ma_curves_alpha = alpha
         self.plot_example()
-    
+
     def set_flags_alpha(self, alpha):
         self.flags_alpha = alpha
         self.plot_example()
-                
+
     def get_current_exps_folder(self):
-        if os.path.isfile(os.path.join("xview", "config", "config.json")):
-            # Read the JSON file
-            return read_json(os.path.join("xview", "config", "config.json"))["data_folder"]
-        else:
-            return "No folder selected"
-                
+        config = get_config_file()
+        return config["data_folder"]
+
     def update_curves_colors(self, index, new_color):
         if self.dark_mode_enabled:
             self.dark_mode_curves[index] = new_color
@@ -513,12 +473,10 @@ class ConfigManager(QMainWindow):
 
 
 if __name__ == '__main__':
-    config_path = os.path.join("xview", "config", "config.json")
-    if not os.path.isfile(config_path):
-        os.makedirs(os.path.join("xview", "config"), exist_ok=True)
-        # Create the config file with default values
+    if not config_exists():
+        data_folder = os.path.dirname(f"{os.path.expanduser('~')}/.xview/exps/")
         default_config = {
-            "data_folder": os.path.join(os.getcwd(), "exps"),
+            "data_folder": data_folder,
             "dark_mode_curves": ["#A2D2DF", "#F6EFBD", "#E4C087", "#BC7C7C", "#FF00FF"],
             "dark_mode_flags": ["#fafafa", "#fafafa", "#fafafa"],
             "light_mode_curves": ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF"],
@@ -529,12 +487,12 @@ if __name__ == '__main__':
             "flags_alpha": 1.0,
             "ma_curves_ls": "--",
             "ma_curves_alpha": 0.5,
-            "update_interval": 60
+            "update_interval": 60,
+            "dark_mode": False
         }
-        write_json(config_path, default_config)
-
-        dark_mode = {"dark_mode": False}
-        write_json(os.path.join("xview", "config", "dark_mode.json"), dark_mode)
+        set_config_file(default_config)
+        if not os.path.exists(data_folder):
+            os.makedirs(data_folder, exist_ok=True)
 
     app = QApplication(sys.argv)
     app.setStyle("Fusion")

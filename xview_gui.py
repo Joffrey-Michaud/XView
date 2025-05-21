@@ -13,14 +13,14 @@ from xview.curves_selector import CurvesSelector
 from config import ConfigManager
 from xview.update.update_window import UpdateWindow
 from xview.update.update_project import is_up_to_date
+from xview import get_config_file, set_config_file, set_config_data
 
 
 class ExperimentViewer(QMainWindow):
-    def __init__(self, config_file_path):
+    def __init__(self):
         super().__init__()
-        self.config_file_path = config_file_path
 
-        self.experiments_dir = read_json(config_file_path)["data_folder"]
+        self.experiments_dir = get_config_file()["data_folder"]
         self.current_experiment_name = None
 
         self.dark_mode_enabled = False
@@ -200,23 +200,20 @@ class ExperimentViewer(QMainWindow):
         self.current_train_loss = []
         self.current_val_loss = []
 
-        if not os.path.isfile(os.path.join("xview", "config", "dark_mode.json")):
-            write_json(os.path.join("xview", "config", "dark_mode.json"), {"dark_mode": False})
         # self.dark_mode_enabled = self.read_dark_mode_state()
         # print("DARK MODE ENABLED :", self.dark_mode_enabled)
-        if self.read_dark_mode_state():
-            self.toggle_dark_mode()
+        self.set_dark_mode(get_config_file()["dark_mode"])
 
         # Mise à jour initiale
         self.update_experiment_list()
+        self.update_plot()
 
     def read_dark_mode_state(self):
         """Lit l'état du mode sombre à partir du fichier JSON."""
-        dark_mode_state = read_json(os.path.join("xview", "config", "dark_mode.json"))
-        return dark_mode_state["dark_mode"]
+        return get_config_file()["dark_mode"]
 
     def get_interval(self):
-        interval = read_json(self.config_file_path)["update_interval"]
+        interval = get_config_file()["update_interval"]
         return int(interval * 1000)
 
     def open_config_panel(self):
@@ -438,31 +435,31 @@ class ExperimentViewer(QMainWindow):
     def get_curves_style(self):
         # colors
         if self.dark_mode_enabled:
-            colors = read_json(self.config_file_path)["dark_mode_curves"]
+            colors = get_config_file()["dark_mode_curves"]
         else:
-            colors = read_json(self.config_file_path)["light_mode_curves"]
-        ls = read_json(self.config_file_path)["curves_ls"]  # linestyle
-        alpha = read_json(self.config_file_path)["curves_alpha"]  # linestyle
+            colors = get_config_file()["light_mode_curves"]
+        ls = get_config_file()["curves_ls"]  # linestyle
+        alpha = get_config_file()["curves_alpha"]  # linestyle
         return colors, ls, alpha
 
     def get_ma_curves_style(self):
         # colors
         if self.dark_mode_enabled:
-            colors = read_json(self.config_file_path)["dark_mode_curves"]
+            colors = get_config_file()["dark_mode_curves"]
         else:
-            colors = read_json(self.config_file_path)["light_mode_curves"]
-        ls = read_json(self.config_file_path)["ma_curves_ls"]  # linestyle
-        alpha = read_json(self.config_file_path)["ma_curves_alpha"]  # linestyle
+            colors = get_config_file()["light_mode_curves"]
+        ls = get_config_file()["ma_curves_ls"]  # linestyle
+        alpha = get_config_file()["ma_curves_alpha"]  # linestyle
         return colors, ls, alpha
 
     def get_flags_style(self):
         # colors
         if self.dark_mode_enabled:
-            colors = read_json(self.config_file_path)["dark_mode_flags"]
+            colors = get_config_file()["dark_mode_flags"]
         else:
-            colors = read_json(self.config_file_path)["light_mode_flags"]
-        ls = read_json(self.config_file_path)["flags_ls"]  # linestyle
-        alpha = read_json(self.config_file_path)["flags_alpha"]  # linestyle
+            colors = get_config_file()["light_mode_flags"]
+        ls = get_config_file()["flags_ls"]  # linestyle
+        alpha = get_config_file()["flags_alpha"]  # linestyle
         return colors, ls, alpha
 
     def get_plt_args(self, score_name, type):
@@ -623,41 +620,37 @@ class ExperimentViewer(QMainWindow):
         self.figure.savefig(save_path, dpi=300)  # Enregistrer en haute qualité
         print(f"Graph enregistré dans : {save_path}")
 
-    def toggle_dark_mode(self):
-        if not self.dark_mode_enabled:
-            self.set_dark_mode()
-            self.dark_mode_enabled = True
+    def set_dark_mode(self, sett):
+        if sett:
+            dark_palette = QPalette()
+            dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
+            dark_palette.setColor(QPalette.WindowText, Qt.white)
+            dark_palette.setColor(QPalette.Base, QColor(25, 25, 25))
+            dark_palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
+            dark_palette.setColor(QPalette.ToolTipBase, Qt.white)
+            dark_palette.setColor(QPalette.ToolTipText, Qt.white)
+            dark_palette.setColor(QPalette.Text, Qt.white)
+            dark_palette.setColor(QPalette.Button, QColor(53, 53, 53))
+            dark_palette.setColor(QPalette.ButtonText, Qt.white)
+            dark_palette.setColor(QPalette.BrightText, Qt.red)
+            dark_palette.setColor(QPalette.Highlight, QColor(142, 45, 197).lighter())
+            dark_palette.setColor(QPalette.HighlightedText, Qt.black)
+            self.setPalette(dark_palette)
             self.setWindowIcon(QIcon(os.path.join("xview", "logo_dark.png")))
             self.dark_mode_button.setText("Light mode")
+            self.dark_mode_enabled = True
         else:
-            self.set_light_mode()
-            self.dark_mode_enabled = False
+            self.setPalette(QApplication.style().standardPalette())
             self.setWindowIcon(QIcon(os.path.join("xview", "logo_light.png")))
             self.dark_mode_button.setText("Dark mode")
+            self.dark_mode_enabled = False
 
-        write_json(os.path.join("xview", "config", "dark_mode.json"), {"dark_mode": self.dark_mode_enabled})
+        set_config_data("dark_mode", sett)
+
+    def toggle_dark_mode(self):
+        self.set_dark_mode(not get_config_file()["dark_mode"])
         self.update_plot()
         self.display_model_image()
-
-    def set_dark_mode(self):
-        dark_palette = QPalette()
-        dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
-        dark_palette.setColor(QPalette.WindowText, Qt.white)
-        dark_palette.setColor(QPalette.Base, QColor(25, 25, 25))
-        dark_palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
-        dark_palette.setColor(QPalette.ToolTipBase, Qt.white)
-        dark_palette.setColor(QPalette.ToolTipText, Qt.white)
-        dark_palette.setColor(QPalette.Text, Qt.white)
-        dark_palette.setColor(QPalette.Button, QColor(53, 53, 53))
-        dark_palette.setColor(QPalette.ButtonText, Qt.white)
-        dark_palette.setColor(QPalette.BrightText, Qt.red)
-        dark_palette.setColor(QPalette.Highlight, QColor(142, 45, 197).lighter())
-        dark_palette.setColor(QPalette.HighlightedText, Qt.black)
-
-        self.setPalette(dark_palette)
-
-    def set_light_mode(self):
-        self.setPalette(QApplication.style().standardPalette())
 
     def finish_experiment(self):
         exp_path = os.path.join(self.experiments_dir, self.current_experiment_name)
@@ -671,26 +664,6 @@ class ExperimentViewer(QMainWindow):
         self.update_experiment_list()
 
 
-# if __name__ == "__main__":
-#     if is_up_to_date():
-#         app = QApplication(sys.argv)
-
-#         app.setStyle("Fusion")
-#         viewer = UpdateWindow()
-
-#     app = QApplication(sys.argv)
-
-#     app.setStyle("Fusion")
-
-    # curr_dir = os.path.abspath(os.path.dirname(__file__))
-    # config_path = os.path.join("xview", "config", "config.json")
-    # config_file_path = os.path.join(curr_dir, config_path)
-
-    # viewer = ExperimentViewer(config_file_path)
-    # viewer.show()
-
-    # sys.exit(app.exec_())
-
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
@@ -703,10 +676,8 @@ if __name__ == "__main__":
         # oui
 
     curr_dir = os.path.abspath(os.path.dirname(__file__))
-    config_path = os.path.join("xview", "config", "config.json")
-    config_file_path = os.path.join(curr_dir, config_path)
 
-    viewer = ExperimentViewer(config_file_path)
+    viewer = ExperimentViewer()
     viewer.show()
 
     sys.exit(app.exec_())
