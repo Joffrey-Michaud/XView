@@ -270,6 +270,7 @@ class ConfigManager(QMainWindow):
         if folder_path:
             self.current_exp_folder = folder_path
             self.exp_folder_label.setText(f"Current exps folder :\n{self.current_exp_folder}")
+            set_config_data('data_folder', folder_path)
 
     # region - plot_example
     def plot_example(self):
@@ -286,16 +287,10 @@ class ConfigManager(QMainWindow):
         if self.dark_mode_enabled:
             bg_color = "#191919"
             text_color = "white"
-            tr_color = "cyan"
-            val_color = "magenta"
-            best_epoch_color = text_color
 
         else:
             bg_color = "white"
             text_color = "black"
-            tr_color = "blue"
-            val_color = "orange"
-            best_epoch_color = text_color
 
         ax.set_facecolor(bg_color)
         self.figure.set_facecolor(bg_color)
@@ -403,29 +398,36 @@ class ConfigManager(QMainWindow):
     def set_interval(self):
         interval = self.interval_input.text()
         self.interval = float(interval)
+        set_config_data('update_interval', self.interval)
 
     def set_curves_ls(self, ls):
         self.curves_ls = ls
+        set_config_data('curves_ls', ls)
         self.plot_example()
 
     def set_ma_curves_ls(self, ls):
         self.ma_curves_ls = ls
+        set_config_data('ma_curves_ls', ls)
         self.plot_example()
 
     def set_flags_ls(self, ls):
         self.flags_ls = ls
+        set_config_data('flags_ls', ls)
         self.plot_example()
 
     def set_curves_alpha(self, alpha):
         self.curves_alpha = alpha
+        set_config_data('curves_alpha', alpha)
         self.plot_example()
 
     def set_ma_curves_alpha(self, alpha):
         self.ma_curves_alpha = alpha
+        set_config_data('ma_curves_alpha', alpha)
         self.plot_example()
 
     def set_flags_alpha(self, alpha):
         self.flags_alpha = alpha
+        set_config_data('flags_alpha', alpha)
         self.plot_example()
 
     def get_current_exps_folder(self):
@@ -435,16 +437,20 @@ class ConfigManager(QMainWindow):
     def update_curves_colors(self, index, new_color):
         if self.dark_mode_enabled:
             self.dark_mode_curves[index] = new_color
+            set_config_data('dark_mode_curves', self.dark_mode_curves)
         else:
             self.light_mode_curves[index] = new_color
+            set_config_data('light_mode_curves', self.light_mode_curves)
 
         self.plot_example()
 
     def update_flags_colors(self, index, new_color):
         if self.dark_mode_enabled:
             self.dark_mode_flags[index] = new_color
+            set_config_data('dark_mode_flags', self.dark_mode_flags)
         else:
             self.light_mode_flags[index] = new_color
+            set_config_data('light_mode_flags', self.light_mode_flags)
 
         self.plot_example()
 
