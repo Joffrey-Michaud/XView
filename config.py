@@ -119,6 +119,7 @@ class StyleSetter(QWidget):
 class ConfigManager(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.global_config = get_config_file()
         self.initUI()
 
     def initUI(self):
@@ -252,14 +253,15 @@ class ConfigManager(QMainWindow):
         left_layout.addWidget(self.flags_style_setter, 12, 0)
 
         # region - save button
-        save_btn = QPushButton('Save')
-        save_btn.clicked.connect(self.save_config)
-        left_layout.addWidget(save_btn, 13, 0)
+        # save_btn = QPushButton('Save')
+        # save_btn.clicked.connect(self.save_config)
+        # left_layout.addWidget(save_btn, 13, 0)
 
         self.plot_example()
 
-        if get_config_file()["dark_mode"] != self.dark_mode_enabled:
-            self.toggle_dark_mode()
+        print(self.global_config["dark_mode"])
+
+        self.set_dark_mode(self.global_config["dark_mode"])
 
         self.show()
 
@@ -268,25 +270,6 @@ class ConfigManager(QMainWindow):
         if folder_path:
             self.current_exp_folder = folder_path
             self.exp_folder_label.setText(f"Current exps folder :\n{self.current_exp_folder}")
-
-    # region - save_config
-    def save_config(self):
-        config = {
-            "data_folder": self.current_exp_folder,
-            "dark_mode_curves": self.dark_mode_curves,
-            "dark_mode_flags": self.dark_mode_flags,
-            "light_mode_curves": self.light_mode_curves,
-            "light_mode_flags": self.light_mode_flags,
-            "curves_ls": self.curves_ls,
-            "curves_alpha": self.curves_alpha,
-            "flags_ls": self.flags_ls,
-            "flags_alpha": self.flags_alpha,
-            "ma_curves_ls": self.ma_curves_ls,
-            "ma_curves_alpha": self.ma_curves_alpha,
-            "update_interval": self.interval
-        }
-        set_config_file(config)
-        print("Configuration saved to config.json")
 
     # region - plot_example
     def plot_example(self):
@@ -350,49 +333,43 @@ class ConfigManager(QMainWindow):
         ax.set_ylabel("Y-axis")
         self.canvas.draw()
 
-    def toggle_dark_mode(self):
-        if not self.dark_mode_enabled:
+    def set_dark_mode(self, dark_mode):
+        if dark_mode:
+            dark_palette = QPalette()
+            dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
+            dark_palette.setColor(QPalette.WindowText, Qt.white)
+            dark_palette.setColor(QPalette.Base, QColor(25, 25, 25))
+            dark_palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
+            dark_palette.setColor(QPalette.ToolTipBase, Qt.white)
+            dark_palette.setColor(QPalette.ToolTipText, Qt.white)
+            dark_palette.setColor(QPalette.Text, Qt.white)
+            dark_palette.setColor(QPalette.Button, QColor(53, 53, 53))
+            dark_palette.setColor(QPalette.ButtonText, Qt.white)
+            dark_palette.setColor(QPalette.BrightText, Qt.red)
+            dark_palette.setColor(QPalette.Highlight, QColor(142, 45, 197).lighter())
+            dark_palette.setColor(QPalette.HighlightedText, Qt.black)
+
+            self.color_widget.update_colors(self.dark_mode_curves)
+            self.color_widget_2.update_colors(self.dark_mode_flags)
+
+            self.setPalette(dark_palette)
             self.dark_mode_enabled = True
-            self.set_dark_mode()
+
             self.setWindowIcon(QIcon("logo_dark.png"))
-            # dark_mode_btn = self.sender()
             self.dark_mode_btn.setText("Light mode")
         else:
+            self.setPalette(QApplication.style().standardPalette())
+            self.color_widget.update_colors(self.light_mode_curves)
+            self.color_widget_2.update_colors(self.light_mode_flags)
             self.dark_mode_enabled = False
-            self.set_light_mode()
             self.setWindowIcon(QIcon("logo_light.png"))
             self.dark_mode_btn.setText("Dark mode")
+
         self.plot_example()
-        dark_mode = {"dark_mode": self.dark_mode_enabled}
         set_config_data('dark_mode', dark_mode)
-        # self.display_model_image()
 
-    #  region - dark/light mode
-    def set_dark_mode(self):
-        dark_palette = QPalette()
-        dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
-        dark_palette.setColor(QPalette.WindowText, Qt.white)
-        dark_palette.setColor(QPalette.Base, QColor(25, 25, 25))
-        dark_palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
-        dark_palette.setColor(QPalette.ToolTipBase, Qt.white)
-        dark_palette.setColor(QPalette.ToolTipText, Qt.white)
-        dark_palette.setColor(QPalette.Text, Qt.white)
-        dark_palette.setColor(QPalette.Button, QColor(53, 53, 53))
-        dark_palette.setColor(QPalette.ButtonText, Qt.white)
-        dark_palette.setColor(QPalette.BrightText, Qt.red)
-        dark_palette.setColor(QPalette.Highlight, QColor(142, 45, 197).lighter())
-        dark_palette.setColor(QPalette.HighlightedText, Qt.black)
-
-        self.color_widget.update_colors(self.dark_mode_curves)
-        self.color_widget_2.update_colors(self.dark_mode_flags)
-
-        self.setPalette(dark_palette)
-
-    def set_light_mode(self):
-        self.setPalette(QApplication.style().standardPalette())
-        self.color_widget.update_colors(self.light_mode_curves)
-        self.color_widget_2.update_colors(self.light_mode_flags)
-        # self.setStyleSheet("")
+    def toggle_dark_mode(self):
+        self.set_dark_mode(not self.dark_mode_enabled)
 
     def get_color_theme(self, color_section="curves", dark_mode=False):
         config = get_config_file()

@@ -220,13 +220,9 @@ class ExperimentViewer(QMainWindow):
         if self.config_window is None or not self.config_window.isVisible():
             # self.config_window = ConfigManager(self.config_file_path)
             self.config_window = ConfigManager()
-            if self.dark_mode_enabled:
-                self.config_window.toggle_dark_mode()
             self.config_window.show()
         else:
             self.config_window.activateWindow()
-            if self.dark_mode_enabled:
-                self.config_window.toggle_dark_mode()
             self.config_window.raise_()
 
     def open_curve_selector(self):
