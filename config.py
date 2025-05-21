@@ -2,7 +2,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget, QPushButton, QVBoxLayout, QSplitter, QGridLayout, QMainWindow, QHBoxLayout, QColorDialog, QComboBox, QLineEdit
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QDir
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from xview.utils.utils import write_json, read_json, compute_moving_average
@@ -259,14 +259,22 @@ class ConfigManager(QMainWindow):
 
         self.plot_example()
 
-        print(self.global_config["dark_mode"])
-
         self.set_dark_mode(self.global_config["dark_mode"])
 
         self.show()
 
     def change_exp_folder(self):
-        folder_path = QFileDialog.getExistingDirectory(self, 'Select Folder')
+
+        dialog = QFileDialog(self, 'Select Folder')
+        dialog.setFileMode(QFileDialog.Directory)
+        dialog.setOptions(QFileDialog.ShowDirsOnly | QFileDialog.DontUseNativeDialog)
+        dialog.setFilter(dialog.filter() | QDir.Hidden)
+
+        if dialog.exec_():
+            folder_path = dialog.selectedFiles()[0]
+        else:
+            folder_path = None
+
         if folder_path:
             self.current_exp_folder = folder_path
             self.exp_folder_label.setText(f"Current exps folder :\n{self.current_exp_folder}")
