@@ -572,7 +572,8 @@ class ExperimentViewer(QMainWindow):
             x = self.current_flags[flag]
             if self.curve_selector_window.boxes[flag][0].isChecked():
                 # ax.vlines(x=x, color="red", linestyle="--", label=flag)
-                ax.vlines(x=x, ymin=0, ymax=1, transform=ax.get_xaxis_transform(), linestyle=flags_ls, label=f"{label_value} {flag}", color=flags_colors[i], alpha=flags_alpha, **plt_args)
+                for xo in x:
+                    ax.axvline(x=x, linestyle=flags_ls, label=f"{label_value} {flag}", color=flags_colors[i], alpha=flags_alpha, **plt_args)
 
         ax.set_title(self.current_experiment_name)
         ax.set_xlabel("Epochs")
