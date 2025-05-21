@@ -25,11 +25,11 @@ class Experiment(object):
 
         os.makedirs(self.experiment_folder, exist_ok=True)
 
-        # créer le fichier d'infos si donné
-        self.infos = infos
+        # créer le fichier d'infos si donnés
+        self.infos_path = os.path.join(self.experiment_folder, "exp_infos.json")
+        self.infos = self.get_infos()
         if infos is not None:
-            self.exp_infos_file = os.path.join(self.experiment_folder, "exp_infos.json")
-            write_json(self.exp_infos_file, infos)
+            self.set_infos(infos)
 
         # créer le fichier de status
         self.status = "init"
@@ -50,6 +50,23 @@ class Experiment(object):
         self.flags_folder = os.path.join(self.experiment_folder, "flags")
         os.makedirs(self.flags_folder, exist_ok=True)
         self.flags = MultiScores(self.flags_folder)
+
+    def get_infos(self):
+        if os.path.exists(self.infos_path):
+            self.infos = read_json(self.infos_path)
+        else:
+            self.infos = {}
+            self.set_infos({})
+        return self.infos
+
+    def set_infos(self, infos):
+        self.infos = infos
+        if infos is not None:
+            write_json(self.infos_path, infos)
+
+    def set_info(self, key, value):
+        self.infos[key] = value
+        write_json(self.infos_path, self.infos)
 
     def set_train_status(self):
         self.update_status("training")
