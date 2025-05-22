@@ -8,9 +8,13 @@ def write_json(json_path, my_dict):
 
 
 def read_json(json_path):
-    with open(json_path, "r") as f:
-        my_dict = json.load(f)
-    return my_dict
+    while True:
+        try:
+            with open(json_path, "r") as f:
+                my_dict = json.load(f)
+            return my_dict
+        except json.JSONDecodeError:
+            pass
 
 
 def write_file(path_to_file, word, flag="w"):
