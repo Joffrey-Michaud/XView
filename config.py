@@ -314,7 +314,7 @@ class ConfigManager(QMainWindow):
         x = np.linspace(0, 2 * np.pi, 200)
         amplitudes = [1, 2, 0.5, 1.5, 0.8]
         for i, (color, amp) in enumerate(zip(curves_colors, amplitudes)):
-            y = amp * np.sin(x + i)
+            y = amp * np.sin(x + i) + np.random.normal(0, 0.05, len(x))
             ax.plot(x, y, color=color, label=f"Curve {i+1}", ls=self.curves_ls, alpha=self.curves_alpha)
 
             ax.plot(x, compute_moving_average(y, 10), color=color, label=f"MA Curve {i+1}", ls=self.ma_curves_ls, alpha=self.ma_curves_alpha)
