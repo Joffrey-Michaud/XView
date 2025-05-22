@@ -26,6 +26,8 @@ def read_file(file_to_path, return_str=False):
     splitted = data.split("\n")
     splitted.pop()
     if return_str:
+        if len(splitted) == 0:
+            return ""
         return str(splitted[0])
     return np.asarray(splitted, dtype=np.float32)
 
