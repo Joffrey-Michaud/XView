@@ -39,7 +39,6 @@ class UpdateWindow(QDialog):
         self.layout.addWidget(self.label_2)
         self.layout.addLayout(self.btn_layout)
 
-        # self.central_widget.setLayout(self.layout)
 
         # self.central_widget.setLayout(self.layout)
         self.setLayout(self.layout)
