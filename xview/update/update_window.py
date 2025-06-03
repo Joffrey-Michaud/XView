@@ -4,7 +4,8 @@ from PyQt5.QtGui import QPalette, QColor, QIcon
 from xview.update.update_project import pull_latest_changes
 import sys
 import os
-from xview import get_config_file
+from xview import get_config_file, set_config_file, set_config_data
+from datetime import datetime, timedelta
 
 
 class UpdateWindow(QDialog):
@@ -28,7 +29,7 @@ class UpdateWindow(QDialog):
 
         self.btn_layout = QHBoxLayout()
         self.update_btn = QPushButton("Update now")
-        self.no_btn = QPushButton("Remind me latter")
+        self.no_btn = QPushButton("Remind me later")
         self.update_btn.clicked.connect(self.pull_project)
         self.no_btn.clicked.connect(self.do_nothing)
 
@@ -59,6 +60,8 @@ class UpdateWindow(QDialog):
         self.show()
 
     def do_nothing(self):
+        # remind me later
+        set_config_data("remind_me_later_date", datetime.now())
         self.close()
 
     def pull_project(self):

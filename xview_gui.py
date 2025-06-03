@@ -15,13 +15,19 @@ from xview.update.update_window import UpdateWindow
 from xview.update.update_project import is_up_to_date
 from xview import get_config_file, set_config_file, set_config_data
 from xview.settings.settings_window import SettingsWindow
+from datetime import datetime, timedelta
 
 
 def check_for_updates():
     """Vérifie si une mise à jour est disponible et affiche une fenêtre de mise à jour si nécessaire."""
-    if not is_up_to_date():
-        update_window = UpdateWindow()
-        update_window.exec_()
+    last_reminder = get_config_file().get("remind_me_later_date", None)
+
+    # si None ou si la date est plus ancienne que 24 heures, on affiche la fenêtre de mise à jour
+    # if last_reminder is None or datetime.now() - datetime.fromisoformat(last_reminder) > timedelta(hours=24):
+    if last_reminder is None or datetime.now() - datetime.fromisoformat(last_reminder) > timedelta(seconds=10):
+        if not is_up_to_date():
+            update_window = UpdateWindow()
+            update_window.exec_()
 
 
 class ExperimentViewer(QMainWindow):
@@ -178,8 +184,7 @@ class ExperimentViewer(QMainWindow):
         self.update_check_timer.timeout.connect(check_for_updates)
         # vérification toutes les 60 minutes
         # self.update_check_timer.start(60 * 60 * 1000)  # 60 minutes en millisecondes
-        # vérification toutes les 3 secondes
-        self.update_check_timer.start(3 * 1000)  # 3 secondes en millisecondes
+        self.update_check_timer.start(5 * 1000)  # 60 minutes en millisecondes
 
         # Variables pour le stockage temporaire
         self.current_scores = {}
