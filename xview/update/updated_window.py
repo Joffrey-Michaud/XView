@@ -33,5 +33,29 @@ class UpdatedNotification(QDialog):
 
         self.setLayout(self.layout)
 
+        if get_config_file()["dark_mode"] == True:
+            self.set_dark_mode()
+            self.setWindowIcon(QIcon("logo_dark.png"))
+
         self.show()
+
+    def set_dark_mode(self):
+        dark_palette = QPalette()
+        dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
+        dark_palette.setColor(QPalette.WindowText, Qt.white)
+        dark_palette.setColor(QPalette.Base, QColor(25, 25, 25))
+        dark_palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
+        dark_palette.setColor(QPalette.ToolTipBase, Qt.white)
+        dark_palette.setColor(QPalette.ToolTipText, Qt.white)
+        dark_palette.setColor(QPalette.Text, Qt.white)
+        dark_palette.setColor(QPalette.Button, QColor(53, 53, 53))
+        dark_palette.setColor(QPalette.ButtonText, Qt.white)
+        dark_palette.setColor(QPalette.BrightText, Qt.red)
+        dark_palette.setColor(QPalette.Highlight, QColor(142, 45, 197).lighter())
+        dark_palette.setColor(QPalette.HighlightedText, Qt.black)
+
+        self.setPalette(dark_palette)
+
+    def set_light_mode(self):
+        self.setPalette(QApplication.style().standardPalette())
 
