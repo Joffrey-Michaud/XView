@@ -32,6 +32,7 @@ class ExperimentViewer(QMainWindow):
         self.setWindowIcon(QIcon(os.path.join("xview", "logo_light.png")))
         self.setGeometry(100, 100, 1200, 800)
 
+        # region - MAIN WIDGET
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
 
@@ -40,6 +41,7 @@ class ExperimentViewer(QMainWindow):
         main_layout = QVBoxLayout(main_widget)
         main_layout.addWidget(splitter)
 
+        # region - LEFT WIDGET
         # Widget gauche : Contrôles et listes des expériences
         left_widget = QWidget()
         left_layout = QGridLayout()
@@ -89,27 +91,6 @@ class ExperimentViewer(QMainWindow):
 
         self.config_window = None
 
-        # show infos et dark mode
-        # boxes_widget = QWidget()
-        # boxes_layout = QGridLayout()
-        # boxes_widget.setLayout(boxes_layout)
-        # left_layout.addWidget(boxes_widget, 3, 0)
-
-        # Case à cocher pour afficher/masquer le schéma
-        # self.show_network_cb = QCheckBox("Show Infos")
-        # self.show_network_cb.setChecked(True)
-        # self.show_network_cb.stateChanged.connect(self.toggle_model_image)
-        # boxes_layout.addWidget(self.show_network_cb, 0, 0)
-
-        # # Case à cocher pour le darkmode
-        # self.box_dark_mode = QCheckBox("Dark mode")
-        # self.box_dark_mode.setChecked(False)
-        # self.box_dark_mode.stateChanged.connect(self.toggle_dark_mode)
-        # boxes_layout.addWidget(self.box_dark_mode, 0, 1)
-
-        # Listes des expériences
-        # self.training_list = QListWidget()
-        # self.finished_list = QListWidget()
         self.training_list = MyTreeWidget(self, display_exp=self.display_experiment)
         self.finished_list = MyTreeWidget(self, display_exp=self.display_experiment)
 
@@ -125,11 +106,13 @@ class ExperimentViewer(QMainWindow):
 
         left_layout.addWidget(self.finished_list, 8, 0)  # Liste des expériences terminées sous la barre de recherche
 
+        # region - PLOT WIDGET
         # Widget central : Graphique Matplotlib
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
         splitter.addWidget(self.canvas)
 
+        # region - RIGHT WIDGET
         # Widget droit : Affichage du schéma du modèle et des informations
         right_widget = QSplitter(Qt.Vertical)
         splitter.addWidget(right_widget)
@@ -166,26 +149,6 @@ class ExperimentViewer(QMainWindow):
 
         self.curve_selector_window = CurvesSelector(self)
 
-        # self.show_train_cb = QCheckBox("Display Train Loss")
-        # self.show_train_cb.setChecked(True)
-        # self.show_val_cb = QCheckBox("Display Validation Loss")
-        # self.show_val_cb.setChecked(True)
-        # self.show_train_ma_cb = QCheckBox("Display Train Loss (MA)")
-        # self.show_train_ma_cb.setChecked(True)
-        # self.show_val_ma_cb = QCheckBox("Display Validation Loss (MA)")
-        # self.show_val_ma_cb.setChecked(True)
-
-        # left_layout.addWidget(self.show_train_cb, 9, 0)
-        # left_layout.addWidget(self.show_val_cb, 10, 0)
-        # left_layout.addWidget(self.show_train_ma_cb, 11, 0)
-        # left_layout.addWidget(self.show_val_ma_cb, 12, 0)
-
-        # # Connexion des signaux)
-        # self.show_train_cb.stateChanged.connect(self.update_plot)
-        # self.show_val_cb.stateChanged.connect(self.update_plot)
-        # self.show_train_ma_cb.stateChanged.connect(self.update_plot)
-        # self.show_val_ma_cb.stateChanged.connect(self.update_plot)
-
         # region - QTIMER
         # Timers pour mise à jour
         self.list_update_timer = QTimer(self)
@@ -200,8 +163,6 @@ class ExperimentViewer(QMainWindow):
         self.current_train_loss = []
         self.current_val_loss = []
 
-        # self.dark_mode_enabled = self.read_dark_mode_state()
-        # print("DARK MODE ENABLED :", self.dark_mode_enabled)
         self.set_dark_mode(get_config_file()["dark_mode"])
 
         # Mise à jour initiale
@@ -227,10 +188,6 @@ class ExperimentViewer(QMainWindow):
 
     def open_curve_selector(self):
         if self.curve_selector_window is None or not self.curve_selector_window.isVisible():
-            # self.curve_selector_window = CurvesSelector(
-            #     self,
-            #     # curves_list=list(self.current_scores.keys()), flags_list=list(self.current_flags.keys())
-            #     )
             if self.dark_mode_enabled != self.curve_selector_window.dark_mode_enabled:
                 self.curve_selector_window.toggle_dark_mode()
             self.curve_selector_window.show()
@@ -309,7 +266,6 @@ class ExperimentViewer(QMainWindow):
         if os.path.exists(file_path):
             with open(file_path, "r") as f:
                 lines = f.readlines()
-                # print(lines)
             x = []
             y = []
             for line in lines:
@@ -367,7 +323,6 @@ class ExperimentViewer(QMainWindow):
             self.curve_selector_window.update_boxes(
                 self.current_scores.keys(), self.current_flags.keys()
             )
-            # self.curve_selector_window.reset_window(exp_path)
 
         # Charger et afficher l'image du modèle
         if os.path.exists(exp_info_file):
@@ -420,7 +375,6 @@ class ExperimentViewer(QMainWindow):
                 else:
                     self.model_image_label.setStyleSheet("border: 1px solid black; background-color: white")
                 pixmap = QPixmap.fromImage(image)
-                # pixmap = QPixmap(self.model_image_file)
                 self.model_image_label.setPixmap(pixmap.scaled(self.model_image_label.size(),
                                                                aspectRatioMode=Qt.KeepAspectRatio,
                                                                transformMode=Qt.SmoothTransformation))  # Preserve aspect ratio
@@ -476,16 +430,10 @@ class ExperimentViewer(QMainWindow):
         if self.dark_mode_enabled:
             bg_color = "#191919"
             text_color = "white"
-            tr_color = "cyan"
-            val_color = "magenta"
-            best_epoch_color = text_color
 
         else:
             bg_color = "white"
             text_color = "black"
-            tr_color = "blue"
-            val_color = "orange"
-            best_epoch_color = text_color
 
         ax.set_facecolor(bg_color)
         self.figure.set_facecolor(bg_color)
@@ -497,7 +445,6 @@ class ExperimentViewer(QMainWindow):
         ax.xaxis.label.set_color(text_color)
         ax.yaxis.label.set_color(text_color)
         ax.title.set_color(text_color)
-        # ax.grid(True, color=grid_color)
 
         # Loading the styles
         curves_colors, curves_ls, curves_alpha = self.get_curves_style()
@@ -529,7 +476,6 @@ class ExperimentViewer(QMainWindow):
             ):
                 label_file = os.path.join(self.experiments_dir, self.current_experiment_name, "scores", f"{score}_label_value.txt")
                 label_value = read_file(label_file, return_str=True)
-                # label_value = f"{label_value:.4f}"
             else:
                 label_value = ""
 
@@ -564,14 +510,11 @@ class ExperimentViewer(QMainWindow):
             ):
                 label_file = os.path.join(self.experiments_dir, self.current_experiment_name, "flags", f"{flag}_label_value.txt")
                 label_value = read_file(label_file, return_str=True)
-                # label_value = f"{label_value:.4f}"
             else:
                 label_value = ""
 
-            # print("FLAG", flag)
             x = self.current_flags[flag]
             if self.curve_selector_window.boxes[flag][0].isChecked():
-                # ax.vlines(x=x, color="red", linestyle="--", label=flag)
                 label = f"{label_value} {flag}"
                 label_written = False
                 for xo in x:
