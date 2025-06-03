@@ -17,31 +17,25 @@ class SettingsWindow(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.main_layout = QVBoxLayout(self)
+        self.main_layout = QHBoxLayout(self)
         self.setLayout(self.main_layout)
 
         self.dark_mode_enabled = get_config_file()["dark_mode"]
-
-        self.splitter = QSplitter(Qt.Horizontal)
-        self.main_layout.addWidget(self.splitter)
-
         self.settings_widgets = {}
 
         # region - TREE
         self.list = QListWidget()
-        self.list.setFixedWidth(200)
-        # self.list.setColumnCount(1)
+        self.list.setFixedWidth(100)
         self.list.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.list.setStyleSheet("QTreeWidget::item { padding: 5px; }")
         self.list.itemClicked.connect(self.on_item_clicked)
 
-        self.splitter.addWidget(self.list)
+        self.main_layout.addWidget(self.list)
 
         # region - SETTINGS WIDGET
         self.setting_widget_container = QWidget()
         self.setting_layout = QVBoxLayout()
         self.setting_widget_container.setLayout(self.setting_layout)
-        self.splitter.addWidget(self.setting_widget_container)
+        self.main_layout.addWidget(self.setting_widget_container)
 
         self.current_widget = None
 

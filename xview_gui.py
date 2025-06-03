@@ -174,6 +174,13 @@ class ExperimentViewer(QMainWindow):
         self.list_update_timer.timeout.connect(self.refresh_graph)  # Mise à jour du graphique en même temps que les listes
         self.list_update_timer.start(self.get_interval())
 
+        self.update_check_timer = QTimer(self)
+        self.update_check_timer.timeout.connect(check_for_updates)
+        # vérification toutes les 60 minutes
+        # self.update_check_timer.start(60 * 60 * 1000)  # 60 minutes en millisecondes
+        # vérification toutes les 3 secondes
+        self.update_check_timer.start(3 * 1000)  # 3 secondes en millisecondes
+
         # Variables pour le stockage temporaire
         self.current_scores = {}
         self.current_flags = {}
