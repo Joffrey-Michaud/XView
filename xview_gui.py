@@ -19,7 +19,6 @@ from xview.settings.settings_window import SettingsWindow
 from datetime import datetime, timedelta
 
 
-
 def check_for_updates():
     """Vérifie si une mise à jour est disponible et affiche une fenêtre de mise à jour si nécessaire."""
     last_reminder = get_config_file().get("remind_me_later_date", None)
@@ -200,6 +199,7 @@ class ExperimentViewer(QMainWindow):
         self.update_plot()
 
         first_since_update = get_config_file().get("first_since_update", None)
+        print("first_since_update", first_since_update)
 
         if first_since_update is None:
             set_config_data("first_since_update", True)
