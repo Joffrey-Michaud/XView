@@ -199,7 +199,6 @@ class ExperimentViewer(QMainWindow):
         self.update_plot()
 
         first_since_update = get_config_file().get("first_since_update", None)
-        print("first_since_update ?", first_since_update)
 
         if first_since_update is None:
             set_config_data("first_since_update", True)
