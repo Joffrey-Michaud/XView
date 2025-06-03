@@ -479,7 +479,9 @@ if __name__ == '__main__':
             "ma_curves_ls": "--",
             "ma_curves_alpha": 0.5,
             "update_interval": 60,
-            "dark_mode": False
+            "dark_mode": False,
+            "remind_me_later_date": None,
+            "first_since_update": False
         }
         set_config_file(default_config)
         if not os.path.exists(data_folder):

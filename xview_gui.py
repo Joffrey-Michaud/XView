@@ -12,10 +12,12 @@ from xview.tree_widget import MyTreeWidget
 from xview.curves_selector import CurvesSelector
 from config import ConfigManager
 from xview.update.update_window import UpdateWindow
+from xview.update.updated_window import UpdatedNotification
 from xview.update.update_project import is_up_to_date
 from xview import get_config_file, set_config_file, set_config_data
 from xview.settings.settings_window import SettingsWindow
 from datetime import datetime, timedelta
+
 
 
 def check_for_updates():
@@ -196,6 +198,16 @@ class ExperimentViewer(QMainWindow):
         # Mise à jour initiale
         self.update_experiment_list()
         self.update_plot()
+
+        first_since_update = get_config_file().get("first_since_update", None)
+
+        if first_since_update is None:
+            set_config_data("first_since_update", True)
+            UpdatedNotification = UpdatedNotification().exex_()
+            set_config_data("first_since_update", False)
+        elif first_since_update:
+            UpdatedNotification = UpdatedNotification().exec_()
+            set_config_data("first_since_update", False)
 
     def read_dark_mode_state(self):
         """Lit l'état du mode sombre à partir du fichier JSON."""
