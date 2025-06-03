@@ -14,6 +14,7 @@ from config import ConfigManager
 from xview.update.update_window import UpdateWindow
 from xview.update.update_project import is_up_to_date
 from xview import get_config_file, set_config_file, set_config_data
+from xview.settings.settings_window import SettingsWindow
 
 
 class ExperimentViewer(QMainWindow):
@@ -41,21 +42,30 @@ class ExperimentViewer(QMainWindow):
         main_layout = QVBoxLayout(main_widget)
         main_layout.addWidget(splitter)
 
+        # region - MENU BAR
+        menu_bar = self.menuBar()
+        settings_menu = menu_bar.addAction("Settings")
+        light_dark_menu = menu_bar.addAction("Light/Dark Mode")
+        self.settings_window = None
+        # exit_action = file_menu.addAction("Exit")
+        settings_menu.triggered.connect(self.open_settings_window)
+        light_dark_menu.triggered.connect(self.toggle_dark_mode)
+
         # region - LEFT WIDGET
         # Widget gauche : Contrôles et listes des expériences
         left_widget = QWidget()
-        left_layout = QGridLayout()
+        left_layout = QVBoxLayout()
         left_widget.setLayout(left_layout)
         splitter.addWidget(left_widget)
 
         # Boutons Refresh (en colonne)
         self.refresh_graph_button = QPushButton("Refresh Graph")
         self.refresh_graph_button.clicked.connect(self.refresh_graph)
-        left_layout.addWidget(self.refresh_graph_button, 0, 0)
+        left_layout.addWidget(self.refresh_graph_button)
 
         self.refresh_experiments_button = QPushButton("Refresh Experiments")
         self.refresh_experiments_button.clicked.connect(self.update_experiment_list)
-        left_layout.addWidget(self.refresh_experiments_button, 1, 0)
+        left_layout.addWidget(self.refresh_experiments_button)
 
         # Bouton Save Graph et Finish exp
         save_finish_widget = QWidget()
@@ -71,40 +81,40 @@ class ExperimentViewer(QMainWindow):
         self.finish_exp_button.clicked.connect(self.finish_experiment)
         save_finish_layout.addWidget(self.finish_exp_button)
 
-        left_layout.addWidget(save_finish_widget, 2, 0)
+        left_layout.addWidget(save_finish_widget)
 
         # Bouton dark mode et config panel
-        dark_config_widget = QWidget()
-        dark_config_layout = QHBoxLayout()
-        dark_config_layout.setContentsMargins(0, 0, 0, 0)
-        dark_config_widget.setLayout(dark_config_layout)
+        # dark_config_widget = QWidget()
+        # dark_config_layout = QHBoxLayout()
+        # dark_config_layout.setContentsMargins(0, 0, 0, 0)
+        # dark_config_widget.setLayout(dark_config_layout)
 
-        self.dark_mode_button = QPushButton("Dark mode")
-        self.dark_mode_button.clicked.connect(self.toggle_dark_mode)
-        dark_config_layout.addWidget(self.dark_mode_button)
+        # self.dark_mode_button = QPushButton("Dark mode")
+        # self.dark_mode_button.clicked.connect(self.toggle_dark_mode)
+        # dark_config_layout.addWidget(self.dark_mode_button)
 
-        self.config_button = QPushButton("Config panel")
-        self.config_button.clicked.connect(self.open_config_panel)
-        dark_config_layout.addWidget(self.config_button)
+        # self.config_button = QPushButton("Config panel")
+        # self.config_button.clicked.connect(self.open_config_panel)
+        # dark_config_layout.addWidget(self.config_button)
 
-        left_layout.addWidget(dark_config_widget, 3, 0)
+        # left_layout.addWidget(dark_config_widget, 3, 0)
 
         self.config_window = None
 
         self.training_list = MyTreeWidget(self, display_exp=self.display_experiment)
         self.finished_list = MyTreeWidget(self, display_exp=self.display_experiment)
 
-        left_layout.addWidget(QLabel("Experiments in progress"), 4, 0)
-        left_layout.addWidget(self.training_list, 5, 0)
-        left_layout.addWidget(QLabel("Finished experiments"), 6, 0)
+        left_layout.addWidget(QLabel("Experiments in progress"))
+        left_layout.addWidget(self.training_list)
+        left_layout.addWidget(QLabel("Finished experiments"))
 
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("Search for an experiment...")
         # self.search_bar.textChanged.connect(self.filter_experiments)
         self.search_bar.textChanged.connect(self.finished_list.filter_items)
-        left_layout.addWidget(self.search_bar, 7, 0)  # Ajout sous le titre "Expériences terminées"
+        left_layout.addWidget(self.search_bar)  # Ajout sous le titre "Expériences terminées"
 
-        left_layout.addWidget(self.finished_list, 8, 0)  # Liste des expériences terminées sous la barre de recherche
+        left_layout.addWidget(self.finished_list)  # Liste des expériences terminées sous la barre de recherche
 
         # region - PLOT WIDGET
         # Widget central : Graphique Matplotlib
@@ -145,7 +155,7 @@ class ExperimentViewer(QMainWindow):
         # Cases à cocher pour les courbes
         self.curve_selector_btn = QPushButton("Select Curves")
         self.curve_selector_btn.clicked.connect(self.open_curve_selector)
-        left_layout.addWidget(self.curve_selector_btn, 9, 0)
+        left_layout.addWidget(self.curve_selector_btn)
 
         self.curve_selector_window = CurvesSelector(self)
 
@@ -199,6 +209,15 @@ class ExperimentViewer(QMainWindow):
             self.curve_selector_window.move_to_cursor_bottom_left()
             self.curve_selector_window.raise_()
 
+    def open_settings_window(self):
+        if self.settings_window is None or not self.settings_window.isVisible():
+            # self.config_window = ConfigManager(self.config_file_path)
+            self.settings_window = SettingsWindow(main_gui=self)
+            self.settings_window.show()
+        else:
+            self.settings_window.activateWindow()
+            self.settings_window.raise_()
+
     def toggle_model_image(self):
         """Affiche ou masque l'image du modèle et les infos en fonction de l'état de la case à cocher."""
         if self.show_network_cb.isChecked():
@@ -243,6 +262,8 @@ class ExperimentViewer(QMainWindow):
 
     def update_experiment_list(self):
         """Met à jour les listes des expériences affichées."""
+        self.experiments_dir = get_config_file()["data_folder"]
+
         tr_ids = self.training_list.get_expanded_items()
         finished_ids = self.finished_list.get_expanded_items()
 
@@ -537,17 +558,17 @@ class ExperimentViewer(QMainWindow):
             if os.path.exists(os.path.join(self.experiments_dir, self.current_experiment_name)):
                 self.display_experiment(self.current_experiment_name)
             else:
-                print("Aucune expérience sélectionnée. Veuillez en sélectionner une dans la liste.")
+                # print("Aucune expérience sélectionnée. Veuillez en sélectionner une dans la liste.")
                 self.figure.clear()
                 self.canvas.draw()
                 self.current_experiment_name = None
-        else:
-            print("Aucune expérience sélectionnée. Veuillez en sélectionner une dans la liste.")
+        # else:
+        #     print("Aucune expérience sélectionnée. Veuillez en sélectionner une dans la liste.")
 
     def save_graph(self):
         """Enregistre le graphe actuel dans le dossier de l'expérience sélectionnée."""
         if not self.current_experiment_name:
-            print("Aucune expérience sélectionnée. Veuillez en sélectionner une.")
+            # print("Aucune expérience sélectionnée. Veuillez en sélectionner une.")
             return
 
         exp_figure_path = os.path.join(self.experiments_dir, self.current_experiment_name, 'figures')
@@ -580,12 +601,12 @@ class ExperimentViewer(QMainWindow):
             dark_palette.setColor(QPalette.HighlightedText, Qt.black)
             self.setPalette(dark_palette)
             self.setWindowIcon(QIcon(os.path.join("xview", "logo_dark.png")))
-            self.dark_mode_button.setText("Light mode")
+            # self.dark_mode_button.setText("Light mode")
             self.dark_mode_enabled = True
         else:
             self.setPalette(QApplication.style().standardPalette())
             self.setWindowIcon(QIcon(os.path.join("xview", "logo_light.png")))
-            self.dark_mode_button.setText("Dark mode")
+            # self.dark_mode_button.setText("Dark mode")
             self.dark_mode_enabled = False
 
         set_config_data("dark_mode", sett)
