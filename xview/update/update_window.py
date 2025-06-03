@@ -61,7 +61,7 @@ class UpdateWindow(QDialog):
 
     def do_nothing(self):
         # remind me later
-        set_config_data("remind_me_later_date", datetime.now())
+        set_config_data("remind_me_later_date", datetime.now().isoformat())
         self.close()
 
     def pull_project(self):
