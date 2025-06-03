@@ -17,6 +17,13 @@ from xview import get_config_file, set_config_file, set_config_data
 from xview.settings.settings_window import SettingsWindow
 
 
+def check_for_updates():
+    """Vérifie si une mise à jour est disponible et affiche une fenêtre de mise à jour si nécessaire."""
+    if not is_up_to_date():
+        update_window = UpdateWindow()
+        update_window.exec_()
+
+
 class ExperimentViewer(QMainWindow):
     def __init__(self):
         super().__init__()
