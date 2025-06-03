@@ -23,8 +23,7 @@ def check_for_updates():
     last_reminder = get_config_file().get("remind_me_later_date", None)
 
     # si None ou si la date est plus ancienne que 24 heures, on affiche la fenêtre de mise à jour
-    # if last_reminder is None or datetime.now() - datetime.fromisoformat(last_reminder) > timedelta(hours=24):
-    if last_reminder is None or datetime.now() - datetime.fromisoformat(last_reminder) > timedelta(seconds=10):
+    if last_reminder is None or datetime.now() - datetime.fromisoformat(last_reminder) > timedelta(hours=24):
         if not is_up_to_date():
             update_window = UpdateWindow()
             update_window.exec_()
@@ -183,8 +182,8 @@ class ExperimentViewer(QMainWindow):
         self.update_check_timer = QTimer(self)
         self.update_check_timer.timeout.connect(check_for_updates)
         # vérification toutes les 60 minutes
-        # self.update_check_timer.start(60 * 60 * 1000)  # 60 minutes en millisecondes
-        self.update_check_timer.start(5 * 1000)  # 60 minutes en millisecondes
+        self.update_check_timer.start(60 * 60 * 1000)  # 60 minutes en millisecondes
+        # self.update_check_timer.start(5 * 1000)  # 60 minutes en millisecondes
 
         # Variables pour le stockage temporaire
         self.current_scores = {}
