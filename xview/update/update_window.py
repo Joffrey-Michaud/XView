@@ -67,6 +67,7 @@ class UpdateWindow(QDialog):
     def pull_project(self):
         pull_latest_changes()
         self.close()
+        set_config_data("first_since_update", True)
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
     def set_dark_mode(self):
