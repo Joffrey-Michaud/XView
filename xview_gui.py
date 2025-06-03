@@ -30,6 +30,7 @@ def check_for_updates():
             update_window.exec_()
 
 
+
 class ExperimentViewer(QMainWindow):
     def __init__(self):
         super().__init__()
