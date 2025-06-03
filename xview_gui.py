@@ -203,10 +203,12 @@ class ExperimentViewer(QMainWindow):
 
         if first_since_update is None:
             set_config_data("first_since_update", True)
-            UpdatedNotification = UpdatedNotification().exex_()
+            upd_notif = UpdatedNotification()
+            upd_notif.exec_()
             set_config_data("first_since_update", False)
         elif first_since_update:
-            UpdatedNotification = UpdatedNotification().exec_()
+            upd_notif = UpdatedNotification()
+            upd_notif.exec_()
             set_config_data("first_since_update", False)
 
     def read_dark_mode_state(self):
