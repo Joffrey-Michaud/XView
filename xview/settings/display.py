@@ -123,6 +123,7 @@ class DisplaySettings(QWidget):
         self.parent = parent
         self.global_config = get_config_file()
         self.dark_mode_enabled = get_config_file()["dark_mode"]
+        self.interval = self.get_interval()
 
         self.dark_mode_curves = self.get_color_theme("curves", dark_mode=True)
         self.dark_mode_flags = self.get_color_theme("flags", dark_mode=True)
@@ -169,7 +170,7 @@ class DisplaySettings(QWidget):
 
         # ----------------------------------------------------------- CURVES
         # section_label = QLabel("Choose the colors of the curves")
-        section_label = QLabel("Choose the style of the curves")
+        section_label = QLabel("Raw curves style")
         # section_label.setStyleSheet("font-size: 10px;")
         section_label.setAlignment(Qt.AlignCenter)
         self.left_layout.addWidget(section_label)
@@ -183,7 +184,7 @@ class DisplaySettings(QWidget):
         self.left_layout.addWidget(self.curves_style_setter)
 
         # ----------------------------------------------------------- MA CURVES
-        self.ma_label = QLabel("Choose the style of the moving average curves")
+        self.ma_label = QLabel("Moving Average curves style")
         # self.ma_label.setStyleSheet("font-size: 10px;")
         self.ma_label.setAlignment(Qt.AlignCenter)
         self.left_layout.addWidget(self.ma_label)
@@ -194,7 +195,7 @@ class DisplaySettings(QWidget):
         self.left_layout.addWidget(self.ma_curves_style_setter)
 
         # ----------------------------------------------------------- FLAGS
-        section_label_2 = QLabel("Choose the style of the flags")
+        section_label_2 = QLabel("Flags style")
         # section_label_2.setStyleSheet("font-size: 10px;")
         section_label_2.setAlignment(Qt.AlignCenter)
         self.left_layout.addWidget(section_label_2)
@@ -206,6 +207,21 @@ class DisplaySettings(QWidget):
                                               set_ls_callbak=self.set_flags_ls,
                                               set_alpha_callback=self.set_flags_alpha)
         self.left_layout.addWidget(self.flags_style_setter)
+
+        # ------------------------------------------------------------------------------------------
+        # region - upd interval
+        self.inteval_widget = QWidget()
+        self.interval_layout = QHBoxLayout()
+
+        self.interval_label = QLabel("Graph update interval (s) :")
+        self.interval_input = QLineEdit()
+        self.interval_layout.addWidget(self.interval_label)
+        self.interval_layout.addWidget(self.interval_input)
+        self.inteval_widget.setLayout(self.interval_layout)
+
+        self.interval_input.setPlaceholderText(f"{self.interval}")
+        self.interval_input.editingFinished.connect(self.set_interval)
+        self.left_layout.addWidget(self.inteval_widget)
 
         # region - save button
         # save_btn = QPushButton('Save')
@@ -395,3 +411,12 @@ class DisplaySettings(QWidget):
             set_config_data('light_mode_flags', self.light_mode_flags)
 
         self.plot_example()
+
+    def get_interval(self):
+        config = get_config_file()
+        return config["update_interval"]
+
+    def set_interval(self):
+        interval = self.interval_input.text()
+        self.interval = float(interval)
+        set_config_data('update_interval', self.interval)

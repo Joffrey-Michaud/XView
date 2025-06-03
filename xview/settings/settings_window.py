@@ -53,6 +53,9 @@ class SettingsWindow(QWidget):
 
         self.set_dark_mode(self.dark_mode_enabled)
 
+        self.settings_widgets["Display"].setVisible(True)
+        self.current_widget = self.settings_widgets["Display"]
+
     def add_list_entry(self, label, widget=None):
         item = QListWidgetItem(label)
         self.list.addItem(item)
