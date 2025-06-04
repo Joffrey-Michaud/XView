@@ -23,7 +23,7 @@ default_config = {
     "remind_me_later_date": None,
     "first_since_update": False,
     "auto_update": False,
-    "version": "0.1.1"
+    "version": "0.1.2"
 }
 
 
@@ -52,6 +52,7 @@ def set_config_data(key, value):
     config[key] = value
     set_config_file(config)
 
+
 def check_config_integrity():
     """
     Check if the config file has all required keys.
@@ -60,11 +61,12 @@ def check_config_integrity():
     # required_keys = ["data_folder", "dark_mode_curves", "dark_mode_flags", "light_mode_curves", "light_mode_flags", "curves_ls", "curves_alpha", "flags_ls", "flags_alpha", "ma_curves_ls", "ma_curves_alpha", "update_interval", "dark_mode", "remind_me_later_date", "first_since_update", "auto_update"]
     required_keys = default_config.keys()  # Use the keys from the default config
     config = get_config_file()
-    
+
     for key in required_keys:
         if key not in config:
             config[key] = default_config[key]  # Set default value or handle as needed
             if key == "data_folder":
                 config[key] = os.path.dirname(f"{os.path.expanduser('~')}/.xview/exps/")
-    
+
     set_config_file(config)
+    set_config_data("version", default_config["version"])  # Ensure version is set to the default version
