@@ -37,6 +37,14 @@ class UpdatedNotification(QDialog):
             self.set_dark_mode()
             self.setWindowIcon(QIcon("logo_dark.png"))
 
+        # afficher la fenêtre au centre de l'écran
+        screen = self.screen()
+        screen_geometry = screen.geometry()
+        window_geometry = self.geometry()
+        x = (screen_geometry.width() - window_geometry.width()) // 2
+        y = (screen_geometry.height() - window_geometry.height()) // 2
+        self.setGeometry(x, y, window_geometry.width(), window_geometry.height())
+
         self.show()
 
     def set_dark_mode(self):
@@ -58,4 +66,3 @@ class UpdatedNotification(QDialog):
 
     def set_light_mode(self):
         self.setPalette(QApplication.style().standardPalette())
-
