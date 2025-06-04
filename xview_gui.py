@@ -401,6 +401,17 @@ class ExperimentViewer(QMainWindow):
         self.range_widget.y_min.setText(y_min)
         self.range_widget.y_max.setText(y_max)
 
+        normalize = self.get_exp_config_data("normalize")
+        if normalize is None:
+            normalize = False
+        self.range_widget.normalize_checkbox.setChecked(normalize)
+        self.range_widget.normalize_checkbox.stateChanged.connect(self.normalized_state_changed)
+
+    def normalized_state_changed(self):
+        """Gère le changement d'état de la case à cocher de normalisation."""
+        normalize = self.range_widget.normalize_checkbox.isChecked()
+        self.set_exp_config_data("normalize", normalize)
+
     # region - display_experiment
     def display_experiment(self, path):
         """Affiche le graphique de l'expérience sélectionnée."""
@@ -570,6 +581,23 @@ class ExperimentViewer(QMainWindow):
             else:
                 label_value = ""
 
+            if self.get_exp_config_data("normalize"):
+                # normalisation 0 1
+                if len(x) > 0:
+                    y = [(val - min(y)) / (max(y) - min(y)) for val in y]
+                    y_ma = [val / max(y_ma) for val in y_ma]
+                else:
+                    y = [val / max(y) for val in y]
+                    y_ma = [val / max(y_ma) for val in y_ma]
+
+                # # Normalisation des données
+                # if len(x) > 0:
+                #     y = [(val - (y))/ (max(y) for val in y]
+                #     y_ma = [val / max(y_ma) for val in y_ma]
+                # else:
+                #     y = [val / max(y) for val in y]
+                #     y_ma = [val / max(y_ma) for val in y_ma]
+
             if len(x) > 0:
                 if self.curve_selector_window.boxes[score][0].isChecked():
                     ax.plot(x, y, label=f"{label_value} {score}", ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
@@ -606,10 +634,6 @@ class ExperimentViewer(QMainWindow):
                 y_max = None
             else:
                 y_max = float(y_max)
-
-            print("#----------------------------------#")
-            print("X AXIS RANGE", x_min, x_max)
-            print("Y AXIS RANGE", y_min, y_max)
 
             ax.set_xlim(x_min if x_min is not None else ax.get_xlim()[0],
                         x_max if x_max is not None else ax.get_xlim()[1])
