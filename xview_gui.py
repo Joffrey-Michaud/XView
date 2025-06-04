@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QPushButton, QSplitter, QTextEdit, QLineEdit, QTableWidget, QTableWidgetItem)
 from PyQt5.QtGui import QPixmap, QImage, QColor, QIcon, QPalette
 from PyQt5.QtCore import QDateTime
@@ -8,13 +9,14 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from xview.utils.utils import read_file, read_json, compute_moving_average, write_file, write_json
 from xview.tree_widget import MyTreeWidget
-from xview.curves_selector import CurvesSelector
+from xview.graph.curves_selector import CurvesSelector
 from config import ConfigManager
 from xview.version.updated_window import UpdatedNotification
 from xview.version.update_project import check_for_updates
 from xview.version.about_window import AboutWindow
 from xview import get_config_file, set_config_data, check_config_integrity
 from xview.settings.settings_window import SettingsWindow
+from xview.graph.range_widget import RangeWidget
 
 
 # def check_for_updates():
@@ -115,26 +117,10 @@ class ExperimentViewer(QMainWindow):
 
         left_layout.addWidget(save_finish_widget)
 
-        # Bouton dark mode et config panel
-        # dark_config_widget = QWidget()
-        # dark_config_layout = QHBoxLayout()
-        # dark_config_layout.setContentsMargins(0, 0, 0, 0)
-        # dark_config_widget.setLayout(dark_config_layout)
-
-        # self.dark_mode_button = QPushButton("Dark mode")
-        # self.dark_mode_button.clicked.connect(self.toggle_dark_mode)
-        # dark_config_layout.addWidget(self.dark_mode_button)
-
-        # self.config_button = QPushButton("Config panel")
-        # self.config_button.clicked.connect(self.open_config_panel)
-        # dark_config_layout.addWidget(self.config_button)
-
-        # left_layout.addWidget(dark_config_widget, 3, 0)
-
         self.config_window = None
 
-        self.training_list = MyTreeWidget(self, display_exp=self.display_experiment)
-        self.finished_list = MyTreeWidget(self, display_exp=self.display_experiment)
+        self.training_list = MyTreeWidget(self, display_exp=self.display_experiment, display_range=self.display_exp_range)
+        self.finished_list = MyTreeWidget(self, display_exp=self.display_experiment, display_range=self.display_exp_range)
 
         left_layout.addWidget(QLabel("Experiments in progress"))
         left_layout.addWidget(self.training_list)
@@ -159,12 +145,23 @@ class ExperimentViewer(QMainWindow):
         right_widget = QSplitter(Qt.Vertical)
         splitter.addWidget(right_widget)
 
-        # Affichage du schéma du modèle
-        self.model_image_label = QLabel()
-        self.model_image_label.setMinimumSize(300, 300)
-        self.model_image_label.setStyleSheet("border: 1px solid black; background-color: white")
-        self.model_image_label.setAlignment(Qt.AlignCenter)
-        right_widget.addWidget(self.model_image_label)
+        # region - plot range
+        self.range_widget = RangeWidget()
+        # self.model_image_label = QLabel()
+        # self.model_image_label.setMinimumSize(300, 300)
+        # self.model_image_label.setStyleSheet("border: 1px solid black; background-color: white")
+        # self.model_image_label.setAlignment(Qt.AlignCenter)
+        right_widget.addWidget(self.range_widget)
+        # ------------------------ x axis
+        self.range_widget.x_min.editingFinished.connect(
+            lambda: self.set_exp_config_data("x_min", self.range_widget.x_min.text()))
+        self.range_widget.x_max.editingFinished.connect(
+            lambda: self.set_exp_config_data("x_max", self.range_widget.x_max.text()))
+        # ------------------------ y axis
+        self.range_widget.y_min.editingFinished.connect(
+            lambda: self.set_exp_config_data("y_min", self.range_widget.y_min.text()))
+        self.range_widget.y_max.editingFinished.connect(
+            lambda: self.set_exp_config_data("y_max", self.range_widget.y_max.text()))
 
         # Affichage des informations du fichier JSON
         self.exp_info_text = QTextEdit()
@@ -374,6 +371,37 @@ class ExperimentViewer(QMainWindow):
                     _, x = self.read_scores(file_path)
                     self.current_flags[flag] = x
 
+    def display_exp_range(self):
+        x_min = self.get_exp_config_data("x_min")
+        if x_min is None:
+            x_min = ""
+        else:
+            x_min = str(x_min)
+
+        x_max = self.get_exp_config_data("x_max")
+        if x_max is None:
+            x_max = ""
+        else:
+            x_max = str(x_max)
+
+        y_min = self.get_exp_config_data("y_min")
+        if y_min is None:
+            y_min = ""
+        else:
+            y_min = str(y_min)
+
+        y_max = self.get_exp_config_data("y_max")
+        if y_max is None:
+            y_max = ""
+        else:
+            y_max = str(y_max)
+
+        self.range_widget.x_min.setText(x_min)
+        self.range_widget.x_max.setText(x_max)
+        self.range_widget.y_min.setText(y_min)
+        self.range_widget.y_max.setText(y_max)
+
+    # region - display_experiment
     def display_experiment(self, path):
         """Affiche le graphique de l'expérience sélectionnée."""
         self.current_experiment_name = path
@@ -395,16 +423,8 @@ class ExperimentViewer(QMainWindow):
                 self.current_scores.keys(), self.current_flags.keys()
             )
 
-        # Charger et afficher l'image du modèle
         if os.path.exists(exp_info_file):
             exp_info = read_json(exp_info_file)
-            model_name = exp_info.get("model_name", "")
-            model_image_file = os.path.join(exp_path, f"{model_name}.png")
-            self.model_image_file = model_image_file
-
-            if os.path.exists(self.model_image_file):
-                self.display_model_image()
-
             sorted_keys = sorted(exp_info.keys())
 
             # Mettre à jour le tableau
@@ -436,22 +456,22 @@ class ExperimentViewer(QMainWindow):
             self.figure.clear()
             self.canvas.draw()
 
-    def display_model_image(self):
-        if self.model_image_file is not None:
-            if os.path.exists(self.model_image_file):
-                image = QImage(self.model_image_file)
-                if self.dark_mode_enabled:
-                    image.invertPixels()
-                    self.model_image_label.setStyleSheet("border: 1px solid black; background-color: black")
-                else:
-                    self.model_image_label.setStyleSheet("border: 1px solid black; background-color: white")
-                pixmap = QPixmap.fromImage(image)
-                self.model_image_label.setPixmap(pixmap.scaled(self.model_image_label.size(),
-                                                               aspectRatioMode=Qt.KeepAspectRatio,
-                                                               transformMode=Qt.SmoothTransformation))  # Preserve aspect ratio
-            else:
-                self.model_image_label.clear()
-                self.model_image_label.setText("Image non trouvée")
+    # def display_model_image(self):
+    #     if self.model_image_file is not None:
+    #         if os.path.exists(self.model_image_file):
+    #             image = QImage(self.model_image_file)
+    #             if self.dark_mode_enabled:
+    #                 image.invertPixels()
+    #                 self.model_image_label.setStyleSheet("border: 1px solid black; background-color: black")
+    #             else:
+    #                 self.model_image_label.setStyleSheet("border: 1px solid black; background-color: white")
+    #             pixmap = QPixmap.fromImage(image)
+    #             self.model_image_label.setPixmap(pixmap.scaled(self.model_image_label.size(),
+    #                                                            aspectRatioMode=Qt.KeepAspectRatio,
+    #                                                            transformMode=Qt.SmoothTransformation))  # Preserve aspect ratio
+    #         else:
+    #             self.model_image_label.clear()
+    #             self.model_image_label.setText("Image non trouvée")
 
     def get_curves_style(self):
         # colors
@@ -561,6 +581,41 @@ class ExperimentViewer(QMainWindow):
                 if self.curve_selector_window.boxes[f"{score} (MA)"][0].isChecked():
                     ax.plot(y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha, **plt_args)
 
+        #  ------------------------------------------- PLOT RANGE
+        # ------------------------------- X AXIS RANGE
+        if self.current_experiment_name is not None:
+            x_min = self.get_exp_config_data("x_min")
+            if x_min == "" or x_min is None:
+                x_min = None
+            else:
+                x_min = float(x_min)
+            x_max = self.get_exp_config_data("x_max")
+            if x_max == "" or x_max is None:
+                x_max = None
+            else:
+                x_max = float(x_max)
+
+            # ------------------------------- Y AXIS RANGE
+            y_min = self.get_exp_config_data("y_min")
+            if y_min == "" or y_min is None:
+                y_min = None
+            else:
+                y_min = float(y_min)
+            y_max = self.get_exp_config_data("y_max")
+            if y_max == "" or y_max is None:
+                y_max = None
+            else:
+                y_max = float(y_max)
+
+            print("#----------------------------------#")
+            print("X AXIS RANGE", x_min, x_max)
+            print("Y AXIS RANGE", y_min, y_max)
+
+            ax.set_xlim(x_min if x_min is not None else ax.get_xlim()[0],
+                        x_max if x_max is not None else ax.get_xlim()[1])
+            ax.set_ylim(y_min if y_max is not None else ax.get_ylim()[0],
+                        y_max if y_max is not None else ax.get_ylim()[1])
+
         for i, flag in enumerate(self.current_flags):
             plt_args = self.get_plt_args(flag, type="flags")
             if plt_args is not None:
@@ -664,7 +719,7 @@ class ExperimentViewer(QMainWindow):
     def toggle_dark_mode(self):
         self.set_dark_mode(not get_config_file()["dark_mode"])
         self.update_plot()
-        self.display_model_image()
+        # self.display_model_image()
 
     def finish_experiment(self):
         exp_path = os.path.join(self.experiments_dir, self.current_experiment_name)
@@ -676,6 +731,24 @@ class ExperimentViewer(QMainWindow):
             print(f"Le fichier de statut '{status_file}' n'existe pas.")
         # Mettre à jour la liste des expériences
         self.update_experiment_list()
+
+    def get_exp_config_file(self):
+        if not os.path.exists(os.path.join(self.experiments_dir, self.current_experiment_name, "config.json")):
+            self.set_exp_config_file({})
+        config = json.load(open(os.path.join(self.experiments_dir, self.current_experiment_name, "config.json")))
+        return config
+
+    def get_exp_config_data(self, key):
+        return self.get_exp_config_file().get(key, None)
+
+    def set_exp_config_file(self, config):
+        with open(os.path.join(self.experiments_dir, self.current_experiment_name, "config.json"), "w") as f:
+            json.dump(config, f, indent=4)
+
+    def set_exp_config_data(self, key, value):
+        config = self.get_exp_config_file()
+        config[key] = value
+        self.set_exp_config_file(config)
 
 
 if __name__ == "__main__":

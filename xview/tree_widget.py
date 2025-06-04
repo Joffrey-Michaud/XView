@@ -3,10 +3,11 @@ import os
 
 
 class MyTreeWidget(QTreeWidget):
-    def __init__(self, parent=None, display_exp=None, items=None):
+    def __init__(self, parent=None, display_exp=None, display_range=None, items=None):
         super().__init__(parent)
         self.setHeaderHidden(True)  # Masque le titre
         self.display_exp = display_exp
+        self.display_range = display_range
 
         self.itemClicked.connect(self.on_click_item)
 
@@ -24,6 +25,7 @@ class MyTreeWidget(QTreeWidget):
             # vérifier si il y a un parent
             full_path = self.get_full_path(item)
             self.display_exp(full_path)
+            self.display_range()
 
     def expand_parents(self, item):
         parent = item.parent()

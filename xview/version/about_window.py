@@ -14,7 +14,6 @@ class AboutWindow(QDialog):
 
     def init_ui(self):
         self.setWindowTitle("About XView")
-        self.setWindowIcon(QIcon("logo_light.png"))
         self.setGeometry(100, 100, 400, 150)
 
         # self.central_widget = QWidget()
@@ -26,7 +25,10 @@ class AboutWindow(QDialog):
         self.logo_label = QLabel()
         # fixer la taille du label pour le logo
         self.logo_label.setFixedSize(100, 100)
-        pixmap = QPixmap('xview/logo_light.png')  # Replace with your logo path
+        if get_config_file()["dark_mode"] == True:
+            pixmap = QPixmap('xview/logo_dark.png')  # Replace with your logo path
+        else:
+            pixmap = QPixmap('xview/logo_light.png')  # Replace with your logo path
         pixmap = pixmap.scaled(200, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.logo_label.setPixmap(pixmap)
         self.logo_label.setAlignment(Qt.AlignCenter)
@@ -42,7 +44,7 @@ class AboutWindow(QDialog):
 
         self.git_label = QLabel()
         self.git_label.setText('You can report a bug, suggest a feature, or contribute via the <a href="https://github.com/Joffrey-Michaud/XView" style="color:#1e90ff; text-decoration:none;">project\'s GitHub page</a>.'
-                                )
+                               )
         self.git_label.setOpenExternalLinks(True)
         self.git_label.setTextInteractionFlags(Qt.TextBrowserInteraction)
         self.git_label.setWordWrap(True)
