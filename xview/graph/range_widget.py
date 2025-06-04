@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QDialog, QWidget, QMainWindow, QHBoxLayout, QLabel, QVBoxLayout, QPushButton, QApplication, QLineEdit
+from PyQt5.QtWidgets import QCheckBox, QWidget, QHBoxLayout, QLabel, QVBoxLayout, QLineEdit
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPalette, QColor, QIcon
 from xview import get_config_file, set_config_file, set_config_data
@@ -44,5 +44,15 @@ class RangeWidget(QWidget):
         self.y_max.setPlaceholderText("Max")
         self.y_layout.addWidget(self.y_max)
         self.layout.addWidget(self.y_widget)
+
+        # region - normalize
+        self.normalize_widget = QWidget()
+        self.normalize_layout = QHBoxLayout()
+        self.normalize_widget.setLayout(self.normalize_layout)
+        self.normalize_label = QLabel("Normalize:")
+        self.normalize_layout.addWidget(self.normalize_label)
+        self.normalize_checkbox = QCheckBox()
+        self.normalize_layout.addWidget(self.normalize_checkbox)
+        self.layout.addWidget(self.normalize_widget)
 
     # def set_
