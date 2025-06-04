@@ -11,10 +11,11 @@ from xview.utils.utils import read_file, read_json, compute_moving_average, writ
 from xview.tree_widget import MyTreeWidget
 from xview.curves_selector import CurvesSelector
 from config import ConfigManager
-from xview.update.update_window import UpdateWindow
-from xview.update.updated_window import UpdatedNotification
-from xview.update.update_project import is_up_to_date
-from xview import get_config_file, set_config_file, set_config_data
+from xview.version.update_window import UpdateWindow
+from xview.version.updated_window import UpdatedNotification
+from xview.version.update_project import is_up_to_date
+from xview.version.about_window import AboutWindow
+from xview import get_config_file, set_config_file, set_config_data, check_config_integrity
 from xview.settings.settings_window import SettingsWindow
 from datetime import datetime, timedelta
 
@@ -63,6 +64,9 @@ class ExperimentViewer(QMainWindow):
         # exit_action = file_menu.addAction("Exit")
         settings_menu.triggered.connect(self.open_settings_window)
         light_dark_menu.triggered.connect(self.toggle_dark_mode)
+
+        about_menu = menu_bar.addAction("About")
+        about_menu.triggered.connect(lambda: AboutWindow().exec_())
 
         # region - LEFT WIDGET
         # Widget gauche : Contrôles et listes des expériences
@@ -662,6 +666,8 @@ class ExperimentViewer(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
+
+    check_config_integrity()
 
     if not is_up_to_date():
         dlg = UpdateWindow()

@@ -9,8 +9,8 @@ from xview.utils.utils import write_json, read_json, compute_moving_average
 import os
 import numpy as np
 import time
-from xview.update.update_project import warn_if_outdated
-from xview import get_config_file, set_config_file, set_config_data, config_exists
+from xview.version.update_project import warn_if_outdated
+from xview import get_config_file, set_config_file, set_config_data, config_exists, default_config
 
 
 # ------------------------------------------------------------------ COLOR PICKER
@@ -466,23 +466,25 @@ class ConfigManager(QMainWindow):
 if __name__ == '__main__':
     if not config_exists():
         data_folder = os.path.dirname(f"{os.path.expanduser('~')}/.xview/exps/")
-        default_config = {
-            "data_folder": data_folder,
-            "dark_mode_curves": ["#A2D2DF", "#F6EFBD", "#E4C087", "#BC7C7C", "#FF00FF"],
-            "dark_mode_flags": ["#fafafa", "#fafafa", "#fafafa"],
-            "light_mode_curves": ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF"],
-            "light_mode_flags": ["#000000", "#000000", "#000000"],
-            "curves_ls": "-",
-            "curves_alpha": 1.0,
-            "flags_ls": "-",
-            "flags_alpha": 1.0,
-            "ma_curves_ls": "--",
-            "ma_curves_alpha": 0.5,
-            "update_interval": 60,
-            "dark_mode": False,
-            "remind_me_later_date": None,
-            "first_since_update": False
-        }
+        default_config["data_folder"] = data_folder
+        # default_config = {
+        #     "data_folder": data_folder,
+        #     "dark_mode_curves": ["#A2D2DF", "#F6EFBD", "#E4C087", "#BC7C7C", "#FF00FF"],
+        #     "dark_mode_flags": ["#fafafa", "#fafafa", "#fafafa"],
+        #     "light_mode_curves": ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF"],
+        #     "light_mode_flags": ["#000000", "#000000", "#000000"],
+        #     "curves_ls": "-",
+        #     "curves_alpha": 1.0,
+        #     "flags_ls": "-",
+        #     "flags_alpha": 1.0,
+        #     "ma_curves_ls": "--",
+        #     "ma_curves_alpha": 0.5,
+        #     "update_interval": 60,
+        #     "dark_mode": False,
+        #     "remind_me_later_date": None,
+        #     "first_since_update": False,
+        #     "auto_update": False
+        # }
         set_config_file(default_config)
         if not os.path.exists(data_folder):
             os.makedirs(data_folder, exist_ok=True)

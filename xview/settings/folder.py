@@ -9,7 +9,7 @@ from xview.utils.utils import write_json, read_json, compute_moving_average
 import os
 import numpy as np
 import time
-from xview.update.update_project import warn_if_outdated
+from xview.version.update_project import warn_if_outdated
 from xview import get_config_file, set_config_file, set_config_data, config_exists
 
 
