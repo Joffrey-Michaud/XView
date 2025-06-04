@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtWidgets import QSizePolicy
 import os
 from xview.settings.display import DisplaySettings
-from xview.settings.folder import FolderSetting
+from xview.settings.preferences import PreferencesSetting
 from xview import get_config_file
 
 
@@ -41,7 +41,7 @@ class SettingsWindow(QWidget):
 
         DISPLAY_LABEL = QLabel("DISPLAY SETTINGS")
         self.add_list_entry("Display", widget=DisplaySettings(self))
-        self.add_list_entry("Folder", widget=FolderSetting())
+        self.add_list_entry("Preferences", widget=PreferencesSetting())
         # self.add_list_entry("Update")
         # self.add_list_entry("Save")
 

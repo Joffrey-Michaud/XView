@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QApplication
-from xview.update.update_window import UpdateWindow
+from xview.version.update_window import UpdateWindow
 import sys
 
 
