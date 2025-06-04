@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import QDialog, QWidget, QMainWindow, QHBoxLayout, QLabel, QVBoxLayout, QPushButton, QApplication
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPalette, QColor, QIcon
-from xview.version.update_project import pull_latest_changes
 import sys
 import os
 from xview import get_config_file, set_config_file, set_config_data

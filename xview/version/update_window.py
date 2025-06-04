@@ -1,11 +1,21 @@
 from PyQt5.QtWidgets import QDialog, QWidget, QMainWindow, QHBoxLayout, QLabel, QVBoxLayout, QPushButton, QApplication
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPalette, QColor, QIcon
-from xview.version.update_project import pull_latest_changes
 import sys
 import os
+import subprocess
 from xview import get_config_file, set_config_file, set_config_data
 from datetime import datetime, timedelta
+
+
+def pull_latest_changes():
+    """Effectue un git pull pour récupérer les dernières modifications."""
+    try:
+        REPO_DIR = os.path.dirname(os.path.abspath(__file__))
+        subprocess.run(["git", "pull"], check=True, cwd=REPO_DIR)
+        print("Projet mis à jour avec succès.")
+    except subprocess.CalledProcessError:
+        print("/!\\ Échec du git pull.")
 
 
 class UpdateWindow(QDialog):
@@ -67,6 +77,7 @@ class UpdateWindow(QDialog):
     def pull_project(self):
         pull_latest_changes()
         self.close()
+        set_config_data("remind_me_later_date", datetime.now().isoformat())
         set_config_data("first_since_update", True)
         os.execv(sys.executable, [sys.executable] + sys.argv)
 

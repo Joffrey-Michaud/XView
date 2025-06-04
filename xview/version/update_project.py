@@ -1,6 +1,11 @@
 import subprocess
 import functools
 import os
+from xview import get_config_file, set_config_data
+from xview.version.update_window import UpdateWindow, pull_latest_changes
+from datetime import datetime, timedelta
+import sys
+
 
 _warned_once = False
 
@@ -37,12 +42,29 @@ def warn_if_outdated(obj):
     return wrapper
 
 
-def pull_latest_changes():
-    """Effectue un git pull pour récupérer les dernières modifications."""
-    try:
-        REPO_DIR = os.path.dirname(os.path.abspath(__file__))
-        subprocess.run(["git", "pull"], check=True, cwd=REPO_DIR)
-        print("Projet mis à jour avec succès.")
-    except subprocess.CalledProcessError:
-        print("/!\\ Échec du git pull.")
+# def pull_latest_changes():
+#     """Effectue un git pull pour récupérer les dernières modifications."""
+#     try:
+#         REPO_DIR = os.path.dirname(os.path.abspath(__file__))
+#         subprocess.run(["git", "pull"], check=True, cwd=REPO_DIR)
+#         print("Projet mis à jour avec succès.")
+#     except subprocess.CalledProcessError:
+#         print("/!\\ Échec du git pull.")
 
+
+def check_for_updates():
+    """Vérifie si une mise à jour est disponible et affiche une fenêtre de mise à jour si nécessaire."""
+    if not is_up_to_date():
+        # si pas auto-update
+        if not get_config_file().get("auto_update", False):  # pas d'auto-update
+            last_reminder = get_config_file().get("remind_me_later_date", None)
+
+            # si None ou si la date est plus ancienne que 24 heures, on affiche la fenêtre de mise à jour
+            if last_reminder is None or datetime.now() - datetime.fromisoformat(last_reminder) > timedelta(hours=24):
+                update_window = UpdateWindow()
+                update_window.exec_()
+        else:
+            pull_latest_changes()
+            set_config_data("remind_me_later_date", datetime.now().isoformat())
+            set_config_data("first_since_update", True)
+            os.execv(sys.executable, [sys.executable] + sys.argv)

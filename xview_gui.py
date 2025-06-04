@@ -1,8 +1,7 @@
 import os
 import sys
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QListWidget, QWidget, QHBoxLayout,
-                             QCheckBox, QLabel, QGridLayout, QPushButton, QSplitter, QTextEdit, QLineEdit, QTableWidget, QTableWidgetItem)
-from PyQt5.QtGui import QPixmap, QImage, QBrush, QColor, QFont, QIcon, QPalette
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QPushButton, QSplitter, QTextEdit, QLineEdit, QTableWidget, QTableWidgetItem)
+from PyQt5.QtGui import QPixmap, QImage, QColor, QIcon, QPalette
 from PyQt5.QtCore import QDateTime
 from PyQt5.QtCore import QTimer, Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -11,24 +10,40 @@ from xview.utils.utils import read_file, read_json, compute_moving_average, writ
 from xview.tree_widget import MyTreeWidget
 from xview.curves_selector import CurvesSelector
 from config import ConfigManager
-from xview.version.update_window import UpdateWindow
 from xview.version.updated_window import UpdatedNotification
-from xview.version.update_project import is_up_to_date
+from xview.version.update_project import check_for_updates
 from xview.version.about_window import AboutWindow
-from xview import get_config_file, set_config_file, set_config_data, check_config_integrity
+from xview import get_config_file, set_config_data, check_config_integrity
 from xview.settings.settings_window import SettingsWindow
-from datetime import datetime, timedelta
 
 
-def check_for_updates():
-    """Vérifie si une mise à jour est disponible et affiche une fenêtre de mise à jour si nécessaire."""
-    last_reminder = get_config_file().get("remind_me_later_date", None)
+# def check_for_updates():
+#     """Vérifie si une mise à jour est disponible et affiche une fenêtre de mise à jour si nécessaire."""
+#     last_reminder = get_config_file().get("remind_me_later_date", None)
 
-    # si None ou si la date est plus ancienne que 24 heures, on affiche la fenêtre de mise à jour
-    if last_reminder is None or datetime.now() - datetime.fromisoformat(last_reminder) > timedelta(hours=24):
-        if not is_up_to_date():
-            update_window = UpdateWindow()
-            update_window.exec_()
+#     # si None ou si la date est plus ancienne que 24 heures, on affiche la fenêtre de mise à jour
+#     if last_reminder is None or datetime.now() - datetime.fromisoformat(last_reminder) > timedelta(hours=24):
+#         if not is_up_to_date():
+#             update_window = UpdateWindow()
+#             update_window.exec_()
+
+
+# def check_for_updates():
+#     """Vérifie si une mise à jour est disponible et affiche une fenêtre de mise à jour si nécessaire."""
+#     # si pas auto-update
+#     if not get_config_file().get("auto_update", False):
+#         last_reminder = get_config_file().get("remind_me_later_date", None)
+
+#         # si None ou si la date est plus ancienne que 24 heures, on affiche la fenêtre de mise à jour
+#         if last_reminder is None or datetime.now() - datetime.fromisoformat(last_reminder) > timedelta(hours=24):
+#             if not is_up_to_date():
+#                 update_window = UpdateWindow()
+#                 update_window.exec_()
+#     else:
+#         if not is_up_to_date():
+#             pull_latest_changes()
+#             set_config_data("remind_me_later_date", datetime.now().isoformat())
+#             set_config_data("first_since_update", True)
 
 
 class ExperimentViewer(QMainWindow):
@@ -669,12 +684,13 @@ if __name__ == "__main__":
 
     check_config_integrity()
 
-    if not is_up_to_date():
-        dlg = UpdateWindow()
-        dlg.exec_()
-        # Si tu fais un git pull + redémarrage, il ne faut pas aller plus loin ici
-        # sys.exit(0)
-        # oui
+    check_for_updates()
+
+    # if not is_up_to_date():
+    #     if not get_config_file().get("auto_update", False):
+    #         check_for_updates()
+    #     else:
+    #         pull_latest_changes()
 
     curr_dir = os.path.abspath(os.path.dirname(__file__))
 
