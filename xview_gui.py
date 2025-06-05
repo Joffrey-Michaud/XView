@@ -17,6 +17,7 @@ from xview.version.about_window import AboutWindow
 from xview import get_config_file, set_config_data, check_config_integrity
 from xview.settings.settings_window import SettingsWindow
 from xview.graph.range_widget import RangeWidget
+import numpy as np
 
 
 # def check_for_updates():
@@ -582,21 +583,23 @@ class ExperimentViewer(QMainWindow):
                 label_value = ""
 
             if self.get_exp_config_data("normalize"):
-                # normalisation 0 1
+                #  normalisation 0 1
+                y = np.array(y)
+                y_ma = np.array(y_ma)
                 if len(x) > 0:
-                    y = [(val - min(y)) / (max(y) - min(y)) for val in y]
-                    y_ma = [val / max(y_ma) for val in y_ma]
+                    y = (y - np.min(y)) / (np.max(y) - np.min(y))
+                    y_ma = (y_ma - np.min(y_ma)) / (np.max(y_ma) - np.min(y_ma))
                 else:
-                    y = [val / max(y) for val in y]
-                    y_ma = [val / max(y_ma) for val in y_ma]
+                    y = (y - np.min(y)) / (np.max(y) - np.min(y))
+                    y_ma = (y_ma - np.min(y_ma)) / (np.max(y_ma) - np.min(y_ma))
 
-                # # Normalisation des données
-                # if len(x) > 0:
-                #     y = [(val - (y))/ (max(y) for val in y]
-                #     y_ma = [val / max(y_ma) for val in y_ma]
-                # else:
-                #     y = [val / max(y) for val in y]
-                #     y_ma = [val / max(y_ma) for val in y_ma]
+            # # Normalisation des données
+            # if len(x) > 0:
+            #     y = [(val - (y))/ (max(y) for val in y]
+            #     y_ma = [val / max(y_ma) for val in y_ma]
+            # else:
+            #     y = [val / max(y) for val in y]
+            #     y_ma = [val / max(y_ma) for val in y_ma]
 
             if len(x) > 0:
                 if self.curve_selector_window.boxes[score][0].isChecked():
