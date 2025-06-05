@@ -27,5 +27,5 @@ chmod 0700 /run/user/$(id -u)
 
 ## First use
 
-Run config.py, configure your experiment folder, and modify the graph style if you want.
+Run installer.py, configure your experiment folder, and modify the graph style if you want. Then you'll be able to enter "xview" in your terminal and the GUI will open.
 
