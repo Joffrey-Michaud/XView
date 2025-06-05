@@ -40,11 +40,13 @@ def install_launcher_linux():
     target_dir = Path.home() / ".local" / "bin"
     target_dir.mkdir(parents=True, exist_ok=True)
 
+    python_bin = VENV_DIR / "bin" / "python"
+
     launcher = target_dir / "xview"
     with open(launcher, "w") as f:
         f.write(f"""#!/bin/bash
 source "{VENV_DIR}/bin/activate"
-python "{SCRIPT_FILE}"
+"{python_bin}" "{SCRIPT_FILE}"
 """)
     launcher.chmod(0o755)
 
@@ -91,30 +93,21 @@ def main():
         print("Installation annulée.")
         return
 
-    print("What operating system are you using?")
-    print("1. Linux / Ubuntu")
-    print("2. Windows")
-    choice = input("Enter 1 or 2 : ").strip()
-
-    while choice not in ("1", "2"):
-        print("Please enter '1' for Linux or '2' for Windows.")
-        choice = input("Enter 1 or 2 : ").strip()
-
-    APP_DIR.mkdir(parents=True, exist_ok=True)
-
-    create_venv()
-
-    if choice == "1":
+    current_os = platform.system()
+    if current_os == "Linux":
         install_launcher_linux()
-    elif choice == "2":
+    elif current_os == "Windows":
         install_launcher_windows()
     else:
-        print("❌ Choix invalide.")
+        print(f"Unsupported OS : {current_os}")
 
     if not os.path.isfile(APP_DIR / "config.json"):
         config_script = EXEC_DIR / "config.py"
         python_bin = VENV_DIR / ("Scripts" if platform.system() == "Windows" else "bin") / "python"
         subprocess.run([str(python_bin), str(config_script)])
+
+    print("Installation finished.")
+    print("You can now run XView by typing 'xview' in your terminal.")
 
 
 if __name__ == "__main__":
