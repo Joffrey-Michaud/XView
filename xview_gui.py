@@ -10,6 +10,7 @@ from matplotlib.figure import Figure
 from xview.utils.utils import read_file, read_json, compute_moving_average, write_file, write_json
 from xview.tree_widget import MyTreeWidget
 from xview.graph.curves_selector import CurvesSelector
+from xview.graph.curves_selector_v2 import CurvesSelectorV2
 from config import ConfigManager
 from xview.version.updated_window import UpdatedNotification
 from xview.version.update_project import check_for_updates
@@ -187,7 +188,7 @@ class ExperimentViewer(QMainWindow):
         self.curve_selector_btn.clicked.connect(self.open_curve_selector)
         left_layout.addWidget(self.curve_selector_btn)
 
-        self.curve_selector_window = CurvesSelector(self)
+        self.curve_selector_window = CurvesSelectorV2(self)
 
         # region - QTIMER
         # Timers pour mise à jour
@@ -555,6 +556,8 @@ class ExperimentViewer(QMainWindow):
         _, ma_curves_ls, ma_curves_alpha = self.get_ma_curves_style()
 
         # print('CURVE COLORS', curves_colors)
+        x_min, x_max = None, None
+        y_min, y_max = None, None
 
         for i, score in enumerate(self.current_scores):
             plt_args = self.get_plt_args(score, type="scores")
@@ -593,14 +596,6 @@ class ExperimentViewer(QMainWindow):
                     y = (y - np.min(y)) / (np.max(y) - np.min(y))
                     y_ma = (y_ma - np.min(y_ma)) / (np.max(y_ma) - np.min(y_ma))
 
-            # # Normalisation des données
-            # if len(x) > 0:
-            #     y = [(val - (y))/ (max(y) for val in y]
-            #     y_ma = [val / max(y_ma) for val in y_ma]
-            # else:
-            #     y = [val / max(y) for val in y]
-            #     y_ma = [val / max(y_ma) for val in y_ma]
-
             if len(x) > 0:
                 if self.curve_selector_window.boxes[score][0].isChecked():
                     ax.plot(x, y, label=f"{label_value} {score}", ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
@@ -638,11 +633,6 @@ class ExperimentViewer(QMainWindow):
             else:
                 y_max = float(y_max)
 
-            ax.set_xlim(x_min if x_min is not None else ax.get_xlim()[0],
-                        x_max if x_max is not None else ax.get_xlim()[1])
-            ax.set_ylim(y_min if y_max is not None else ax.get_ylim()[0],
-                        y_max if y_max is not None else ax.get_ylim()[1])
-
         for i, flag in enumerate(self.current_flags):
             plt_args = self.get_plt_args(flag, type="flags")
             if plt_args is not None:
@@ -673,6 +663,11 @@ class ExperimentViewer(QMainWindow):
                 for xo in x:
                     ax.axvline(x=xo, linestyle=flags_ls, label=label if not label_written else None, color=flags_colors[i], alpha=flags_alpha, **plt_args)
                     label_written = True
+
+        ax.set_xlim(x_min if x_min is not None else ax.get_xlim()[0],
+                    x_max if x_max is not None else ax.get_xlim()[1])
+        ax.set_ylim(y_min if y_max is not None else ax.get_ylim()[0],
+                    y_max if y_max is not None else ax.get_ylim()[1])
 
         ax.set_title(self.current_experiment_name)
         ax.set_xlabel("Epochs")
