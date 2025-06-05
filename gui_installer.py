@@ -30,6 +30,7 @@ def create_venv():
     subprocess.check_call([str(python_bin), "-m", "pip", "install", "-r", str(REQUIREMENTS_FILE)])
     print("Dependencies installed.")
 
+
 def create_venv_wsl():
     if VENV_DIR.exists():
         print("Virtual environment 'xview_venv' already exists.")
@@ -107,6 +108,7 @@ def is_wsl():
     except FileNotFoundError:
         return False
 
+
 def main():
     print("Welcome to the XView installer!")
     print("This script will set up a virtual environment and install the necessary dependencies for XView.")
@@ -125,7 +127,7 @@ def main():
             create_venv_wsl()
         else:
             create_venv()
-            install_launcher_linux()
+        install_launcher_linux()
 
     elif current_os == "Windows":
         create_venv()
