@@ -30,6 +30,25 @@ def create_venv():
     subprocess.check_call([str(python_bin), "-m", "pip", "install", "-r", str(REQUIREMENTS_FILE)])
     print("Dependencies installed.")
 
+def create_venv_wsl():
+    if VENV_DIR.exists():
+        print("Virtual environment 'xview_venv' already exists.")
+    else:
+        print("Creating virtual environment 'xview_venv'...")
+        subprocess.check_call([sys.executable, "-m", "venv", str(VENV_DIR)])
+        print("Virtual environment created.")
+
+    python_bin = VENV_DIR / ("Scripts" if platform.system() == "Windows" else "bin") / "python"
+    print("Installing dependencies...")
+    # lire le requirements.txt dans le répertoire courant et remplacer "PyQt5" par "PyQt5==5.15.2"
+    with open(REQUIREMENTS_FILE, 'r') as f:
+        requirements = f.readlines()
+    requirements = [line.replace("PyQt5", "PyQt5==5.15.2") for line in requirements]
+    with open(REQUIREMENTS_FILE, 'w') as f:
+        f.writelines(requirements)
+    subprocess.check_call([str(python_bin), "-m", "pip", "install", "-r", str(REQUIREMENTS_FILE)])
+    print("Dependencies installed.")
+
 
 def is_in_path(directory):
     path_env = os.environ.get("PATH", "")
@@ -81,6 +100,13 @@ python "{SCRIPT_FILE}"
         print("❌ Permission denied. Run as administrator or manually copy this file to a folder in your PATH.")
 
 
+def is_wsl():
+    try:
+        with open("/proc/version", "r") as f:
+            return "microsoft" in f.read().lower()
+    except FileNotFoundError:
+        return False
+
 def main():
     print("Welcome to the XView installer!")
     print("This script will set up a virtual environment and install the necessary dependencies for XView.")
@@ -95,8 +121,14 @@ def main():
 
     current_os = platform.system()
     if current_os == "Linux":
-        install_launcher_linux()
+        if is_wsl():
+            create_venv_wsl()
+        else:
+            create_venv()
+            install_launcher_linux()
+
     elif current_os == "Windows":
+        create_venv()
         install_launcher_windows()
     else:
         print(f"Unsupported OS : {current_os}")
