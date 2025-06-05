@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QColorDialog, QComboBox, QLineEdit
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QColorDialog, QComboBox, QLineEdit, QSplitter, QHBoxLayout
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor
 from PyQt5.QtCore import Qt
