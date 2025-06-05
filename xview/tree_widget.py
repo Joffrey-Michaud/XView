@@ -16,9 +16,6 @@ class MyTreeWidget(QTreeWidget):
         if items is not None:
             self.populate(items)
 
-        # # Ajouter les éléments principaux
-        # self.add_top_level_items()
-
     def on_click_item(self, item, column):
         # Vérifie si l'item a des enfants
         if item.childCount() == 0:

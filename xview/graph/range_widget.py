@@ -1,7 +1,4 @@
 from PyQt5.QtWidgets import QCheckBox, QWidget, QHBoxLayout, QLabel, QVBoxLayout, QLineEdit
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPalette, QColor, QIcon
-from xview import get_config_file, set_config_file, set_config_data
 
 
 class RangeWidget(QWidget):
@@ -55,4 +52,3 @@ class RangeWidget(QWidget):
         self.normalize_layout.addWidget(self.normalize_checkbox)
         self.layout.addWidget(self.normalize_widget)
 
-    # def set_
