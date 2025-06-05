@@ -1,8 +1,7 @@
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QSplitter, QLabel, QCheckBox, QScrollArea, QPushButton, QListWidget, QListWidgetItem
-from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor, QCursor
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QListWidget, QListWidgetItem
+from PyQt5.QtGui import QIcon, QPalette, QColor
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QSizePolicy
-import os
 from xview.settings.display import DisplaySettings
 from xview.settings.preferences import PreferencesSetting
 from xview import get_config_file

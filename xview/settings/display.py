@@ -1,16 +1,12 @@
-import sys
-from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget, QPushButton, QVBoxLayout, QSplitter, QGridLayout, QMainWindow, QHBoxLayout, QColorDialog, QComboBox, QLineEdit
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QColorDialog, QComboBox, QLineEdit
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor
-from PyQt5.QtCore import Qt, QDir
+from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from xview.utils.utils import write_json, read_json, compute_moving_average
-import os
+from xview.utils.utils import compute_moving_average
 import numpy as np
-import time
-from xview.version.update_project import warn_if_outdated
-from xview import get_config_file, set_config_file, set_config_data, config_exists
+from xview import get_config_file, set_config_data
 
 
 # ------------------------------------------------------------------ COLOR PICKER

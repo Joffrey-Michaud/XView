@@ -2,15 +2,14 @@ import os
 import sys
 import json
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QPushButton, QSplitter, QTextEdit, QLineEdit, QTableWidget, QTableWidgetItem)
-from PyQt5.QtGui import QPixmap, QImage, QColor, QIcon, QPalette
+from PyQt5.QtGui import QColor, QIcon, QPalette
 from PyQt5.QtCore import QDateTime
 from PyQt5.QtCore import QTimer, Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from xview.utils.utils import read_file, read_json, compute_moving_average, write_file, write_json
+from xview.utils.utils import read_file, read_json, compute_moving_average, write_file
 from xview.tree_widget import MyTreeWidget
 from xview.graph.curves_selector import CurvesSelector
-from xview.graph.curves_selector_v2 import CurvesSelectorV2
 from config import ConfigManager
 from xview.version.updated_window import UpdatedNotification
 from xview.version.update_project import check_for_updates
@@ -149,10 +148,8 @@ class ExperimentViewer(QMainWindow):
 
         # region - plot range
         self.range_widget = RangeWidget()
-        # self.model_image_label = QLabel()
-        # self.model_image_label.setMinimumSize(300, 300)
-        # self.model_image_label.setStyleSheet("border: 1px solid black; background-color: white")
-        # self.model_image_label.setAlignment(Qt.AlignCenter)
+        self.range_widget.setFixedHeight(130)
+        self.range_widget.setMinimumWidth(220)
         right_widget.addWidget(self.range_widget)
         # ------------------------ x axis
         self.range_widget.x_min.editingFinished.connect(
@@ -164,6 +161,9 @@ class ExperimentViewer(QMainWindow):
             lambda: self.set_exp_config_data("y_min", self.range_widget.y_min.text()))
         self.range_widget.y_max.editingFinished.connect(
             lambda: self.set_exp_config_data("y_max", self.range_widget.y_max.text()))
+
+        self.curve_selector_widget = CurvesSelector(self)
+        right_widget.addWidget(self.curve_selector_widget)
 
         # Affichage des informations du fichier JSON
         self.exp_info_text = QTextEdit()
@@ -182,13 +182,6 @@ class ExperimentViewer(QMainWindow):
         splitter.setStretchFactor(2, 1)  # Zone de l'image et des infos
         right_widget.setStretchFactor(0, 3)  # Zone du schéma
         right_widget.setStretchFactor(1, 2)  # Zone des infos
-
-        # Cases à cocher pour les courbes
-        self.curve_selector_btn = QPushButton("Select Curves")
-        self.curve_selector_btn.clicked.connect(self.open_curve_selector)
-        left_layout.addWidget(self.curve_selector_btn)
-
-        self.curve_selector_window = CurvesSelectorV2(self)
 
         # region - QTIMER
         # Timers pour mise à jour
@@ -244,19 +237,6 @@ class ExperimentViewer(QMainWindow):
         else:
             self.config_window.activateWindow()
             self.config_window.raise_()
-
-    def open_curve_selector(self):
-        if self.curve_selector_window is None or not self.curve_selector_window.isVisible():
-            if self.dark_mode_enabled != self.curve_selector_window.dark_mode_enabled:
-                self.curve_selector_window.toggle_dark_mode()
-            self.curve_selector_window.show()
-            self.curve_selector_window.move_to_cursor_bottom_left()
-
-        else:
-            if self.dark_mode_enabled != self.curve_selector_window.dark_mode_enabled:
-                self.curve_selector_window.toggle_dark_mode()
-            self.curve_selector_window.move_to_cursor_bottom_left()
-            self.curve_selector_window.raise_()
 
     def open_settings_window(self):
         if self.settings_window is None or not self.settings_window.isVisible():
@@ -426,13 +406,13 @@ class ExperimentViewer(QMainWindow):
         self.read_current_scores()
         self.read_current_flags()
 
-        if exp_path != self.curve_selector_window.current_path:
-            self.curve_selector_window.reset_window(exp_path)
-            self.curve_selector_window.init_boxes(
+        if exp_path != self.curve_selector_widget.current_path:
+            self.curve_selector_widget.reset_window(exp_path)
+            self.curve_selector_widget.init_boxes(
                 self.current_scores.keys(), self.current_flags.keys()
             )
         else:
-            self.curve_selector_window.update_boxes(
+            self.curve_selector_widget.update_boxes(
                 self.current_scores.keys(), self.current_flags.keys()
             )
 
@@ -597,14 +577,14 @@ class ExperimentViewer(QMainWindow):
                     y_ma = (y_ma - np.min(y_ma)) / (np.max(y_ma) - np.min(y_ma))
 
             if len(x) > 0:
-                if self.curve_selector_window.boxes[score][0].isChecked():
+                if self.curve_selector_widget.boxes[score][0].isChecked():
                     ax.plot(x, y, label=f"{label_value} {score}", ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
-                if self.curve_selector_window.boxes[f"{score} (MA)"][0].isChecked():
+                if self.curve_selector_widget.boxes[f"{score} (MA)"][0].isChecked():
                     ax.plot(x, y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha, **plt_args)
             else:
-                if self.curve_selector_window.boxes[score][0].isChecked():
+                if self.curve_selector_widget.boxes[score][0].isChecked():
                     ax.plot(y, label=f"{label_value} {score}", ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
-                if self.curve_selector_window.boxes[f"{score} (MA)"][0].isChecked():
+                if self.curve_selector_widget.boxes[f"{score} (MA)"][0].isChecked():
                     ax.plot(y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha, **plt_args)
 
         #  ------------------------------------------- PLOT RANGE
@@ -657,7 +637,7 @@ class ExperimentViewer(QMainWindow):
                 label_value = ""
 
             x = self.current_flags[flag]
-            if self.curve_selector_window.boxes[flag][0].isChecked():
+            if self.curve_selector_widget.boxes[flag][0].isChecked():
                 label = f"{label_value} {flag}"
                 label_written = False
                 for xo in x:

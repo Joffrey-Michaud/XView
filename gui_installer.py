@@ -4,8 +4,6 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from config import config_exists
-
 
 
 APP_DIR = Path.home() / ".xview"
