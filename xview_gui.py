@@ -148,8 +148,8 @@ class ExperimentViewer(QMainWindow):
 
         # region - plot range
         self.range_widget = RangeWidget()
-        self.range_widget.setFixedHeight(130)
-        self.range_widget.setMinimumWidth(220)
+        self.range_widget.setFixedHeight(165)
+        self.range_widget.setMinimumWidth(240)
         right_widget.addWidget(self.range_widget)
         # ------------------------ x axis
         self.range_widget.x_min.editingFinished.connect(
@@ -652,7 +652,9 @@ class ExperimentViewer(QMainWindow):
         ax.set_title(self.current_experiment_name)
         ax.set_xlabel("Epochs")
         ax.set_ylabel("Loss")
-        ax.legend(facecolor=bg_color, edgecolor=text_color, labelcolor=text_color)
+        if self.range_widget.legend_checkbox.isChecked():
+            ax.legend(loc='upper right', facecolor=bg_color, edgecolor=text_color, labelcolor=text_color)
+            ax.legend(facecolor=bg_color, edgecolor=text_color, labelcolor=text_color)
 
         self.figure.tight_layout()
 

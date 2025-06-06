@@ -42,6 +42,11 @@ class RangeWidget(QWidget):
         self.y_layout.addWidget(self.y_max)
         self.layout.addWidget(self.y_widget)
 
+        self.boxes_widget = QWidget()
+        self.boxes_layout = QHBoxLayout()
+        self.boxes_widget.setLayout(self.boxes_layout)
+        
+
         # region - normalize
         self.normalize_widget = QWidget()
         self.normalize_layout = QHBoxLayout()
@@ -50,5 +55,19 @@ class RangeWidget(QWidget):
         self.normalize_layout.addWidget(self.normalize_label)
         self.normalize_checkbox = QCheckBox()
         self.normalize_layout.addWidget(self.normalize_checkbox)
-        self.layout.addWidget(self.normalize_widget)
+        self.boxes_layout.addWidget(self.normalize_widget)
 
+        # region - legend
+        self.legend_widget = QWidget()
+        self.legend_layout = QHBoxLayout()
+        self.legend_widget.setLayout(self.legend_layout)
+        self.legend_label = QLabel("Legend:")
+        self.legend_layout.addWidget(self.legend_label)
+        self.legend_checkbox = QCheckBox()
+        self.legend_checkbox.setChecked(True)
+        self.legend_layout.addWidget(self.legend_checkbox)
+        self.boxes_layout.addWidget(self.legend_widget)
+
+        self.layout.addWidget(self.boxes_widget)
+
+        
