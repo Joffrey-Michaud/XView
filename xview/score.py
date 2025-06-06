@@ -1,9 +1,9 @@
 import os
-from xview.utils.utils import write_file, write_json
+from xview.utils.utils import write_file, write_json, compute_moving_average
 
 
 class Score(object):
-    def __init__(self, name, score_dir, plt_args:dict=None):
+    def __init__(self, name, score_dir, plt_args: dict = None):
         self.name = name
         self.score_dir = score_dir
         self.score_file = os.path.join(self.score_dir, f"{self.name}.txt")
@@ -34,11 +34,36 @@ class Score(object):
         else:
             return 0
 
+    def read_scores(self, get_x: bool = True, ma=False):
+        """Lit les scores à partir d'un fichier et retourne une liste de tuples (x, y)."""
+        if os.path.exists(self.score_file):
+            with open(self.score_file, "r") as f:
+                lines = f.readlines()
+            x = []
+            y = []
+            for line in lines:
+                values = line.strip().split(",")
+                if len(values) == 1:
+                    y.append(float(values[0]))
+                else:
+                    x.append(float(values[0]))
+                    y.append(float(values[1]))
+            if ma is not None and ma is not False:
+                window = ma if not isinstance(ma, bool) else 15
+                y = compute_moving_average(y, window)
+            if get_x:
+                return (x, y)
+            return y
+
+        else:
+            print(f"Le fichier {self.score_file} n'existe pas.")
+            return []
+
 
 class MultiScores(object):
     def __init__(self, score_dir):
         self.score_dir = score_dir
-        self.scores = {}
+        self.scores: dict[str, Score] = {}
 
     def add_score(self, name, plt_args=None):
         if name not in self.scores:
@@ -56,3 +81,8 @@ class MultiScores(object):
     def add_score_point(self, name, x=None, y=None, unique=False, label_value=None):
         assert name in self.scores, f"Score {name} not found. Please add it first."
         self.scores[name].add_score_point(y, x, unique=unique, label_value=label_value)
+
+    def get_score(self, name, get_x=True, ma=False):
+        assert name in self.scores, f"Score {name} not found."
+        score = self.scores[name].read_scores(get_x=get_x, ma=ma)
+        return score

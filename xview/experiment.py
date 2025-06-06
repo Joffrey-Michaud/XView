@@ -89,3 +89,6 @@ class Experiment(object):
         if x is None:
             x = max(len(self.scores), len(self.flags))
         self.flags.add_score_point(name, x=x, unique=unique, label_value=label_value)
+
+    def get_score(self, name, get_x=True, ma=False):
+        return self.scores.get_score(name, get_x=get_x, ma=ma)
