@@ -39,7 +39,7 @@ class SettingsWindow(QWidget):
         self.current_widget = None
 
         DISPLAY_LABEL = QLabel("DISPLAY SETTINGS")
-        self.add_list_entry("Display", widget=DisplaySettings(self))
+        self.add_list_entry("Display", widget=DisplaySettings(self, add_curve_color_callback=self.main_gui.add_curve_color, add_flag_color_callback=self.main_gui.add_flag_color, remove_curve_color_callback=self.main_gui.remove_curve_color, remove_flag_color_callback=self.main_gui.remove_flag_color))
         self.add_list_entry("Preferences", widget=PreferencesSetting())
         # self.add_list_entry("Update")
         # self.add_list_entry("Save")
