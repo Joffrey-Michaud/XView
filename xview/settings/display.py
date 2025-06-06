@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QColorDialog, QComboBox, QLineEdit, QSplitter, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QColorDialog, QComboBox, QLineEdit, QSplitter, QHBoxLayout, QMenu
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor
 from PyQt5.QtCore import Qt
@@ -12,9 +12,12 @@ from xview import get_config_file, set_config_data
 # ------------------------------------------------------------------ COLOR PICKER
 # region - ColorPickerWidget
 class ColorPickerWidget(QWidget):
-    def __init__(self, colors=["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF"], on_color_change=None):
+    def __init__(self, colors=["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF"], on_color_change=None, add_color_callback=None, remove_color_callback=None, update_plot_ex=None):
         super().__init__()
         self.on_color_change = on_color_change
+        self.add_color_callback = add_color_callback
+        self.remove_color_callback = remove_color_callback
+        self.update_plot_ex = update_plot_ex
         self.layout = QHBoxLayout()
         self.color_buttons = []
         self.colors = colors
@@ -24,19 +27,64 @@ class ColorPickerWidget(QWidget):
         for color in colors:
             base_colors.append(QColor(color))
 
-        # Création des boutons de couleur
-        for i, color in enumerate(colors):
-            # w = (400 - 50) // len(colors)
-            w = 25
-            qcolor = QColor(color)
-            btn = QPushButton()
-            btn.setFixedSize(w, w)
-            btn.setStyleSheet(f"background-color: {qcolor.name()}; border: 1px solid black;")
-            btn.clicked.connect(lambda _, idx=i: self.open_color_dialog(idx))
-            self.color_buttons.append(btn)
-            self.layout.addWidget(btn)
+        self.add_btn = QPushButton("+")
+        self.add_btn.setFixedSize(20, 20)
+        self.add_btn.clicked.connect(self.add_color_click)
+
+        self.init_colors()
 
         self.setLayout(self.layout)
+
+    def init_colors(self):
+        for i, color in enumerate(self.colors):
+            if i < len(self.color_buttons):
+                self.color_buttons[i].setStyleSheet(f"background-color: {color}; border: 1px solid black;")
+            else:
+                btn = QPushButton()
+                btn.setFixedSize(25, 25)
+                btn.setStyleSheet(f"background-color: {color}; border: 1px solid black;")
+
+                # click gauche : color picker
+                btn.clicked.connect(lambda _, idx=i: self.open_color_dialog(idx))
+
+                # click droit : supprimer la couleur
+                btn.setContextMenuPolicy(Qt.CustomContextMenu)
+                btn.customContextMenuRequested.connect(
+                    lambda pos, idx=i, b=btn: self.show_context_menu(pos, idx, b)
+                )
+
+                self.color_buttons.append(btn)
+                self.layout.addWidget(btn)
+        self.layout.addWidget(self.add_btn)
+
+    def add_color_click(self):
+        new_color = QColorDialog.getColor(parent=self)  #  sélectionner une couleur
+        if new_color.isValid():
+            self.colors.append(new_color.name())
+            self.add_color_callback(new_color.name())  # Appeler le callback pour ajouter la couleur
+            # Supprimer les anciens boutons de l'interface
+            self.reset_buttons()
+            self.update_plot_ex()  # Mettre à jour le graphique si nécessaire
+
+    def reset_buttons(self):
+        for btn in self.color_buttons:
+            self.layout.removeWidget(btn)
+            btn.deleteLater()  # Nettoyage mémoire
+
+        # Vider la liste des boutons
+        self.color_buttons.clear()
+        self.init_colors()
+
+    def show_context_menu(self, pos, index, button):
+        context_menu = QMenu(self)
+        remove_action = context_menu.addAction("Remove")
+        global_pos = button.mapToGlobal(pos)
+        action = context_menu.exec_(global_pos)
+
+        if action == remove_action and self.remove_color_callback:
+            self.remove_color_callback(index)
+            self.reset_buttons()
+            self.update_plot_ex()  # Mettre à jour le graphique si nécessaire
 
     def open_color_dialog(self, index):
         sender = self.sender()
@@ -114,7 +162,8 @@ class StyleSetter(QWidget):
 # ------------------------------------------------------------------ SETTINGS DISPLAY
 # region - DisplaySettings
 class DisplaySettings(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, add_curve_color_callback=None, add_flag_color_callback=None,
+                 remove_curve_color_callback=None, remove_flag_color_callback=None):
         super().__init__()
         self.parent = parent
         self.global_config = get_config_file()
@@ -171,8 +220,8 @@ class DisplaySettings(QWidget):
         section_label.setAlignment(Qt.AlignCenter)
         self.left_layout.addWidget(section_label)
 
-        self.color_widget = ColorPickerWidget(colors=self.light_mode_curves, on_color_change=self.update_curves_colors)
-        self.left_layout.addWidget(self.color_widget)
+        self.curve_color_widget = ColorPickerWidget(colors=self.light_mode_curves, on_color_change=self.update_curves_colors, add_color_callback=add_curve_color_callback, remove_color_callback=remove_curve_color_callback, update_plot_ex=self.plot_example)
+        self.left_layout.addWidget(self.curve_color_widget)
 
         self.curves_style_setter = StyleSetter(self.curves_ls, self.curves_alpha,
                                                set_ls_callbak=self.set_curves_ls,
@@ -196,8 +245,8 @@ class DisplaySettings(QWidget):
         section_label_2.setAlignment(Qt.AlignCenter)
         self.left_layout.addWidget(section_label_2)
 
-        self.color_widget_2 = ColorPickerWidget(colors=self.light_mode_flags, on_color_change=self.update_flags_colors)
-        self.left_layout.addWidget(self.color_widget_2)
+        self.flag_color_widget = ColorPickerWidget(colors=self.light_mode_flags, on_color_change=self.update_flags_colors, add_color_callback=add_flag_color_callback, remove_color_callback=remove_flag_color_callback, update_plot_ex=self.plot_example)
+        self.left_layout.addWidget(self.flag_color_widget)
 
         self.flags_style_setter = StyleSetter(self.flags_ls, self.flags_alpha,
                                               set_ls_callbak=self.set_flags_ls,
@@ -232,6 +281,12 @@ class DisplaySettings(QWidget):
 
     # region - plot_example
     def plot_example(self):
+        self.dark_mode_curves = self.get_color_theme("curves", dark_mode=True)
+        self.dark_mode_flags = self.get_color_theme("flags", dark_mode=True)
+
+        self.light_mode_curves = self.get_color_theme("curves", dark_mode=False)
+        self.light_mode_flags = self.get_color_theme("flags", dark_mode=False)
+
         if self.dark_mode_enabled:
             curves_colors = self.dark_mode_curves
             flags_colors = self.dark_mode_flags
@@ -262,22 +317,20 @@ class DisplaySettings(QWidget):
         ax.title.set_color(text_color)
 
         x = np.linspace(0, 2 * np.pi, 200)
-        amplitudes = [1, 2, 0.5, 1.5, 0.8]
+        # numpy seed
+        np.random.seed(42)
+        amplitudes = np.random.uniform(0.5, 2.0, size=len(curves_colors))
+        # amplitudes = [1, 2, 0.5, 1.5, 0.8]
         for i, (color, amp) in enumerate(zip(curves_colors, amplitudes)):
             y = amp * np.sin(x + i) + np.random.normal(0, 0.05, len(x))
             ax.plot(x, y, color=color, label=f"Curve {i + 1}", ls=self.curves_ls, alpha=self.curves_alpha)
 
             ax.plot(x, compute_moving_average(y, 10), color=color, label=f"MA Curve {i + 1}", ls=self.ma_curves_ls, alpha=self.ma_curves_alpha)
 
-        coords = np.linspace(0, 2 * np.pi, 5)
+        coords = np.linspace(0, 2 * np.pi, len(flags_colors) + 2)
         for i, (color, x) in enumerate(zip(flags_colors, coords[1:-1])):
             y = amp * np.sin(x + i)
             ax.axvline(x, color=color, label=f"Flag {i + 1}", ls=self.flags_ls, alpha=self.flags_alpha)
-
-        # x = np.linspace(0, 2 * np.pi, 200)
-        # for i, color in enumerate(curves_colors):
-        #     y = np.sin(x + i)
-        #     ax.plot(x, y, color=color, label=f"Sin {i+1}")
 
         ax.legend(facecolor=bg_color, edgecolor=text_color, labelcolor=text_color)
 
@@ -302,8 +355,8 @@ class DisplaySettings(QWidget):
             dark_palette.setColor(QPalette.Highlight, QColor(142, 45, 197).lighter())
             dark_palette.setColor(QPalette.HighlightedText, Qt.black)
 
-            self.color_widget.update_colors(self.dark_mode_curves)
-            self.color_widget_2.update_colors(self.dark_mode_flags)
+            self.curve_color_widget.update_colors(self.dark_mode_curves)
+            self.flag_color_widget.update_colors(self.dark_mode_flags)
 
             pixmap = QPixmap('xview/logo_dark.png')  # Replace with your logo path
             pixmap = pixmap.scaled(200, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -316,8 +369,8 @@ class DisplaySettings(QWidget):
             self.dark_mode_btn.setText("Light mode")
         else:
             self.setPalette(QApplication.style().standardPalette())
-            self.color_widget.update_colors(self.light_mode_curves)
-            self.color_widget_2.update_colors(self.light_mode_flags)
+            self.curve_color_widget.update_colors(self.light_mode_curves)
+            self.flag_color_widget.update_colors(self.light_mode_flags)
             self.dark_mode_enabled = False
             self.setWindowIcon(QIcon("logo_light.png"))
             self.dark_mode_btn.setText("Dark mode")

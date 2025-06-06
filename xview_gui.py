@@ -718,11 +718,13 @@ class ExperimentViewer(QMainWindow):
             # self.dark_mode_button.setText("Dark mode")
             self.dark_mode_enabled = False
 
+        self.update_plot()
+
         set_config_data("dark_mode", sett)
 
     def toggle_dark_mode(self):
         self.set_dark_mode(not get_config_file()["dark_mode"])
-        self.update_plot()
+        # self.update_plot()
         # self.display_model_image()
 
     def finish_experiment(self):
@@ -753,6 +755,76 @@ class ExperimentViewer(QMainWindow):
         config = self.get_exp_config_file()
         config[key] = value
         self.set_exp_config_file(config)
+
+    def add_curve_color(self, color):
+        """Ajoute une couleur à la liste des couleurs de courbes."""
+        dark_colors = get_config_file()["dark_mode_curves"]
+        light_colors = get_config_file()["light_mode_curves"]
+
+        if self.dark_mode_enabled:
+            dark_colors.append(color)
+            # set_config_data("dark_mode_curves", dark_colors)
+            # on ajoute un trait noir (en hexa) en light mode
+            light_colors.append("#000000")
+            # set_config_data("light_mode_curves", light_colors)
+        else:
+            light_colors.append(color)
+            # set_config_data("light_mode_curves", light_colors)
+            # on ajoute un trait blanc (en hexa) en dark mode
+            dark_colors.append("#FFFFFF")
+            # set_config_data("dark_mode_curves", dark_colors)
+
+        set_config_data("dark_mode_curves", dark_colors)
+        set_config_data("light_mode_curves", light_colors)
+
+    def remove_curve_color(self, index):
+        dark_colors = get_config_file()["dark_mode_curves"]
+        light_colors = get_config_file()["light_mode_curves"]
+
+        if index < len(dark_colors):
+            dark_colors.pop(index)
+        if index < len(light_colors):
+            light_colors.pop(index)
+
+        set_config_data("dark_mode_curves", dark_colors)
+        set_config_data("light_mode_curves", light_colors)
+
+        self.settings_window.settings_widgets["Display"].curve_color_widget.colors = dark_colors if self.dark_mode_enabled else light_colors
+
+    def add_flag_color(self, color):
+        """Ajoute une couleur à la liste des couleurs de courbes."""
+        dark_colors = get_config_file()["dark_mode_flags"]
+        light_colors = get_config_file()["light_mode_flags"]
+
+        if self.dark_mode_enabled:
+            dark_colors.append(color)
+            # set_config_data("dark_mode_curves", dark_colors)
+            # on ajoute un trait noir (en hexa) en light mode
+            light_colors.append("#000000")
+            # set_config_data("light_mode_curves", light_colors)
+        else:
+            light_colors.append(color)
+            # set_config_data("light_mode_curves", light_colors)
+            # on ajoute un trait blanc (en hexa) en dark mode
+            dark_colors.append("#FFFFFF")
+            # set_config_data("dark_mode_curves", dark_colors)
+
+        set_config_data("dark_mode_flags", dark_colors)
+        set_config_data("light_mode_flags", light_colors)
+
+    def remove_flag_color(self, index):
+        dark_colors = get_config_file()["dark_mode_flags"]
+        light_colors = get_config_file()["light_mode_flags"]
+
+        if index < len(dark_colors):
+            dark_colors.pop(index)
+        if index < len(light_colors):
+            light_colors.pop(index)
+
+        set_config_data("dark_mode_flags", dark_colors)
+        set_config_data("light_mode_flags", light_colors)
+
+        self.settings_window.settings_widgets["Display"].flag_color_widget.colors = dark_colors if self.dark_mode_enabled else light_colors
 
 
 if __name__ == "__main__":
