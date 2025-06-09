@@ -23,7 +23,7 @@ default_config = {
     "remind_me_later_date": None,
     "first_since_update": False,
     "auto_update": False,
-    "version": "0.1.4"
+    "version": "0.1.5"
 }
 
 

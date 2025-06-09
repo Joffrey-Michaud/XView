@@ -1,4 +1,5 @@
 import os
+import random
 import sys
 import json
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QPushButton, QSplitter, QTextEdit, QLineEdit, QTableWidget, QTableWidgetItem)
@@ -534,6 +535,26 @@ class ExperimentViewer(QMainWindow):
         curves_colors, curves_ls, curves_alpha = self.get_curves_style()
         flags_colors, flags_ls, flags_alpha = self.get_flags_style()
         _, ma_curves_ls, ma_curves_alpha = self.get_ma_curves_style()
+
+        random.seed(159)
+
+        if len(curves_colors) < len(self.current_scores):
+            #  if not enough colors, we add more
+
+            for i in range(len(curves_colors), len(self.current_scores)):
+                random_col = "#{:06x}".format(random.randint(0, 0xFFFFFF)).upper()
+                while random_col in curves_colors:
+                    random_col = "#{:06x}".format(random.randint(0, 0xFFFFFF)).upper()
+                curves_colors.append(random_col)
+        print("CURVES COLORS", curves_colors)
+
+        if len(flags_colors) < len(self.current_flags):
+            #  if not enough colors, we add more
+            for i in range(len(flags_colors), len(self.current_flags)):
+                random_col = "#{:06x}".format(random.randint(0, 0xFFFFFF)).upper()
+                while random_col in curves_colors:
+                    random_col = "#{:06x}".format(random.randint(0, 0xFFFFFF)).upper()
+                flags_colors.append(random_col)
 
         # print('CURVE COLORS', curves_colors)
         x_min, x_max = None, None
