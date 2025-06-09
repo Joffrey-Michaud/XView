@@ -546,7 +546,6 @@ class ExperimentViewer(QMainWindow):
                 while random_col in curves_colors:
                     random_col = "#{:06x}".format(random.randint(0, 0xFFFFFF)).upper()
                 curves_colors.append(random_col)
-        print("CURVES COLORS", curves_colors)
 
         if len(flags_colors) < len(self.current_flags):
             #  if not enough colors, we add more
