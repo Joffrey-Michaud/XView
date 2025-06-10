@@ -1,4 +1,5 @@
 import os
+import shutil
 import random
 import sys
 import json
@@ -15,7 +16,7 @@ from config import ConfigManager
 from xview.version.updated_window import UpdatedNotification
 from xview.version.update_project import check_for_updates
 from xview.version.about_window import AboutWindow
-from xview import get_config_file, set_config_data, check_config_integrity
+from xview import get_config_file, set_config_data, check_config_integrity, get_config_data
 from xview.settings.settings_window import SettingsWindow
 from xview.graph.range_widget import RangeWidget
 import numpy as np
@@ -121,8 +122,8 @@ class ExperimentViewer(QMainWindow):
 
         self.config_window = None
 
-        self.training_list = MyTreeWidget(self, display_exp=self.display_experiment, display_range=self.display_exp_range)
-        self.finished_list = MyTreeWidget(self, display_exp=self.display_experiment, display_range=self.display_exp_range)
+        self.training_list = MyTreeWidget(self, display_exp=self.display_experiment, display_range=self.display_exp_range, remove_exp_callback=self.remove_exp, move_exp_callback=self.move_exp)
+        self.finished_list = MyTreeWidget(self, display_exp=self.display_experiment, display_range=self.display_exp_range, remove_exp_callback=self.remove_exp, move_exp_callback=self.move_exp)
 
         left_layout.addWidget(QLabel("Experiments in progress"))
         left_layout.addWidget(self.training_list)
@@ -538,6 +539,7 @@ class ExperimentViewer(QMainWindow):
 
         random.seed(159)
 
+        #  ----------------------------------------------------------- GET RANDOM COLORS
         if len(curves_colors) < len(self.current_scores):
             #  if not enough colors, we add more
 
@@ -575,7 +577,7 @@ class ExperimentViewer(QMainWindow):
                 plt_args = {}
 
             x, y = self.current_scores[score]
-            y_ma = compute_moving_average(y)
+            y_ma = compute_moving_average(y, window_size=get_config_data("ma_window_size"))
 
             if os.path.exists(
                 os.path.join(self.experiments_dir, self.current_experiment_name, "scores", f"{score}_label_value.txt")
@@ -585,6 +587,7 @@ class ExperimentViewer(QMainWindow):
             else:
                 label_value = ""
 
+            #  ----------------------------------------------------------- NORMALIZE IF NEEDED
             if self.get_exp_config_data("normalize"):
                 #  normalisation 0 1
                 y = np.array(y)
@@ -596,6 +599,7 @@ class ExperimentViewer(QMainWindow):
                     y = (y - np.min(y)) / (np.max(y) - np.min(y))
                     y_ma = (y_ma - np.min(y_ma)) / (np.max(y_ma) - np.min(y_ma))
 
+            #  ----------------------------------------------------------- PLOT CURVES
             if len(x) > 0:
                 if self.curve_selector_widget.boxes[score][0].isChecked():
                     ax.plot(x, y, label=f"{label_value} {score}", ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
@@ -656,6 +660,7 @@ class ExperimentViewer(QMainWindow):
             else:
                 label_value = ""
 
+            #  ----------------------------------------------------------- PLOT FLAGS
             x = self.current_flags[flag]
             if self.curve_selector_widget.boxes[flag][0].isChecked():
                 label = f"{label_value} {flag}"
@@ -666,7 +671,7 @@ class ExperimentViewer(QMainWindow):
 
         ax.set_xlim(x_min if x_min is not None else ax.get_xlim()[0],
                     x_max if x_max is not None else ax.get_xlim()[1])
-        ax.set_ylim(y_min if y_max is not None else ax.get_ylim()[0],
+        ax.set_ylim(y_min if y_min is not None else ax.get_ylim()[0],
                     y_max if y_max is not None else ax.get_ylim()[1])
 
         ax.set_title(self.current_experiment_name)
@@ -845,6 +850,33 @@ class ExperimentViewer(QMainWindow):
         set_config_data("light_mode_flags", light_colors)
 
         self.settings_window.settings_widgets["Display"].flag_color_widget.colors = dark_colors if self.dark_mode_enabled else light_colors
+
+    def remove_exp(self, path):
+        """Supprime l'expérience sélectionnée."""
+        if os.path.exists(os.path.join(self.experiments_dir, path)):
+            if path == self.current_experiment_name:
+                self.current_experiment_name = None
+                self.current_scores = {}
+                self.current_flags = {}
+                self.current_train_loss = []
+                self.current_val_loss = []
+                self.update_plot()
+                self.exp_info_table.clearContents()
+            shutil.rmtree(os.path.join(self.experiments_dir, path))
+
+            self.update_experiment_list()
+
+    def move_exp(self, path, new_group):
+        """Déplace l'expérience sélectionnée vers un nouveau groupe."""
+        new_path = os.path.join(new_group, path.split(os.sep)[-1])
+        if os.path.exists(os.path.join(self.experiments_dir, path)):  # si l exp existe
+            if not os.path.exists(os.path.join(self.experiments_dir, new_group)):  # si le nouveau groupe n'existe pas
+                os.makedirs(os.path.join(self.experiments_dir, new_group))
+            shutil.move(os.path.join(self.experiments_dir, path), os.path.join(self.experiments_dir, new_group))
+
+            self.update_experiment_list()
+            if path == self.current_experiment_name:
+                self.display_experiment(new_path)
 
 
 if __name__ == "__main__":

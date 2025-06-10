@@ -5,7 +5,7 @@ import time
 
 A1,A2, A3 = np.random.rand(3)
 
-my_exp = Experiment("toy_experiment_3",  # give a name to the experiment
+my_exp = Experiment("toy_experiment_2",  # give a name to the experiment
                     infos={"A1": A1, "A2": A2, "A3": A3},  # you can add any information you want to the experiment in dict format
                     group="examples_group",  # possible to set a group for the experiment, to group them in one folder
                     clear=True
@@ -37,6 +37,6 @@ for i, x in enumerate(points):
         best_val = y2
         print(f"New best val: {best_val} at x={x}")
         my_exp.add_flag(name="best_val", x=x, unique=True, plt_args={"lw": 7}, label_value=f"{best_val:.3f}")  # add a flag with unique=True to keep only the last one
-    time.sleep(1)
+    # time.sleep(1)
 
 # my_exp.set_finished_status()  # set the status of the experiment to finished

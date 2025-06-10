@@ -18,12 +18,13 @@ default_config = {
     "flags_alpha": 1.0,
     "ma_curves_ls": "--",
     "ma_curves_alpha": 0.5,
+    "ma_window_size": 15,
     "update_interval": 60,
     "dark_mode": False,
     "remind_me_later_date": None,
     "first_since_update": False,
     "auto_update": False,
-    "version": "0.1.5"
+    "version": "1.0.0"
 }
 
 

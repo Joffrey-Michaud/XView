@@ -3,13 +3,13 @@ import numpy as np
 import time
 
 
-N_SIGNALS = 7
+N_SIGNALS = 2
 
 amplitudes = np.random.rand(N_SIGNALS)
 
 infos = {f"A{i + 1}": amplitudes[i] for i in range(N_SIGNALS)}
 
-my_exp = Experiment("toy_experiment_3",  # give a name to the experiment
+my_exp = Experiment("colors_exp_2",  # give a name to the experiment
                     infos=infos,  # you can add any information you want to the experiment in dict format
                     group="debug_colors",  # possible to set a group for the experiment, to group them in one folder
                     clear=True

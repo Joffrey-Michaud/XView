@@ -6,7 +6,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from xview.utils.utils import compute_moving_average
 import numpy as np
-from xview import get_config_file, set_config_data
+from xview import get_config_file, set_config_data, get_config_data
 
 
 # ------------------------------------------------------------------ COLOR PICKER
@@ -169,6 +169,7 @@ class DisplaySettings(QWidget):
         self.global_config = get_config_file()
         self.dark_mode_enabled = get_config_file()["dark_mode"]
         self.interval = self.get_interval()
+        self.ma_window_size = get_config_data("ma_window_size")
 
         self.dark_mode_curves = self.get_color_theme("curves", dark_mode=True)
         self.dark_mode_flags = self.get_color_theme("flags", dark_mode=True)
@@ -239,6 +240,21 @@ class DisplaySettings(QWidget):
                                                   set_alpha_callback=self.set_ma_curves_alpha)
         self.left_layout.addWidget(self.ma_curves_style_setter)
 
+        # ------------------------------------------------------------------------------------------
+        # region - MA WINDOW
+        self.ma_window_widget = QWidget()
+        self.ma_window_layout = QHBoxLayout()
+
+        self.ma_window_label = QLabel("Moving Avg window size :")
+        self.ma_window_input = QLineEdit()
+        self.ma_window_layout.addWidget(self.ma_window_label)
+        self.ma_window_layout.addWidget(self.ma_window_input)
+        self.ma_window_widget.setLayout(self.ma_window_layout)
+
+        self.ma_window_input.setPlaceholderText(f"{self.ma_window_size}")
+        self.ma_window_input.editingFinished.connect(self.set_ma_window_size)
+        self.left_layout.addWidget(self.ma_window_widget)
+
         # ----------------------------------------------------------- FLAGS
         section_label_2 = QLabel("Flags style")
         # section_label_2.setStyleSheet("font-size: 10px;")
@@ -255,18 +271,18 @@ class DisplaySettings(QWidget):
 
         # ------------------------------------------------------------------------------------------
         # region - upd interval
-        self.inteval_widget = QWidget()
+        self.interval_widget = QWidget()
         self.interval_layout = QHBoxLayout()
 
         self.interval_label = QLabel("Graph update interval (s) :")
         self.interval_input = QLineEdit()
         self.interval_layout.addWidget(self.interval_label)
         self.interval_layout.addWidget(self.interval_input)
-        self.inteval_widget.setLayout(self.interval_layout)
+        self.interval_widget.setLayout(self.interval_layout)
 
         self.interval_input.setPlaceholderText(f"{self.interval}")
         self.interval_input.editingFinished.connect(self.set_interval)
-        self.left_layout.addWidget(self.inteval_widget)
+        self.left_layout.addWidget(self.interval_widget)
 
         # region - save button
         # save_btn = QPushButton('Save')
@@ -469,3 +485,8 @@ class DisplaySettings(QWidget):
         interval = self.interval_input.text()
         self.interval = float(interval)
         set_config_data('update_interval', self.interval)
+
+    def set_ma_window_size(self):
+        ma_window_size = self.ma_window_input.text()
+        self.ma_window_size = int(ma_window_size)
+        set_config_data('ma_window_size', self.ma_window_size)

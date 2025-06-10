@@ -1,13 +1,16 @@
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QInputDialog
+from PyQt5.QtCore import Qt
 import os
 
 
 class MyTreeWidget(QTreeWidget):
-    def __init__(self, parent=None, display_exp=None, display_range=None, items=None):
+    def __init__(self, parent=None, display_exp=None, display_range=None, items=None, remove_exp_callback=None, move_exp_callback=None):
         super().__init__(parent)
         self.setHeaderHidden(True)  # Masque le titre
         self.display_exp = display_exp
         self.display_range = display_range
+        self.remove_exp_callback = remove_exp_callback
+        self.move_exp_callback = move_exp_callback
 
         self.itemClicked.connect(self.on_click_item)
 
@@ -15,6 +18,10 @@ class MyTreeWidget(QTreeWidget):
 
         if items is not None:
             self.populate(items)
+
+        # contextual menu on right click
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_context_menu)
 
     def on_click_item(self, item, column):
         # Vérifie si l'item a des enfants
@@ -38,7 +45,6 @@ class MyTreeWidget(QTreeWidget):
 
         return os.path.join(*parts) if parts else ""
         return "/".join(parts)
-
 
     def populate(self, items):
         self.clear()
@@ -121,7 +127,7 @@ class MyTreeWidget(QTreeWidget):
     def get_item_identifier(self, item):
         # Ex: return a tuple with column texts
         return tuple(item.text(i) for i in range(item.columnCount()))
-    
+
     def restore_expanded_items(self, expanded_ids):
         def recurse(item):
             if self.get_item_identifier(item) in expanded_ids:
@@ -132,16 +138,65 @@ class MyTreeWidget(QTreeWidget):
         for i in range(self.topLevelItemCount()):
             recurse(self.topLevelItem(i))
 
+    def get_group_names(self):
+        groups = []
 
-    # def add_top_level_items(self):
-    #     item_a = QTreeWidgetItem(["A"])
-    #     item_b = QTreeWidgetItem(["B"])
-    #     item_c = QTreeWidgetItem(["C"])
+        def recurse(item):
+            if item.childCount() > 0:
+                groups.append(item.text(0))
+                for i in range(item.childCount()):
+                    recurse(item.child(i))
 
-    #     # Sous-éléments pour B
-    #     item_b1 = QTreeWidgetItem(["B1"])
-    #     item_b2 = QTreeWidgetItem(["B2"])
-    #     item_b.addChildren([item_b1, item_b2])
+        for i in range(self.topLevelItemCount()):
+            recurse(self.topLevelItem(i))
 
-    #     self.addTopLevelItems([item_a, item_b, item_c])
+        return groups
 
+    def move_exp(self, path):
+        groups = self.get_group_names()
+        # ouvre un sous-menu pour choisir le groupe
+        menu = QMenu(self)
+
+    def show_context_menu(self, pos):
+        item = self.itemAt(pos)
+        if item is None:
+            return
+
+        full_path = self.get_full_path(item)
+
+        menu = QMenu(self)
+
+        # Ajouter des actions au menu contextuel
+        action_rm = menu.addAction("Remove")
+
+        move_menu = menu.addMenu("Move to")
+        groups = self.get_group_names()
+        if groups:
+            for group in groups:
+                move_menu.addAction(group, lambda g=group: self.move_exp_callback(full_path, g))
+        move_menu.addAction("Create new group", lambda: self.move_to_new_group_dialog(full_path))
+
+        action = menu.exec_(self.mapToGlobal(pos))
+
+        if action == action_rm:
+            # item.setExpanded(True)
+            self.remove_exp_callback(full_path)
+        elif action == move_menu:
+            # groups = self.get_group_names()
+            # if groups:
+            #     submenu = QMenu("Select Group", self)
+            #     for group in groups:
+            #         submenu.addAction(group, lambda g=group: self.move_exp_callback(full_path, g))
+            #     menu.addMenu(submenu)
+            #     submenu.addAction("Create new group", lambda: self.move_exp_callback(full_path, "New Group"))
+            # menu.exec_(self.mapToGlobal(pos))
+            ...
+
+    def move_to_new_group_dialog(self, full_path):
+        # Open a dialog to create a new group
+        group_name, ok = QInputDialog.getText(self, 'New Group', 'Enter group name:')
+        if ok and group_name:
+            return self.move_exp_callback(full_path, group_name)
+        return None
+    
+        
