@@ -122,8 +122,8 @@ class ExperimentViewer(QMainWindow):
 
         self.config_window = None
 
-        self.training_list = MyTreeWidget(self, display_exp=self.display_experiment, display_range=self.display_exp_range, remove_exp_callback=self.remove_exp, move_exp_callback=self.move_exp)
-        self.finished_list = MyTreeWidget(self, display_exp=self.display_experiment, display_range=self.display_exp_range, remove_exp_callback=self.remove_exp, move_exp_callback=self.move_exp)
+        self.training_list = MyTreeWidget(self, display_exp=self.display_experiment, display_range=self.display_exp_range, remove_folders_callback=self.remove_folders, move_exp_callback=self.move_exp)
+        self.finished_list = MyTreeWidget(self, display_exp=self.display_experiment, display_range=self.display_exp_range, remove_folders_callback=self.remove_folders, move_exp_callback=self.move_exp)
 
         left_layout.addWidget(QLabel("Experiments in progress"))
         left_layout.addWidget(self.training_list)
@@ -851,20 +851,38 @@ class ExperimentViewer(QMainWindow):
 
         self.settings_window.settings_widgets["Display"].flag_color_widget.colors = dark_colors if self.dark_mode_enabled else light_colors
 
-    def remove_exp(self, path):
+    def remove_folders(self, folders):
         """Supprime l'expérience sélectionnée."""
-        if os.path.exists(os.path.join(self.experiments_dir, path)):
-            if path == self.current_experiment_name:
-                self.current_experiment_name = None
-                self.current_scores = {}
-                self.current_flags = {}
-                self.current_train_loss = []
-                self.current_val_loss = []
-                self.update_plot()
-                self.exp_info_table.clearContents()
-            shutil.rmtree(os.path.join(self.experiments_dir, path))
+        if len(folders) > 1:  # on a un groupe
+            for path in folders[:-1]:
+                if os.path.exists(os.path.join(self.experiments_dir, path)):
+                    if path == self.current_experiment_name:
+                        self.current_experiment_name = None
+                        self.current_scores = {}
+                        self.current_flags = {}
+                        self.current_train_loss = []
+                        self.current_val_loss = []
+                        self.update_plot()
+                        self.exp_info_table.clearContents()
+                    shutil.rmtree(os.path.join(self.experiments_dir, path))
+            # si le dossier du groupe est vide, on le supprime aussi
+            if os.path.exists(os.path.join(self.experiments_dir, folders[-1])):
+                if len(os.listdir(os.path.join(self.experiments_dir, folders[-1]))) == 0:
+                    shutil.rmtree(os.path.join(self.experiments_dir, folders[-1]))
+        else:  # on a une expérience
+            path = folders[0]
+            if os.path.exists(os.path.join(self.experiments_dir, path)):
+                if path == self.current_experiment_name:
+                    self.current_experiment_name = None
+                    self.current_scores = {}
+                    self.current_flags = {}
+                    self.current_train_loss = []
+                    self.current_val_loss = []
+                    self.update_plot()
+                    self.exp_info_table.clearContents()
+                shutil.rmtree(os.path.join(self.experiments_dir, path))
 
-            self.update_experiment_list()
+        self.update_experiment_list()
 
     def move_exp(self, path, new_group):
         """Déplace l'expérience sélectionnée vers un nouveau groupe."""

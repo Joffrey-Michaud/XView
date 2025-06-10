@@ -5,7 +5,7 @@ import time
 
 A1,A2, A3 = np.random.rand(3)
 
-my_exp = Experiment("toy_experiment_2",  # give a name to the experiment
+my_exp = Experiment("toy_experiment_5",  # give a name to the experiment
                     infos={"A1": A1, "A2": A2, "A3": A3},  # you can add any information you want to the experiment in dict format
                     group="examples_group",  # possible to set a group for the experiment, to group them in one folder
                     clear=True

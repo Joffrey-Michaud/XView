@@ -4,12 +4,12 @@ import os
 
 
 class MyTreeWidget(QTreeWidget):
-    def __init__(self, parent=None, display_exp=None, display_range=None, items=None, remove_exp_callback=None, move_exp_callback=None):
+    def __init__(self, parent=None, display_exp=None, display_range=None, items=None, remove_folders_callback=None, move_exp_callback=None):
         super().__init__(parent)
         self.setHeaderHidden(True)  # Masque le titre
         self.display_exp = display_exp
         self.display_range = display_range
-        self.remove_exp_callback = remove_exp_callback
+        self.remove_folders_callback = remove_folders_callback
         self.move_exp_callback = move_exp_callback
 
         self.itemClicked.connect(self.on_click_item)
@@ -152,15 +152,13 @@ class MyTreeWidget(QTreeWidget):
 
         return groups
 
-    def move_exp(self, path):
-        groups = self.get_group_names()
-        # ouvre un sous-menu pour choisir le groupe
-        menu = QMenu(self)
-
     def show_context_menu(self, pos):
         item = self.itemAt(pos)
         if item is None:
             return
+
+        item_data = self.get_clicked_item_data(item)
+        print("ITEM DATA :", item_data)
 
         full_path = self.get_full_path(item)
 
@@ -174,23 +172,14 @@ class MyTreeWidget(QTreeWidget):
         if groups:
             for group in groups:
                 move_menu.addAction(group, lambda g=group: self.move_exp_callback(full_path, g))
-        move_menu.addAction("Create new group", lambda: self.move_to_new_group_dialog(full_path))
+        move_menu.addAction("Create new group", lambda: self.move_to_new_group_dialog(full_path, "New"))
 
         action = menu.exec_(self.mapToGlobal(pos))
 
         if action == action_rm:
             # item.setExpanded(True)
-            self.remove_exp_callback(full_path)
-        elif action == move_menu:
-            # groups = self.get_group_names()
-            # if groups:
-            #     submenu = QMenu("Select Group", self)
-            #     for group in groups:
-            #         submenu.addAction(group, lambda g=group: self.move_exp_callback(full_path, g))
-            #     menu.addMenu(submenu)
-            #     submenu.addAction("Create new group", lambda: self.move_exp_callback(full_path, "New Group"))
-            # menu.exec_(self.mapToGlobal(pos))
-            ...
+            # self.remove_exp_callback(full_path)
+            self.remove_folders_callback(item_data)
 
     def move_to_new_group_dialog(self, full_path):
         # Open a dialog to create a new group
@@ -198,5 +187,27 @@ class MyTreeWidget(QTreeWidget):
         if ok and group_name:
             return self.move_exp_callback(full_path, group_name)
         return None
-    
-        
+
+    def get_clicked_item_data(self, item):
+        """
+        Returns:
+        - A list of subfolders if the item is a group (has children).
+        - A list containing a single element (the full path) if the item is an experience (has no children).
+        """
+        print("MON ITEM C EST :", item.text(0))
+        if item.childCount() > 0:  # It's a group
+            base_group_folder = self.get_full_path(item)
+            subfolders = []
+            for i in range(item.childCount()):
+                child_item = item.child(i)
+                # If you want the full path of the immediate children:
+                subfolders.append(self.get_full_path(child_item))
+                # Or if you just want the name of the immediate children:
+                # subfolders.append(child_item.text(0))
+            subfolders.append(base_group_folder)
+            return subfolders
+        else:  # It's an experience
+            return [self.get_full_path(item)]
+
+    # def remove_data(self, folders_to_rm):
+    #     print("Folders to remove:", folders_to_rm)
