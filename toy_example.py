@@ -3,15 +3,16 @@ import numpy as np
 import time
 
 
-A1,A2, A3 = np.random.rand(3)
+A1, A2, A3 = np.random.rand(3)
 
-my_exp = Experiment("toy_experiment_5",  # give a name to the experiment
+my_exp = Experiment("toy_example",  # give a name to the experiment
                     infos={"A1": A1, "A2": A2, "A3": A3},  # you can add any information you want to the experiment in dict format
-                    group="examples_group",  # possible to set a group for the experiment, to group them in one folder
+                    group="examples",  # possible to set a group for the experiment, to group them in one folder
                     clear=True
                     )
 
-my_exp.set_train_status()  # set the status of the experiment to training
+# Set the status of the experiment to training (this line is mandatory)
+my_exp.set_train_status()
 
 points = np.linspace(0, 2 * np.pi, 200)
 
@@ -22,21 +23,28 @@ for i, x in enumerate(points):
     y2 = A2 * np.sin(x + 2)
     y3 = A3 * np.sin(x + 3)
 
-    my_exp.add_score(name="Train_loss", x=x, y=y1, plt_args={"lw": 5}, label_value=21)  # add a score with x and y values. The x value is not mandatory, you can add only y values
-    my_exp.add_score(name="Val_loss", x=x, y=y2, label_value=f"{y2:.3f}")  # 
-    # my_exp.add_score(name="Val_loss", x=x, y=y2, label_value=0.2)  # 
-    my_exp.add_score(name="Test loss", x=x, y=y3, label_value="caca")  # 
+    # add a score with x and y values. The x value is not mandatory, you can add only y values if you want
+    my_exp.add_score(name="Train_loss", x=x, y=y1)
 
-    # if i in [50, 75, 150]:
-    #     my_exp.add_flag(name="flag_1", x=x)  # add a flag at specific points. It will be displayedd with vertical lines in the plot
+    # You can add a label_value to the score to display it in the plot's legend, and update it dynamically
+    my_exp.add_score(name="Val_loss", x=x, y=y2, label_value=f"{y2:.3f}")
 
-    if i == 102:
-        my_exp.add_flag(name="Epoch WOW", x=x, unique=True, label_value=i)
+    # If desired, you can also pass plt_args to customize the plot appearance for the score (like marker, color, linestyle, etc.). It has to be a dict.
+    my_exp.add_score(name="Test loss", x=x, y=y3, plt_args={"marker": "x"})
 
+    # You can add a flag, which will be displayed in the plot as a vertical line at the x value, with a label_value to display in the legend, and update it dynamically :
     if y2 < best_val:
         best_val = y2
-        print(f"New best val: {best_val} at x={x}")
-        my_exp.add_flag(name="best_val", x=x, unique=True, plt_args={"lw": 7}, label_value=f"{best_val:.3f}")  # add a flag with unique=True to keep only the last one
-    # time.sleep(1)
+        my_exp.add_flag(name="best_val", x=x, unique=True, label_value=f"{best_val:.3f}")
 
-# my_exp.set_finished_status()  # set the status of the experiment to finished
+    # If you want to set up a flag that will be displayed multiple times, you can do it like this:
+    if i % 100 == 50 and i != 0:
+        my_exp.add_flag(name="Multiples of 50", x=x, unique=False)
+
+    # You can add info on the experiment at any time, which will be displayed in the info tab of the experiment:
+    my_exp.set_info("Current iteration", value=i)
+
+    time.sleep(0.25)
+
+# Set the status of the experiment to training. This line is mandatory to indicate that the training is finished, otherwise the experiment will be considered as running.
+my_exp.set_finished_status()

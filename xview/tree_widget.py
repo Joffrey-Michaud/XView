@@ -158,7 +158,6 @@ class MyTreeWidget(QTreeWidget):
             return
 
         item_data = self.get_clicked_item_data(item)
-        print("ITEM DATA :", item_data)
 
         full_path = self.get_full_path(item)
 
@@ -194,7 +193,6 @@ class MyTreeWidget(QTreeWidget):
         - A list of subfolders if the item is a group (has children).
         - A list containing a single element (the full path) if the item is an experience (has no children).
         """
-        print("MON ITEM C EST :", item.text(0))
         if item.childCount() > 0:  # It's a group
             base_group_folder = self.get_full_path(item)
             subfolders = []
