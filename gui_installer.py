@@ -24,7 +24,7 @@ def install_launcher_linux():
     launcher = target_dir / "xview"
     with open(launcher, "w") as f:
         f.write(f"""#!/bin/bash
-python3 "{SCRIPT_FILE}"
+nohup python3 "{SCRIPT_FILE}" > "$HOME/.xview/xview.log" 2>&1 &
 """)
     launcher.chmod(0o755)
 
@@ -39,10 +39,11 @@ def install_launcher_windows():
     fallback_dir = Path(os.environ["USERPROFILE"]) / "xview_launcher"
     fallback_dir.mkdir(exist_ok=True)
 
+    log_file = APP_DIR / "xview.log"
     bat_file = fallback_dir / "xview.bat"
     with open(bat_file, "w") as f:
         f.write(f"""@echo off
-python "{SCRIPT_FILE}"
+start "" cmd /c "python \"{SCRIPT_FILE}\" > \"{log_file}\" 2>&1"
 """)
 
     try:

@@ -64,7 +64,10 @@ class ExperimentViewer(QMainWindow):
 
         # Configurer l'interface principale
         self.setWindowTitle("XView")
-        self.setWindowIcon(QIcon(os.path.join("xview", "logo_light.png")))
+        # trouver le dossier du script
+        LOGO_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "xview", "logo_light.png")
+        print("LOGO FILE", LOGO_FILE)
+        self.setWindowIcon(QIcon(os.path.join(os.path.dirname(os.path.abspath(__file__)), "xview", "logo_light.png")))
         self.setGeometry(100, 100, 1200, 800)
 
         # region - MAIN WIDGET
@@ -734,12 +737,12 @@ class ExperimentViewer(QMainWindow):
             dark_palette.setColor(QPalette.Highlight, QColor(142, 45, 197).lighter())
             dark_palette.setColor(QPalette.HighlightedText, Qt.black)
             self.setPalette(dark_palette)
-            self.setWindowIcon(QIcon(os.path.join("xview", "logo_dark.png")))
+            self.setWindowIcon(QIcon(os.path.join(os.path.dirname(os.path.abspath(__file__)), "xview", "logo_dark.png")))
             # self.dark_mode_button.setText("Light mode")
             self.dark_mode_enabled = True
         else:
             self.setPalette(QApplication.style().standardPalette())
-            self.setWindowIcon(QIcon(os.path.join("xview", "logo_light.png")))
+            self.setWindowIcon(QIcon(os.path.join(os.path.dirname(os.path.abspath(__file__)), "xview", "logo_light.png")))
             # self.dark_mode_button.setText("Dark mode")
             self.dark_mode_enabled = False
 
