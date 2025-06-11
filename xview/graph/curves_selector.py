@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QScrollArea, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QCheckBox, QSpacerItem
+from PyQt5.QtWidgets import QScrollArea, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QCheckBox, QSpacerItem, QPushButton
 from PyQt5.QtGui import QIcon, QPalette, QColor, QCursor
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtWidgets import QSizePolicy
@@ -6,11 +6,12 @@ import os
 
 
 class CurvesSelector(QWidget):
-    def __init__(self, parent=None,
+    def __init__(self, parent=None, update_plot_callback=None,
                  #  curves_list=None, flags_list=None
                  ):
         super().__init__()
         self.dark_mode_enabled = False
+        self.update_plot_callback = update_plot_callback
         self.initUI()
         self.setMinimumHeight(100)
         self.setMaximumHeight(400)
@@ -28,6 +29,43 @@ class CurvesSelector(QWidget):
         label.setAlignment(Qt.AlignCenter)
         self.main_layout.addWidget(label)
 
+        # region - check all
+        # ----------------------------------------------------- CHECK/UNCHECK ALL BUTTONS
+        self.btn_widget = QWidget()
+        self.btn_layout = QHBoxLayout()
+        self.btn_widget.setLayout(self.btn_layout)
+
+        check_all_btn = QPushButton("Check All")
+        check_all_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        check_all_btn.clicked.connect(self.check_all_boxes)
+        self.btn_layout.addWidget(check_all_btn)
+
+        uncheck_all_btn = QPushButton("Uncheck All")
+        uncheck_all_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        uncheck_all_btn.clicked.connect(self.uncheck_all_boxes)
+        self.btn_layout.addWidget(uncheck_all_btn)
+
+        self.main_layout.addWidget(self.btn_widget)
+
+        # region - check MA
+        # ----------------------------------------------------- CHECK/UNCHECK MA
+        self.ma_btn_widget = QWidget()
+        self.ma_btn_layout = QHBoxLayout()
+        self.ma_btn_widget.setContentsMargins(0, 0, 0, 0)
+        self.ma_btn_widget.setLayout(self.ma_btn_layout)
+
+        check_all_ma_btn = QPushButton("Check All MA")
+        check_all_ma_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        check_all_ma_btn.clicked.connect(self.check_all_boxes_ma)
+        self.ma_btn_layout.addWidget(check_all_ma_btn)
+
+        uncheck_all_ma_btn = QPushButton("Uncheck All MA")
+        uncheck_all_ma_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        uncheck_all_ma_btn.clicked.connect(self.uncheck_all_boxes_ma)
+        self.ma_btn_layout.addWidget(uncheck_all_ma_btn)
+
+        self.main_layout.addWidget(self.ma_btn_widget)
+
         self.scroll_area = QScrollArea()
 
         self.scroll_area.setWidgetResizable(True)
@@ -41,6 +79,28 @@ class CurvesSelector(QWidget):
 
         self.spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         self.boxes_container_layout.addItem(self.spacer)
+
+    def uncheck_all_boxes(self):
+        for checkbox, _ in self.boxes.values():
+            checkbox.setChecked(False)
+        self.update_plot_callback()
+
+    def check_all_boxes(self):
+        for checkbox, _ in self.boxes.values():
+            checkbox.setChecked(True)
+        self.update_plot_callback()
+
+    def uncheck_all_boxes_ma(self):
+        for curve_name, (checkbox, _) in self.boxes.items():
+            if curve_name.endswith(" (MA)"):
+                checkbox.setChecked(False)
+        self.update_plot_callback()
+
+    def check_all_boxes_ma(self):
+        for curve_name, (checkbox, _) in self.boxes.items():
+            if curve_name.endswith(" (MA)"):
+                checkbox.setChecked(True)
+        self.update_plot_callback()
 
     def reset_window(self, path=None):
         if path != self.current_path:

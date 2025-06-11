@@ -64,7 +64,7 @@ class ExperimentViewer(QMainWindow):
 
         # Configurer l'interface principale
         self.setWindowTitle("XView")
-        # trouver le dossier du script
+        #  trouver le dossier du script
         LOGO_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "xview", "logo_light.png")
         print("LOGO FILE", LOGO_FILE)
         self.setWindowIcon(QIcon(os.path.join(os.path.dirname(os.path.abspath(__file__)), "xview", "logo_light.png")))
@@ -167,7 +167,7 @@ class ExperimentViewer(QMainWindow):
         self.range_widget.y_max.editingFinished.connect(
             lambda: self.set_exp_config_data("y_max", self.range_widget.y_max.text()))
 
-        self.curve_selector_widget = CurvesSelector(self)
+        self.curve_selector_widget = CurvesSelector(self, update_plot_callback=self.update_plot)
         right_widget.addWidget(self.curve_selector_widget)
 
         # Affichage des informations du fichier JSON
@@ -856,7 +856,7 @@ class ExperimentViewer(QMainWindow):
 
     def remove_folders(self, folders):
         """Supprime l'expérience sélectionnée."""
-        if len(folders) > 1:  # on a un groupe
+        if len(folders) > 1:  #  on a un groupe
             for path in folders[:-1]:
                 if os.path.exists(os.path.join(self.experiments_dir, path)):
                     if path == self.current_experiment_name:
@@ -890,7 +890,7 @@ class ExperimentViewer(QMainWindow):
     def move_exp(self, path, new_group):
         """Déplace l'expérience sélectionnée vers un nouveau groupe."""
         new_path = os.path.join(new_group, path.split(os.sep)[-1])
-        if os.path.exists(os.path.join(self.experiments_dir, path)):  # si l exp existe
+        if os.path.exists(os.path.join(self.experiments_dir, path)):  #  si l exp existe
             if not os.path.exists(os.path.join(self.experiments_dir, new_group)):  # si le nouveau groupe n'existe pas
                 os.makedirs(os.path.join(self.experiments_dir, new_group))
             shutil.move(os.path.join(self.experiments_dir, path), os.path.join(self.experiments_dir, new_group))
