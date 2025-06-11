@@ -45,7 +45,8 @@ def install_launcher_windows():
     with open(bat_file, "w") as f:
         f.write(f"""@echo off
 type nul > "{log_file}" 2>nul
-"{pythonw}" "{SCRIPT_FILE}" > "{log_file}" 2>&1
+start "" "{pythonw}" "{SCRIPT_FILE}" > "{log_file}" 2>&1
+exit
 """)
 
     try:
