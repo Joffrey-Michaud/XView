@@ -43,3 +43,11 @@ def compute_moving_average(values, window_size=15):
         current_window = values[low: i + 1]
         means.append(np.mean(current_window))
     return means
+
+
+# def compute_moving_average(values, window_size=15, alpha=0.1):
+#     # window size est là juste pour éviter un bug pour tester
+#     smoothed = [values[0]]
+#     for v in values[1:]:
+#         smoothed.append(alpha * v + (1 - alpha) * smoothed[-1])
+#     return smoothed

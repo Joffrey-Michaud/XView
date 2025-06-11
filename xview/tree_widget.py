@@ -171,7 +171,7 @@ class MyTreeWidget(QTreeWidget):
         if groups:
             for group in groups:
                 move_menu.addAction(group, lambda g=group: self.move_exp_callback(full_path, g))
-        move_menu.addAction("Create new group", lambda: self.move_to_new_group_dialog(full_path, "New"))
+        move_menu.addAction("Create new group", lambda: self.move_to_new_group_dialog(full_path))
 
         action = menu.exec_(self.mapToGlobal(pos))
 
