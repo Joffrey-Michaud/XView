@@ -40,10 +40,12 @@ def install_launcher_windows():
     fallback_dir.mkdir(exist_ok=True)
 
     log_file = APP_DIR / "xview.log"
+    pythonw = Path(sys.exec_prefix) / "pythonw.exe"  # Python sans console
     bat_file = fallback_dir / "xview.bat"
     with open(bat_file, "w") as f:
         f.write(f"""@echo off
-start "" cmd /c "python \"{SCRIPT_FILE}\" > \"{log_file}\" 2>&1"
+type nul > "{log_file}" 2>nul
+"{pythonw}" "{SCRIPT_FILE}" > "{log_file}" 2>&1
 """)
 
     try:
