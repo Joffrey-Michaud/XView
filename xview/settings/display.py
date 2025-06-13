@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QColorDialog, QComboBox, QLineEdit, QSplitter, QHBoxLayout, QMenu, QInputDialog
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QColorDialog, QComboBox, QLineEdit, QSplitter, QHBoxLayout, QMenu, QInputDialog, QDialog
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor
 from PyQt5.QtCore import Qt
@@ -531,11 +531,23 @@ class DisplaySettings(QWidget):
 
     def add_palette(self):
         new_palette_name, ok = QInputDialog.getText(self, "Add Palette", "Enter new palette name:")
-        if ok and new_palette_name:
+        if ok and new_palette_name not in self.palette.get_palette_names():
             self.palette.add_palette(new_palette_name)
             self.palette_combo.addItem(new_palette_name)
             self.palette_combo.setCurrentText(new_palette_name)
             self.select_palette(new_palette_name)
+        elif ok and new_palette_name in self.palette.get_palette_names():
+            existing_palette_diag = QDialog()
+            if get_config_data("dark_mode"):
+                existing_palette_diag.setStyleSheet("background-color: #191919; color: white;")
+            existing_palette_diag.setWindowTitle("Palette Exists")
+            existing_palette_diag.setGeometry(100, 100, 300, 100)
+            existing_palette_label = QLabel(f"Palette '{new_palette_name}' already exists.", existing_palette_diag)
+            existing_palette_label.setAlignment(Qt.AlignCenter)
+            existing_palette_diag.setLayout(QVBoxLayout())
+            existing_palette_diag.layout().addWidget(existing_palette_label)
+            existing_palette_diag.exec_()
+
 
     def rm_palette(self):
         self.palette_combo.blockSignals(True)  #  bloquer les signaux pour éviter les boucles infinies

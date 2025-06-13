@@ -66,5 +66,5 @@ def check_for_updates():
         else:
             pull_latest_changes()
             set_config_data("remind_me_later_date", datetime.now().isoformat())
-            set_config_data("first_since_update", True)
+            # set_config_data("first_since_update", True)
             os.execv(sys.executable, [sys.executable] + sys.argv)

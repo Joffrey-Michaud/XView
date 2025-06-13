@@ -1,7 +1,13 @@
+import sys
+from pathlib import Path
+
+log_file = Path.home() / ".xview" / "xview.log"
+sys.stdout = open(log_file, "w")
+sys.stderr = sys.stdout  # Pour capturer aussi les erreurs
+
 import os
 import shutil
 import random
-import sys
 import json
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QPushButton, QSplitter, QTextEdit, QLineEdit, QTableWidget, QTableWidgetItem)
 from PyQt5.QtGui import QColor, QIcon, QPalette
@@ -22,34 +28,6 @@ from xview.graph.range_widget import RangeWidget
 from xview.settings.palette import Palette
 import numpy as np
 
-
-# def check_for_updates():
-#     """Vérifie si une mise à jour est disponible et affiche une fenêtre de mise à jour si nécessaire."""
-#     last_reminder = get_config_file().get("remind_me_later_date", None)
-
-#     # si None ou si la date est plus ancienne que 24 heures, on affiche la fenêtre de mise à jour
-#     if last_reminder is None or datetime.now() - datetime.fromisoformat(last_reminder) > timedelta(hours=24):
-#         if not is_up_to_date():
-#             update_window = UpdateWindow()
-#             update_window.exec_()
-
-
-# def check_for_updates():
-#     """Vérifie si une mise à jour est disponible et affiche une fenêtre de mise à jour si nécessaire."""
-#     # si pas auto-update
-#     if not get_config_file().get("auto_update", False):
-#         last_reminder = get_config_file().get("remind_me_later_date", None)
-
-#         # si None ou si la date est plus ancienne que 24 heures, on affiche la fenêtre de mise à jour
-#         if last_reminder is None or datetime.now() - datetime.fromisoformat(last_reminder) > timedelta(hours=24):
-#             if not is_up_to_date():
-#                 update_window = UpdateWindow()
-#                 update_window.exec_()
-#     else:
-#         if not is_up_to_date():
-#             pull_latest_changes()
-#             set_config_data("remind_me_later_date", datetime.now().isoformat())
-#             set_config_data("first_since_update", True)
 
 
 class ExperimentViewer(QMainWindow):
@@ -216,17 +194,17 @@ class ExperimentViewer(QMainWindow):
         self.update_experiment_list()
         self.update_plot()
 
-        first_since_update = get_config_file().get("first_since_update", None)
+        # first_since_update = get_config_file().get("first_since_update", None)
 
-        if first_since_update is None:
-            set_config_data("first_since_update", True)
-            upd_notif = UpdatedNotification()
-            upd_notif.exec_()
-            set_config_data("first_since_update", False)
-        elif first_since_update:
-            upd_notif = UpdatedNotification()
-            upd_notif.exec_()
-            set_config_data("first_since_update", False)
+        # if first_since_update is None:
+        #     set_config_data("first_since_update", True)
+        #     upd_notif = UpdatedNotification()
+        #     upd_notif.exec_()
+        #     set_config_data("first_since_update", False)
+        # elif first_since_update:
+        #     upd_notif = UpdatedNotification()
+        #     upd_notif.exec_()
+        #     set_config_data("first_since_update", False)
 
     def read_dark_mode_state(self):
         """Lit l'état du mode sombre à partir du fichier JSON."""
@@ -480,7 +458,7 @@ class ExperimentViewer(QMainWindow):
     def get_ma_curves_style(self):
         colors = self.palette.light_mode_curves if not self.dark_mode_enabled else self.palette.dark_mode_curves
         return colors, self.palette.ma_curves_ls, self.palette.ma_curves_alpha
-    
+
     def get_flags_style(self):
         colors = self.palette.light_mode_flags if not self.dark_mode_enabled else self.palette.dark_mode_flags
         return colors, self.palette.flags_ls, self.palette.flags_alpha
@@ -890,12 +868,6 @@ if __name__ == "__main__":
     check_config_integrity()
 
     check_for_updates()
-
-    # if not is_up_to_date():
-    #     if not get_config_file().get("auto_update", False):
-    #         check_for_updates()
-    #     else:
-    #         pull_latest_changes()
 
     curr_dir = os.path.abspath(os.path.dirname(__file__))
 

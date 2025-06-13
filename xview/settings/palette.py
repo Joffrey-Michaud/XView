@@ -147,7 +147,7 @@ class Palette(object):
 
     def get_palette_names(self):
         return list(self.get_config_file().keys())
-    
+
     def add_palette(self, palette_name):
         config = self.get_config_file()
         config[palette_name] = DEFAULT_PALETTE
@@ -159,4 +159,3 @@ class Palette(object):
         if self.palette_name in config:
             del config[self.palette_name]
             self.set_config_file(config)
-

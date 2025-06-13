@@ -1,10 +1,7 @@
-from PyQt5.QtWidgets import QDialog, QWidget, QMainWindow, QHBoxLayout, QLabel, QVBoxLayout, QPushButton, QApplication
+from PyQt5.QtWidgets import QDialog, QLabel, QVBoxLayout, QPushButton, QApplication
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPalette, QColor, QIcon
-import sys
-import os
-from xview import get_config_file, set_config_file, set_config_data
-from datetime import datetime, timedelta
+from xview import get_config_file
 
 
 class UpdatedNotification(QDialog):

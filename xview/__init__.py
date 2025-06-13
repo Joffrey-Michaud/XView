@@ -25,7 +25,7 @@ default_config = {
     "remind_me_later_date": None,
     "first_since_update": False,
     "auto_update": False,
-    "version": "1.0.2"
+    "version": "1.0.3"
 }
 
 default_palette_config = {
@@ -54,10 +54,10 @@ default_palette_config = {
         "ma_curves_alpha": 0.4
     },
     "desert": {
-        "light_mode_curves": ["#D2B48C", "#CD853F", "#DEB887", "#F4A460", "#E9967A"],
-        "dark_mode_curves": ["#A0522D", "#C68642", "#B87333", "#DAA520", "#8B4513"],
-        "light_mode_flags": ["#4B3621", "#6B4423", "#5C4033"],
-        "dark_mode_flags": ["#FFDAB9", "#FFE4B5", "#FAEBD7"],
+        "light_mode_curves": ["#E0C097", "#C68642", "#F4A261", "#A0522D", "#FFE8A3"],
+        "dark_mode_curves": ["#D9BF77", "#CC7722", "#A65E2E", "#803D3B", "#D89216"],
+        "light_mode_flags": ["#9B6A6C", "#5E3023", "#FF9B54"],
+        "dark_mode_flags": ["#FFFAE5", "#FFD166", "#EF476F"],
         "curves_ls": "-",
         "curves_alpha": 0.95,
         "flags_ls": "--",
@@ -66,10 +66,10 @@ default_palette_config = {
         "ma_curves_alpha": 0.5
     },
     "deep ocean": {
-        "light_mode_curves": ["#0077BE", "#00A1D9", "#009688", "#4DD0E1", "#00BFA6"],
-        "dark_mode_curves": ["#0F2B46", "#145374", "#0C7B93", "#119DA4", "#88D498"],
-        "light_mode_flags": ["#003B46", "#002F2F", "#003E3E"],
-        "dark_mode_flags": ["#B2EBF2", "#A7FFEB", "#80DEEA"],
+        "light_mode_curves": ["#0A369D", "#4472CA", "#1C7293", "#70C1B3", "#9EE493"],
+        "dark_mode_curves": ["#20639B", "#3CAEA3", "#F6D55C", "#173F5F", "#ED553B"],
+        "light_mode_flags": ["#3E517A", "#FF6B6B", "#4ECDC4"],
+        "dark_mode_flags": ["#F25F5C", "#FFE066", "#F3FFBD"],
         "curves_ls": "-",
         "curves_alpha": 0.9,
         "flags_ls": "--",
@@ -78,18 +78,29 @@ default_palette_config = {
         "ma_curves_alpha": 0.5
     },
     "forest": {
-        "light_mode_curves": ["#2E8B57", "#556B2F", "#6B8E23", "#8FBC8F", "#BA55D3"],
-        "dark_mode_curves": ["#013220", "#3B5323", "#4B0082", "#7D5BA6", "#ADFF2F"],
-        "light_mode_flags": ["#3C2F2F", "#4F3A3A", "#2F4F2F"],
-        "dark_mode_flags": ["#E6E6FA", "#D8BFD8", "#98FB98"],
+        "light_mode_curves": ["#1B4332", "#2F5233", "#6A994E", "#A0522D", "#3E1F47"],
+        "dark_mode_curves": ["#A8E6A1", "#C0FDFB", "#F6D186", "#FFB5A7", "#E8EDDF"],
+        "light_mode_flags": ["#9E2A2B", "#4A4E69", "#1D3557"],
+        "dark_mode_flags": ["#FFCF56", "#D4A5A5", "#C1FFD7"],
         "curves_ls": "-",
-        "curves_alpha": 0.85,
-        "flags_ls": "-.",
-        "flags_alpha": 0.75,
+        "curves_alpha": 1.0,
+        "flags_ls": "--",
+        "flags_alpha": 0.9,
         "ma_curves_ls": ":",
-        "ma_curves_alpha": 0.4
+        "ma_curves_alpha": 0.5
+    },
+    "pastel": {
+        "light_mode_curves": ["#96d46f", "#e4b074", "#BC7C7C", "#cc99ff", "#FFBABA"],
+        "dark_mode_curves": ["#b4ff86", "#e4b074", "#BC7C7C", "#cc99ff", "#FFBABA"],
+        "light_mode_flags": ["#b48b8c", "#8c98b4", "#96b49d"],
+        "dark_mode_flags": ["#b48b8c", "#8c98b4", "#96b49d"],
+        "curves_ls": "-",
+        "curves_alpha": 0.9,
+        "flags_ls": "--",
+        "flags_alpha": 0.7,
+        "ma_curves_ls": ":",
+        "ma_curves_alpha": 0.5
     }
-
 }
 
 
