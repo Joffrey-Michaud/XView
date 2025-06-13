@@ -8,9 +8,10 @@ from xview import get_config_file
 
 
 class SettingsWindow(QWidget):
-    def __init__(self, main_gui, parent=None):
+    def __init__(self, main_gui, palette, parent=None):
         super().__init__(parent)
         self.main_gui = main_gui
+        self.palette = palette
         self.setWindowTitle('Settings')
         self.setGeometry(100, 100, 1200, 600)
         self.initUI()
@@ -39,7 +40,8 @@ class SettingsWindow(QWidget):
         self.current_widget = None
 
         DISPLAY_LABEL = QLabel("DISPLAY SETTINGS")
-        self.add_list_entry("Display", widget=DisplaySettings(self, add_curve_color_callback=self.main_gui.add_curve_color, add_flag_color_callback=self.main_gui.add_flag_color, remove_curve_color_callback=self.main_gui.remove_curve_color, remove_flag_color_callback=self.main_gui.remove_flag_color))
+        self.add_list_entry("Display",
+                            widget=DisplaySettings(self, palette=self.palette))
         self.add_list_entry("Preferences", widget=PreferencesSetting())
         # self.add_list_entry("Update")
         # self.add_list_entry("Save")

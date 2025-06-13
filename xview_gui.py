@@ -19,6 +19,7 @@ from xview.version.about_window import AboutWindow
 from xview import get_config_file, set_config_data, check_config_integrity, get_config_data
 from xview.settings.settings_window import SettingsWindow
 from xview.graph.range_widget import RangeWidget
+from xview.settings.palette import Palette
 import numpy as np
 
 
@@ -62,11 +63,12 @@ class ExperimentViewer(QMainWindow):
 
         self.model_image_file = None
 
+        self.palette = Palette(get_config_data("palette_name"))
+
         # Configurer l'interface principale
         self.setWindowTitle("XView")
         #  trouver le dossier du script
         LOGO_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "xview", "logo_light.png")
-        print("LOGO FILE", LOGO_FILE)
         self.setWindowIcon(QIcon(os.path.join(os.path.dirname(os.path.abspath(__file__)), "xview", "logo_light.png")))
         self.setGeometry(100, 100, 1200, 800)
 
@@ -246,7 +248,7 @@ class ExperimentViewer(QMainWindow):
     def open_settings_window(self):
         if self.settings_window is None or not self.settings_window.isVisible():
             # self.config_window = ConfigManager(self.config_file_path)
-            self.settings_window = SettingsWindow(main_gui=self)
+            self.settings_window = SettingsWindow(main_gui=self, palette=self.palette)
             self.settings_window.show()
         else:
             self.settings_window.activateWindow()
@@ -472,34 +474,16 @@ class ExperimentViewer(QMainWindow):
     #             self.model_image_label.setText("Image non trouvée")
 
     def get_curves_style(self):
-        # colors
-        if self.dark_mode_enabled:
-            colors = get_config_file()["dark_mode_curves"]
-        else:
-            colors = get_config_file()["light_mode_curves"]
-        ls = get_config_file()["curves_ls"]  # linestyle
-        alpha = get_config_file()["curves_alpha"]  # linestyle
-        return colors, ls, alpha
+        colors = self.palette.light_mode_curves if not self.dark_mode_enabled else self.palette.dark_mode_curves
+        return colors, self.palette.curves_ls, self.palette.curves_alpha
 
     def get_ma_curves_style(self):
-        # colors
-        if self.dark_mode_enabled:
-            colors = get_config_file()["dark_mode_curves"]
-        else:
-            colors = get_config_file()["light_mode_curves"]
-        ls = get_config_file()["ma_curves_ls"]  # linestyle
-        alpha = get_config_file()["ma_curves_alpha"]  # linestyle
-        return colors, ls, alpha
-
+        colors = self.palette.light_mode_curves if not self.dark_mode_enabled else self.palette.dark_mode_curves
+        return colors, self.palette.ma_curves_ls, self.palette.ma_curves_alpha
+    
     def get_flags_style(self):
-        # colors
-        if self.dark_mode_enabled:
-            colors = get_config_file()["dark_mode_flags"]
-        else:
-            colors = get_config_file()["light_mode_flags"]
-        ls = get_config_file()["flags_ls"]  # linestyle
-        alpha = get_config_file()["flags_alpha"]  # linestyle
-        return colors, ls, alpha
+        colors = self.palette.light_mode_flags if not self.dark_mode_enabled else self.palette.dark_mode_flags
+        return colors, self.palette.flags_ls, self.palette.flags_alpha
 
     def get_plt_args(self, score_name, type):
         score_dir = os.path.join(self.experiments_dir, self.current_experiment_name, type)
@@ -560,7 +544,6 @@ class ExperimentViewer(QMainWindow):
                     random_col = "#{:06x}".format(random.randint(0, 0xFFFFFF)).upper()
                 flags_colors.append(random_col)
 
-        # print('CURVE COLORS', curves_colors)
         x_min, x_max = None, None
         y_min, y_max = None, None
 
