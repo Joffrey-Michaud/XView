@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QColorDialog, QComboBox, QLineEdit, QSplitter, QHBoxLayout, QMenu, QInputDialog
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QColorDialog, QComboBox, QLineEdit, QSplitter, QHBoxLayout, QMenu
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor
 from PyQt5.QtCore import Qt
@@ -7,66 +7,64 @@ from matplotlib.figure import Figure
 from xview.utils.utils import compute_moving_average
 import numpy as np
 from xview import get_config_file, set_config_data, get_config_data
-import time
 
-# ------------------------------------------------------------------------- ColorPickerWidget
-# region - COLOR PICKER
+
+# ------------------------------------------------------------------ COLOR PICKER
+# region - ColorPickerWidget
 class ColorPickerWidget(QWidget):
-    def __init__(self, palette, type, update_plot_ex=None):
+    def __init__(self, colors=["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF"], on_color_change=None, add_color_callback=None, remove_color_callback=None, update_plot_ex=None):
         super().__init__()
-        assert type in ["curve", "flag"], "Type must be either 'curve' or 'flag'."
-        self.type = type
-        self.palette = palette
-        self.dark_mode_enabled = get_config_file()["dark_mode"]
+        self.on_color_change = on_color_change
+        self.add_color_callback = add_color_callback
+        self.remove_color_callback = remove_color_callback
         self.update_plot_ex = update_plot_ex
-        self.color_buttons = []
-
         self.layout = QHBoxLayout()
+        self.color_buttons = []
+        self.colors = colors
+
+        # Couleurs de base
+        base_colors = []
+        for color in colors:
+            base_colors.append(QColor(color))
 
         self.add_btn = QPushButton("+")
         self.add_btn.setFixedSize(20, 20)
         self.add_btn.clicked.connect(self.add_color_click)
 
-        self.init_btns()
+        self.init_colors()
 
         self.setLayout(self.layout)
 
-    # region - add
+    def init_colors(self):
+        for i, color in enumerate(self.colors):
+            if i < len(self.color_buttons):
+                self.color_buttons[i].setStyleSheet(f"background-color: {color}; border: 1px solid black;")
+            else:
+                btn = QPushButton()
+                btn.setFixedSize(25, 25)
+                btn.setStyleSheet(f"background-color: {color}; border: 1px solid black;")
+
+                # click gauche : color picker
+                btn.clicked.connect(lambda _, idx=i: self.open_color_dialog(idx))
+
+                # click droit : supprimer la couleur
+                btn.setContextMenuPolicy(Qt.CustomContextMenu)
+                btn.customContextMenuRequested.connect(
+                    lambda pos, idx=i, b=btn: self.show_context_menu(pos, idx, b)
+                )
+
+                self.color_buttons.append(btn)
+                self.layout.addWidget(btn)
+        self.layout.addWidget(self.add_btn)
+
     def add_color_click(self):
         new_color = QColorDialog.getColor(parent=self)  #  sélectionner une couleur
         if new_color.isValid():
-            new_color_name = new_color.name()
-            if self.type == "curve":
-                self.palette.add_curve_color(new_color_name)  #  ajouter la couleur à la palette et réécrire config file
-            elif self.type == "flag":
-                self.palette.add_flag_color(new_color_name)
+            self.colors.append(new_color.name())
+            self.add_color_callback(new_color.name())  # Appeler le callback pour ajouter la couleur
             # Supprimer les anciens boutons de l'interface
             self.reset_buttons()
             self.update_plot_ex()  # Mettre à jour le graphique si nécessaire
-
-    def get_colors(self):
-        if self.type == "curve":
-            return self.palette.light_mode_curves if not self.dark_mode_enabled else self.palette.dark_mode_curves
-        elif self.type == "flag":
-            return self.palette.light_mode_flags if not self.dark_mode_enabled else self.palette.dark_mode_flags
-
-    # region - init btns
-    def init_btns(self):
-        colors = self.get_colors()
-        for i, color in enumerate(colors):
-            btn = QPushButton()
-            btn.setFixedSize(25, 25)
-            btn.setStyleSheet(f"background-color: {color}; border: 1px solid black;")
-            # click gauche : modifier la couleur
-            btn.clicked.connect(lambda _, idx=i: self.open_color_dialog(idx))
-            # click droit : supprimer la couleur
-            btn.setContextMenuPolicy(Qt.CustomContextMenu)
-            btn.customContextMenuRequested.connect(
-                lambda pos, idx=i, b=btn: self.show_context_menu(pos, idx, b)
-            )
-            self.color_buttons.append(btn)
-            self.layout.addWidget(btn)
-        self.layout.addWidget(self.add_btn)
 
     def reset_buttons(self):
         for btn in self.color_buttons:
@@ -75,9 +73,19 @@ class ColorPickerWidget(QWidget):
 
         # Vider la liste des boutons
         self.color_buttons.clear()
-        self.init_btns()
+        self.init_colors()
 
-    # region - left click
+    def show_context_menu(self, pos, index, button):
+        context_menu = QMenu(self)
+        remove_action = context_menu.addAction("Remove")
+        global_pos = button.mapToGlobal(pos)
+        action = context_menu.exec_(global_pos)
+
+        if action == remove_action and self.remove_color_callback:
+            self.remove_color_callback(index)
+            self.reset_buttons()
+            self.update_plot_ex()  # Mettre à jour le graphique si nécessaire
+
     def open_color_dialog(self, index):
         sender = self.sender()
         current_color = sender.palette().button().color()
@@ -85,57 +93,30 @@ class ColorPickerWidget(QWidget):
 
         if color.isValid():
             sender.setStyleSheet(f"background-color: {color.name()}; border: 1px solid black;")
-            if self.type == "curve":
-                if not self.dark_mode_enabled:
-                    self.palette.light_mode_curves[index] = color.name()
-                else:
-                    self.palette.dark_mode_curves[index] = color.name()
-            elif self.type == "flag":
-                if not self.dark_mode_enabled:
-                    self.palette.light_mode_flags[index] = color.name()
-                else:
-                    self.palette.dark_mode_flags[index] = color.name()
+            self.colors[index] = color.name()  # Update internal color list
 
-            self.palette.set_config_palette()  # Mettre à jour la configuration de la palette
-        self.update_plot_ex()
+            if self.on_color_change:
+                self.on_color_change(index, color.name())  # Call the callback
 
-    # region - right click
-    def show_context_menu(self, pos, index, button):
-        context_menu = QMenu(self)
-        change_action = context_menu.addAction("Change")
-        remove_action = context_menu.addAction("Remove")
-        global_pos = button.mapToGlobal(pos)
-        action = context_menu.exec_(global_pos)
-
-        if action == change_action:
-            self.open_color_dialog(index)
-
-        if action == remove_action:
-            if self.type == "curve":
-                self.palette.rm_curve_color(index)
-            elif self.type == "flag":
-                self.palette.rm_flag_color(index)
-            self.reset_buttons()
-            self.update_plot_ex()  # Mettre à jour le graphique si nécessaire
-
-    def update_colors(self):
-        self.dark_mode_enabled = get_config_file()["dark_mode"]
-        colors = self.get_colors()
+    def update_colors(self, colors):
+        self.colors = colors
         for btn, color in zip(self.color_buttons, colors):
             btn.setStyleSheet(f"background-color: {color}; border: 1px solid black;")
 
 
-# ------------------------------------------------------------------------- StyleSetter
-# region - STYLE SETTER
+# ------------------------------------------------------------------ STYLE SETTER
+# region - StyleSetter
 class StyleSetter(QWidget):
-    def __init__(self, palette, type, update_plot_ex=None):
+    # widget pour choisir le style de ligne plt, et le alpha
+    def __init__(self, ls, alpha, set_ls_callbak, set_alpha_callback):
         super().__init__()
-        assert type in ["curve", "ma_curve", "flag"], "Type must be either 'curve' or 'flag'."
-        self.type = type
-        self.palette = palette
-        self.update_plot_ex = update_plot_ex
+        self.ls = ls
+        self.alpha = alpha
+        self.set_ls_callbak = set_ls_callbak
+        self.set_alpha_callback = set_alpha_callback
 
         self.layout = QHBoxLayout()
+
         self.combo_box = QComboBox()
         self.combo_box.addItems([
             "Ligne continue (-)",
@@ -147,90 +128,58 @@ class StyleSetter(QWidget):
         self.combo_box.currentIndexChanged.connect(self.select_ls_callback)
         self.layout.addWidget(self.combo_box)
 
-        self.style_map = {
+        style_map = {
             "-": 0,
             "--": 1,
             "-.": 2,
             ":": 3
         }
-        self.inverted_style_map = {v: k for k, v in self.style_map.items()}
+
+        self.inverted_style_map = {v: k for k, v in style_map.items()}
+
+        if ls in style_map:
+            self.combo_box.setCurrentIndex(style_map[ls])
 
         self.alpha_label = QLabel("Alpha :")
         self.alpha_input = QLineEdit()
-        self.alpha_input.setPlaceholderText(f"{self.get_alpha()}")
+        self.alpha_input.setPlaceholderText(f"{alpha}")
+        # self.alpha_input.textChanged.connect(self.select_alpha_callback)
         self.alpha_input.editingFinished.connect(self.select_alpha_callback)
 
         self.layout.addWidget(self.alpha_label)
         self.layout.addWidget(self.alpha_input)
 
-        self.init_values()
-
         self.setLayout(self.layout)
 
-    def init_values(self):
-        self.combo_box.setCurrentIndex(self.style_map[self.get_ls()])
-        self.alpha_input.setText(str(self.get_alpha()))
-
     def select_ls_callback(self, index):
-        self.set_ls(self.inverted_style_map[index])
-        self.update_plot_ex()
+        self.set_ls_callbak(self.inverted_style_map[index])
 
     def select_alpha_callback(self):
         alpha = self.alpha_input.text()
-        self.set_alpha(float(alpha))
-        self.update_plot_ex()
+        self.set_alpha_callback(float(alpha))
 
-    # region - get/set ls/alpha
-    def get_ls(self):
-        if self.type == "curve":
-            return self.palette.curves_ls
-        elif self.type == "ma_curve":
-            return self.palette.ma_curves_ls
-        elif self.type == "flag":
-            return self.palette.flags_ls
-
-    def get_alpha(self):
-        if self.type == "curve":
-            return self.palette.curves_alpha
-        elif self.type == "ma_curve":
-            return self.palette.ma_curves_alpha
-        elif self.type == "flag":
-            return self.palette.flags_alpha
-
-    def set_ls(self, ls):
-        if self.type == "curve":
-            self.palette.curves_ls = ls
-        elif self.type == "ma_curve":
-            self.palette.ma_curves_ls = ls
-        elif self.type == "flag":
-            self.palette.flags_ls = ls
-        self.palette.set_config_palette()
-
-    def set_alpha(self, alpha):
-        if self.type == "curve":
-            self.palette.curves_alpha = alpha
-        elif self.type == "ma_curve":
-            self.palette.ma_curves_alpha = alpha
-        elif self.type == "flag":
-            self.palette.flags_alpha = alpha
-        self.palette.set_config_palette()
 
 # ------------------------------------------------------------------ SETTINGS DISPLAY
 # region - DisplaySettings
-
-
 class DisplaySettings(QWidget):
-    def __init__(self, parent, palette):
+    def __init__(self, parent=None, add_curve_color_callback=None, add_flag_color_callback=None,
+                 remove_curve_color_callback=None, remove_flag_color_callback=None):
         super().__init__()
         self.parent = parent
-        self.palette = palette
         self.global_config = get_config_file()
         self.dark_mode_enabled = get_config_file()["dark_mode"]
         self.interval = self.get_interval()
         self.ma_window_size = get_config_data("ma_window_size")
 
-        self.curve_colors = self.get_curve_colors()
-        self.flag_colors = self.get_flag_colors()
+        self.dark_mode_curves = self.get_color_theme("curves", dark_mode=True)
+        self.dark_mode_flags = self.get_color_theme("flags", dark_mode=True)
+
+        self.light_mode_curves = self.get_color_theme("curves", dark_mode=False)
+        self.light_mode_flags = self.get_color_theme("flags", dark_mode=False)
+
+        self.curves_ls, self.curves_alpha = self.get_curves_style()
+        self.ma_curves_ls, self.ma_curves_alpha = self.get_ma_curves_style()
+        self.flags_ls, self.flags_alpha = self.get_flags_style()
 
         self.main_layout = QVBoxLayout(self)
         self.setLayout(self.main_layout)
@@ -262,58 +211,33 @@ class DisplaySettings(QWidget):
         self.dark_mode_btn.clicked.connect(self.toggle_dark_mode)
         self.left_layout.addWidget(self.dark_mode_btn)
 
-        # region - palette label
-        self.palette_widget = QWidget()
-        self.palette_layout = QHBoxLayout()
-        self.palette_widget.setLayout(self.palette_layout)
-        self.left_layout.addWidget(self.palette_widget)
-        self.palette_label = QLabel("Current Palette :")
-        self.palette_label.setAlignment(Qt.AlignCenter)
-        self.palette_layout.addWidget(self.palette_label)
-
-        # region - palette combobox
-        self.palette_combo = QComboBox(self)
-        self.palette_combo.addItems(self.palette.get_palette_names())
-        self.palette_combo.setCurrentText(self.palette.palette_name)
-        self.palette_combo.currentTextChanged.connect(self.select_palette)
-        self.palette_layout.addWidget(self.palette_combo)
-
-        self.add_btn = QPushButton("+")
-        self.add_btn.setFixedSize(20, 20)
-        self.add_btn.clicked.connect(self.add_palette)
-        self.palette_layout.addWidget(self.add_btn)
-
-        self.rm_btn = QPushButton("-")
-        self.rm_btn.setFixedSize(20, 20)
-        self.rm_btn.clicked.connect(self.rm_palette)
-        self.palette_layout.addWidget(self.rm_btn)
-
         # ------------------------------------------------------------------------------------------
         # region - Colors and styles
 
         # ----------------------------------------------------------- CURVES
+        # section_label = QLabel("Choose the colors of the curves")
         section_label = QLabel("Raw curves style")
+        # section_label.setStyleSheet("font-size: 10px;")
         section_label.setAlignment(Qt.AlignCenter)
         self.left_layout.addWidget(section_label)
 
-        self.curve_color_widget = ColorPickerWidget(
-            palette=self.palette, type="curve", update_plot_ex=self.plot_example
-        )
+        self.curve_color_widget = ColorPickerWidget(colors=self.light_mode_curves, on_color_change=self.update_curves_colors, add_color_callback=add_curve_color_callback, remove_color_callback=remove_curve_color_callback, update_plot_ex=self.plot_example)
         self.left_layout.addWidget(self.curve_color_widget)
 
-        self.curves_style_setter = StyleSetter(
-            palette=self.palette, type="curve", update_plot_ex=self.plot_example
-        )
+        self.curves_style_setter = StyleSetter(self.curves_ls, self.curves_alpha,
+                                               set_ls_callbak=self.set_curves_ls,
+                                               set_alpha_callback=self.set_curves_alpha)
         self.left_layout.addWidget(self.curves_style_setter)
 
         # ----------------------------------------------------------- MA CURVES
         self.ma_label = QLabel("Moving Average curves style")
+        # self.ma_label.setStyleSheet("font-size: 10px;")
         self.ma_label.setAlignment(Qt.AlignCenter)
         self.left_layout.addWidget(self.ma_label)
 
-        self.ma_curves_style_setter = StyleSetter(
-            palette=self.palette, type="ma_curve", update_plot_ex=self.plot_example
-        )
+        self.ma_curves_style_setter = StyleSetter(self.ma_curves_ls, self.ma_curves_alpha,
+                                                  set_ls_callbak=self.set_ma_curves_ls,
+                                                  set_alpha_callback=self.set_ma_curves_alpha)
         self.left_layout.addWidget(self.ma_curves_style_setter)
 
         # ------------------------------------------------------------------------------------------
@@ -333,17 +257,16 @@ class DisplaySettings(QWidget):
 
         # ----------------------------------------------------------- FLAGS
         section_label_2 = QLabel("Flags style")
+        # section_label_2.setStyleSheet("font-size: 10px;")
         section_label_2.setAlignment(Qt.AlignCenter)
         self.left_layout.addWidget(section_label_2)
 
-        self.flag_color_widget = ColorPickerWidget(
-            palette=self.palette, type="flag", update_plot_ex=self.plot_example,
-        )
+        self.flag_color_widget = ColorPickerWidget(colors=self.light_mode_flags, on_color_change=self.update_flags_colors, add_color_callback=add_flag_color_callback, remove_color_callback=remove_flag_color_callback, update_plot_ex=self.plot_example)
         self.left_layout.addWidget(self.flag_color_widget)
 
-        self.flags_style_setter = StyleSetter(
-            palette=self.palette, type="flag", update_plot_ex=self.plot_example
-        )
+        self.flags_style_setter = StyleSetter(self.flags_ls, self.flags_alpha,
+                                              set_ls_callbak=self.set_flags_ls,
+                                              set_alpha_callback=self.set_flags_alpha)
         self.left_layout.addWidget(self.flags_style_setter)
 
         # ------------------------------------------------------------------------------------------
@@ -361,33 +284,31 @@ class DisplaySettings(QWidget):
         self.interval_input.editingFinished.connect(self.set_interval)
         self.left_layout.addWidget(self.interval_widget)
 
+        # region - save button
+        # save_btn = QPushButton('Save')
+        # save_btn.clicked.connect(self.save_config)
+        # left_layout.addWidget(save_btn, 13, 0)
+
         self.plot_example()
 
         self.set_dark_mode(self.global_config["dark_mode"])
 
         self.show()
 
-    # region - select_palette
-    def select_palette(self, palette_name):
-        """Select a palette by name and update the colors and styles."""
-        self.palette.set_palette(palette_name)
-        self.curve_color_widget.reset_buttons()
-        self.flag_color_widget.reset_buttons()
-
-        self.curves_style_setter.init_values()
-        self.ma_curves_style_setter.init_values()
-        self.flags_style_setter.init_values()
-
-        self.plot_example()
-
     # region - plot_example
     def plot_example(self):
-        curve_colors = self.get_curve_colors()
-        flags_colors = self.get_flag_colors()
+        self.dark_mode_curves = self.get_color_theme("curves", dark_mode=True)
+        self.dark_mode_flags = self.get_color_theme("flags", dark_mode=True)
 
-        curves_ls, curves_alpha = self.get_curves_style()
-        ma_curves_ls, ma_curves_alpha = self.get_ma_curves_style()
-        flags_ls, flags_alpha = self.get_flags_style()
+        self.light_mode_curves = self.get_color_theme("curves", dark_mode=False)
+        self.light_mode_flags = self.get_color_theme("flags", dark_mode=False)
+
+        if self.dark_mode_enabled:
+            curves_colors = self.dark_mode_curves
+            flags_colors = self.dark_mode_flags
+        else:
+            curves_colors = self.light_mode_curves
+            flags_colors = self.light_mode_flags
 
         self.figure.clear()
         ax = self.figure.add_subplot(111)
@@ -414,18 +335,18 @@ class DisplaySettings(QWidget):
         x = np.linspace(0, 2 * np.pi, 200)
         # numpy seed
         np.random.seed(42)
-        amplitudes = np.random.uniform(0.5, 2.0, size=len(curve_colors))
+        amplitudes = np.random.uniform(0.5, 2.0, size=len(curves_colors))
         # amplitudes = [1, 2, 0.5, 1.5, 0.8]
-        for i, (color, amp) in enumerate(zip(curve_colors, amplitudes)):
+        for i, (color, amp) in enumerate(zip(curves_colors, amplitudes)):
             y = amp * np.sin(x + i) + np.random.normal(0, 0.05, len(x))
-            ax.plot(x, y, color=color, label=f"Curve {i + 1}", ls=curves_ls, alpha=curves_alpha)
+            ax.plot(x, y, color=color, label=f"Curve {i + 1}", ls=self.curves_ls, alpha=self.curves_alpha)
 
-            ax.plot(x, compute_moving_average(y, 10), color=color, label=f"MA Curve {i + 1}", ls=ma_curves_ls, alpha=ma_curves_alpha)
+            ax.plot(x, compute_moving_average(y, 10), color=color, label=f"MA Curve {i + 1}", ls=self.ma_curves_ls, alpha=self.ma_curves_alpha)
 
         coords = np.linspace(0, 2 * np.pi, len(flags_colors) + 2)
         for i, (color, x) in enumerate(zip(flags_colors, coords[1:-1])):
             y = amp * np.sin(x + i)
-            ax.axvline(x, color=color, label=f"Flag {i + 1}", ls=flags_ls, alpha=flags_alpha)
+            ax.axvline(x, color=color, label=f"Flag {i + 1}", ls=self.flags_ls, alpha=self.flags_alpha)
 
         ax.legend(facecolor=bg_color, edgecolor=text_color, labelcolor=text_color)
 
@@ -435,7 +356,6 @@ class DisplaySettings(QWidget):
         self.canvas.draw()
 
     def set_dark_mode(self, dark_mode):
-        set_config_data('dark_mode', dark_mode)
         if dark_mode:
             dark_palette = QPalette()
             dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
@@ -451,8 +371,8 @@ class DisplaySettings(QWidget):
             dark_palette.setColor(QPalette.Highlight, QColor(142, 45, 197).lighter())
             dark_palette.setColor(QPalette.HighlightedText, Qt.black)
 
-            self.curve_color_widget.update_colors()
-            self.flag_color_widget.update_colors()
+            self.curve_color_widget.update_colors(self.dark_mode_curves)
+            self.flag_color_widget.update_colors(self.dark_mode_flags)
 
             pixmap = QPixmap('xview/logo_dark.png')  # Replace with your logo path
             pixmap = pixmap.scaled(200, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -465,8 +385,8 @@ class DisplaySettings(QWidget):
             self.dark_mode_btn.setText("Light mode")
         else:
             self.setPalette(QApplication.style().standardPalette())
-            self.curve_color_widget.update_colors()
-            self.flag_color_widget.update_colors()
+            self.curve_color_widget.update_colors(self.light_mode_curves)
+            self.flag_color_widget.update_colors(self.light_mode_flags)
             self.dark_mode_enabled = False
             self.setWindowIcon(QIcon("logo_light.png"))
             self.dark_mode_btn.setText("Dark mode")
@@ -476,22 +396,11 @@ class DisplaySettings(QWidget):
             self.logo_label.setPixmap(pixmap)
 
         self.plot_example()
+        set_config_data('dark_mode', dark_mode)
 
     def toggle_dark_mode(self):
         self.set_dark_mode(not self.dark_mode_enabled)
         self.parent.set_dark_mode(self.dark_mode_enabled)  # Notify parent if needed
-
-    def get_curve_colors(self):
-        if self.dark_mode_enabled:
-            return self.palette.dark_mode_curves
-        else:
-            return self.palette.light_mode_curves
-
-    def get_flag_colors(self):
-        if self.dark_mode_enabled:
-            return self.palette.dark_mode_flags
-        else:
-            return self.palette.light_mode_flags
 
     def get_color_theme(self, color_section="curves", dark_mode=False):
         config = get_config_file()
@@ -507,13 +416,66 @@ class DisplaySettings(QWidget):
                 return config.get("light_mode_flags", ["#000000", "#000000", "#000000"])
 
     def get_curves_style(self):
-        return self.palette.curves_ls, self.palette.curves_alpha
+        config = get_config_file()
+        return config["curves_ls"], config["curves_alpha"]
 
     def get_ma_curves_style(self):
-        return self.palette.ma_curves_ls, self.palette.ma_curves_alpha
+        config = get_config_file()
+        return config["ma_curves_ls"], config["ma_curves_alpha"]
 
     def get_flags_style(self):
-        return self.palette.flags_ls, self.palette.flags_alpha
+        config = get_config_file()
+        return config["flags_ls"], config["flags_alpha"]
+
+    def set_curves_ls(self, ls):
+        self.curves_ls = ls
+        set_config_data('curves_ls', ls)
+        self.plot_example()
+
+    def set_ma_curves_ls(self, ls):
+        self.ma_curves_ls = ls
+        set_config_data('ma_curves_ls', ls)
+        self.plot_example()
+
+    def set_flags_ls(self, ls):
+        self.flags_ls = ls
+        set_config_data('flags_ls', ls)
+        self.plot_example()
+
+    def set_curves_alpha(self, alpha):
+        self.curves_alpha = alpha
+        set_config_data('curves_alpha', alpha)
+        self.plot_example()
+
+    def set_ma_curves_alpha(self, alpha):
+        self.ma_curves_alpha = alpha
+        set_config_data('ma_curves_alpha', alpha)
+        self.plot_example()
+
+    def set_flags_alpha(self, alpha):
+        self.flags_alpha = alpha
+        set_config_data('flags_alpha', alpha)
+        self.plot_example()
+
+    def update_curves_colors(self, index, new_color):
+        if self.dark_mode_enabled:
+            self.dark_mode_curves[index] = new_color
+            set_config_data('dark_mode_curves', self.dark_mode_curves)
+        else:
+            self.light_mode_curves[index] = new_color
+            set_config_data('light_mode_curves', self.light_mode_curves)
+
+        self.plot_example()
+
+    def update_flags_colors(self, index, new_color):
+        if self.dark_mode_enabled:
+            self.dark_mode_flags[index] = new_color
+            set_config_data('dark_mode_flags', self.dark_mode_flags)
+        else:
+            self.light_mode_flags[index] = new_color
+            set_config_data('light_mode_flags', self.light_mode_flags)
+
+        self.plot_example()
 
     def get_interval(self):
         config = get_config_file()
@@ -528,33 +490,3 @@ class DisplaySettings(QWidget):
         ma_window_size = self.ma_window_input.text()
         self.ma_window_size = int(ma_window_size)
         set_config_data('ma_window_size', self.ma_window_size)
-
-    def add_palette(self):
-        new_palette_name, ok = QInputDialog.getText(self, "Add Palette", "Enter new palette name:")
-        if ok and new_palette_name:
-            self.palette.add_palette(new_palette_name)
-            self.palette_combo.addItem(new_palette_name)
-            self.palette_combo.setCurrentText(new_palette_name)
-            self.select_palette(new_palette_name)
-
-    def rm_palette(self):
-        self.palette_combo.blockSignals(True)  #  bloquer les signaux pour éviter les boucles infinies
-        # enelevr la palette actuelle
-        palette_list = self.palette.get_palette_names()
-        self.palette.remove_palette()
-
-        palette_list = self.palette.get_palette_names()
-        if len(palette_list) == 0:  #  si il n'y a plus de palettes
-            self.palette.add_palette("default")  #  ajouter une palette par défaut
-            new_palette_name = "default"
-        else:
-            new_palette_name = palette_list[0]
-
-        #  mettre à jour la combobox
-        self.palette_combo.clear()
-        self.palette_combo.addItems(self.palette.get_palette_names())
-
-        self.palette_combo.setCurrentText(new_palette_name)
-        self.palette_combo.blockSignals(False)
-        self.select_palette(new_palette_name)
-

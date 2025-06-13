@@ -4,7 +4,7 @@ import numpy as np
 
 def write_json(json_path, my_dict):
     with open(json_path, "w") as f:
-        json.dump(my_dict, f)
+        json.dump(my_dict, f, indent=4)
 
 
 def read_json(json_path):
