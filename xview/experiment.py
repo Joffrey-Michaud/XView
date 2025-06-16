@@ -8,9 +8,42 @@ from xview import get_config_data
 
 @warn_if_outdated
 class Experiment(object):
-    def __init__(self, name, infos=None, group=None, clear=None):
+    def __init__(self, name, infos=None, group=None, clear=None, check_exists=False):
+        """Object to manage an experiment folder.
+        This class creates a folder for the experiment, manages its status, scores, and flags.
+        It also allows to store and retrieve information about the experiment in a JSON file.
+        The folder structure is as follows:
+        data_folder/
+            └── group_name/
+                └── experiment_name/
+                    ├── exp_infos.json
+                    ├── status.txt
+                    ├── scores_training.txt
+                    ├── scores_validation.txt
+                    ├── scores/
+                    │   └── score_name.txt
+                    └── flags/
+                        └── flag_name.txt
+        The `name` parameter is the name of the experiment, which will be used to create the folder and files.
+        The `infos` parameter allows to set initial information for the experiment, which will be stored in a JSON file.
+        The 'group' parameter allows to create a subfolder for the experiment, useful for organizing multiple experiments under a common group name.
+        The `clear` parameter allows to delete the experiment folder if it already exists.
+        The `check_exists` parameter raises an error if the experiment folder does not exist when set to True. It also ignore the `clear` parameter.
+
+        The 'data_folder' is read from the configuration file, and defaults to '~/.xview/exps/' if not set. You can change this in the configuration file, or by running the `config.py` script.
+        Args:
+            name (string): Name of the experiment, used to create the folder and files.
+            infos (dict, optional): Dict containing informations about the experiement. Defaults to None.
+            group (string, optional): Name of the group in which to put the experiment. Defaults to None.
+            clear (bool, optional): Set to True if you want to erase the experiment before running. Defaults to None.
+            check_exists (bool, optional): Set to True if you want to assert the existence of the experiment in security, ignoring the clear parameter. Useful for inference for example. Defaults to False.
+
+        Raises:
+            FileNotFoundError: _description_
+        """
         self.name = name
         self.group = group
+        self.check_exists = check_exists
 
         # lecture du fichier de config et création du dossier de l'expérience
         self.data_folder = get_config_data("data_folder")
@@ -19,6 +52,12 @@ class Experiment(object):
             self.data_folder = os.path.join(self.data_folder, self.group)
 
         self.experiment_folder = os.path.join(self.data_folder, self.name)
+
+        if self.check_exists:
+            clear = False
+            exists = os.path.exists(self.experiment_folder)
+            if not exists:
+                raise FileNotFoundError(f"Experiment folder {self.experiment_folder} does not exist.")
 
         if clear == True and os.path.exists(self.experiment_folder):
             shutil.rmtree(self.experiment_folder)
@@ -92,3 +131,6 @@ class Experiment(object):
 
     def get_score(self, name, get_x=True, ma=False):
         return self.scores.get_score(name, get_x=get_x, ma=ma)
+    
+    def get_folder(self):
+        return self.experiment_folder
