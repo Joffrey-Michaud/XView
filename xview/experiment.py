@@ -44,6 +44,7 @@ class Experiment(object):
         self.name = name
         self.group = group
         self.check_exists = check_exists
+        self.pipes = list()
 
         # lecture du fichier de config et création du dossier de l'expérience
         self.data_folder = get_config_data("data_folder")
@@ -90,6 +91,22 @@ class Experiment(object):
         os.makedirs(self.flags_folder, exist_ok=True)
         self.flags = MultiScores(self.flags_folder)
 
+    def pipe_to(self, other_experiment):
+        if hasattr(other_experiment, "__class__") and other_experiment.__class__.__name__ == "Experiment":
+            self.pipes.append(other_experiment)
+        else:
+            raise TypeError("other_experiment must be an instance of Experiment")
+
+    def pipe_break(self, other_experiment):
+        if other_experiment in self.pipes:
+            self.pipes.remove(other_experiment)
+        else:
+            raise ValueError("other_experiment is not in the list of pipes")
+
+    def __act_pipe(self, method, *args, **kwargs):
+        for pipe in self.pipes:
+            getattr(pipe, method)(*args, **kwargs)
+
     def get_infos(self):
         if os.path.exists(self.infos_path):
             self.infos = read_json(self.infos_path)
@@ -99,11 +116,13 @@ class Experiment(object):
         return self.infos
 
     def set_infos(self, infos):
+        self.__act_pipe("set_infos", infos)
         self.infos = infos
         if infos is not None:
             write_json(self.infos_path, infos)
 
     def set_info(self, key, value):
+        self.__act_pipe("set_info", key, value)
         self.infos[key] = value
         write_json(self.infos_path, self.infos)
 
@@ -114,15 +133,18 @@ class Experiment(object):
         self.update_status("finished")
 
     def update_status(self, status):
+        self.__act_pipe("update_status", status)
         self.status = status
         write_file(self.status_file, self.status, flag="w")
 
     def add_score(self, name, y, x=None, plt_args: dict = None, label_value=None):
+        self.__act_pipe("add_score", name, y, x, plt_args=plt_args, label_value=label_value)
         if name not in self.scores.scores:
             self.scores.add_score(name, plt_args=plt_args)
         self.scores.add_score_point(name, y, x, label_value=label_value)
 
     def add_flag(self, name, x=None, unique=False, plt_args: dict = None, label_value=None):
+        self.__act_pipe("add_flag", name, x, unique=unique, plt_args=plt_args, label_value=label_value)
         if name not in self.flags.scores:
             self.flags.add_score(name, plt_args=plt_args)
         if x is None:
@@ -131,6 +153,6 @@ class Experiment(object):
 
     def get_score(self, name, get_x=True, ma=False):
         return self.scores.get_score(name, get_x=get_x, ma=ma)
-    
+
     def get_folder(self):
         return self.experiment_folder
