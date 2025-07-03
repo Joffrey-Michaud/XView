@@ -9,7 +9,7 @@ import os
 import shutil
 import random
 import json
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QPushButton, QSplitter, QTextEdit, QLineEdit, QTableWidget, QTableWidgetItem)
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QPushButton, QSplitter, QTextEdit, QLineEdit, QTableWidget, QTableWidgetItem, QTabWidget)
 from PyQt5.QtGui import QColor, QIcon, QPalette
 from PyQt5.QtCore import QDateTime
 from PyQt5.QtCore import QTimer, Qt
@@ -46,7 +46,6 @@ class ExperimentViewer(QMainWindow):
         # Configurer l'interface principale
         self.setWindowTitle("XView")
         #  trouver le dossier du script
-        LOGO_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "xview", "logo_light.png")
         self.setWindowIcon(QIcon(os.path.join(os.path.dirname(os.path.abspath(__file__)), "xview", "logo_light.png")))
         self.setGeometry(100, 100, 1200, 800)
 
@@ -122,9 +121,15 @@ class ExperimentViewer(QMainWindow):
 
         # region - PLOT WIDGET
         # Widget central : Graphique Matplotlib
-        self.figure = Figure()
-        self.canvas = FigureCanvas(self.figure)
-        splitter.addWidget(self.canvas)
+        # self.figure = Figure()
+        # self.canvas = FigureCanvas(self.figure)
+        # splitter.addWidget(self.canvas)
+
+        self.plot_tabs = QTabWidget()
+        self.plot_tabs.setTabsClosable(True)
+        # self.plot_tabs.tabCloseRequested.connect(lambda index: self.plot_tabs.removeTab(index))
+        self.plot_tabs.tabCloseRequested.connect(self.plot_tabs.removeTab)
+        splitter.addWidget(self.plot_tabs)
 
         # region - RIGHT WIDGET
         # Widget droit : Affichage du schéma du modèle et des informations
@@ -194,18 +199,6 @@ class ExperimentViewer(QMainWindow):
         self.update_experiment_list()
         self.update_plot()
 
-        # first_since_update = get_config_file().get("first_since_update", None)
-
-        # if first_since_update is None:
-        #     set_config_data("first_since_update", True)
-        #     upd_notif = UpdatedNotification()
-        #     upd_notif.exec_()
-        #     set_config_data("first_since_update", False)
-        # elif first_since_update:
-        #     upd_notif = UpdatedNotification()
-        #     upd_notif.exec_()
-        #     set_config_data("first_since_update", False)
-
     def read_dark_mode_state(self):
         """Lit l'état du mode sombre à partir du fichier JSON."""
         return get_config_file()["dark_mode"]
@@ -225,7 +218,6 @@ class ExperimentViewer(QMainWindow):
 
     def open_settings_window(self):
         if self.settings_window is None or not self.settings_window.isVisible():
-            # self.config_window = ConfigManager(self.config_file_path)
             self.settings_window = SettingsWindow(main_gui=self, palette=self.palette)
             self.settings_window.show()
         else:
@@ -240,6 +232,12 @@ class ExperimentViewer(QMainWindow):
         else:
             self.model_image_label.hide()
             self.exp_info_text.hide()
+
+    def open_new_tab(self):
+        figure = Figure()
+        canvas = FigureCanvas(figure)
+
+
 
     def filter_experiments(self):
         search_text = self.search_bar.text().lower()
@@ -433,23 +431,6 @@ class ExperimentViewer(QMainWindow):
         else:
             self.figure.clear()
             self.canvas.draw()
-
-    # def display_model_image(self):
-    #     if self.model_image_file is not None:
-    #         if os.path.exists(self.model_image_file):
-    #             image = QImage(self.model_image_file)
-    #             if self.dark_mode_enabled:
-    #                 image.invertPixels()
-    #                 self.model_image_label.setStyleSheet("border: 1px solid black; background-color: black")
-    #             else:
-    #                 self.model_image_label.setStyleSheet("border: 1px solid black; background-color: white")
-    #             pixmap = QPixmap.fromImage(image)
-    #             self.model_image_label.setPixmap(pixmap.scaled(self.model_image_label.size(),
-    #                                                            aspectRatioMode=Qt.KeepAspectRatio,
-    #                                                            transformMode=Qt.SmoothTransformation))  # Preserve aspect ratio
-    #         else:
-    #             self.model_image_label.clear()
-    #             self.model_image_label.setText("Image non trouvée")
 
     def get_curves_style(self):
         colors = self.palette.light_mode_curves if not self.dark_mode_enabled else self.palette.dark_mode_curves

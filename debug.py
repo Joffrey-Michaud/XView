@@ -1,35 +1,69 @@
-from xview.utils.utils import write_json
-from xview import CONFIG_FILE_DIR
-import os
+import sys
+from PyQt5.QtWidgets import (
+    QApplication, QWidget, QTabWidget, QVBoxLayout,
+    QLabel, QMainWindow, QPushButton, QHBoxLayout, QTabBar
+)
+from PyQt5.QtCore import Qt
 
 
-palette_config_file = os.path.join(CONFIG_FILE_DIR, "palette_config.json")
+class FenetrePrincipale(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("QTabWidget avec fermeture + ajout")
+        self.setGeometry(300, 200, 600, 400)
 
-palette_dict = {
-    "custom": {
-        "light_mode_curves": ["#ff8288", "#c28cff", "#99b1ff", "#8aff9c"],
-        "dark_mode_curves": ["#F6EFBD", "#e4b074", "#BC7C7C", "#9090ff"],
-        "light_mode_flags": ["#ff2410", "#000000"],
-        "dark_mode_flags": ["#b2b4b0", "#fff6ee"],
-        "curves_ls": "-",
-        "curves_alpha": 1.0,
-        "flags_ls": "-",
-        "flags_alpha": 1.0,
-        "ma_curves_ls": "--",
-        "ma_curves_alpha": 0.5,
-    },
-    "default": {
-        "light_mode_curves": ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF"],
-        "dark_mode_curves": ["#A2D2DF", "#F6EFBD", "#E4C087", "#BC7C7C", "#FF00FF"],
-        "light_mode_flags": ["#000000", "#000000", "#000000"],
-        "dark_mode_flags": ["#fafafa", "#fafafa", "#fafafa"],
-        "curves_ls": "-",
-        "curves_alpha": 1.0,
-        "flags_ls": "-",
-        "flags_alpha": 1.0,
-        "ma_curves_ls": "--",
-        "ma_curves_alpha": 0.5,
-    }
-}
+        self.compteur_onglets = 1
 
-write_json(palette_config_file, palette_dict)
+        # Widget central
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        self.layout = QVBoxLayout(central_widget)
+
+        # QTabWidget
+        self.tabs = QTabWidget()
+        self.tabs.setTabsClosable(True)
+        self.tabs.tabCloseRequested.connect(self.fermer_onglet)
+        self.tabs.setMovable(True)
+        self.layout.addWidget(self.tabs)
+
+        # Ajouter le premier onglet
+        self.ajouter_onglet()
+
+        # Créer un bouton "Ajouter un onglet" et l'intégrer comme onglet
+        self.bouton_ajouter = QPushButton("➕")
+        self.bouton_ajouter.setFixedWidth(40)
+        self.bouton_ajouter.clicked.connect(self.ajouter_onglet)
+
+        # Onglet factice pour le bouton "ajouter"
+        self.onglet_factice = QWidget()
+        self.tabs.addTab(self.onglet_factice, "")  # Onglet vide
+        self.tabs.tabBar().setTabButton(self.tabs.count() - 1, QTabBar.RightSide, self.bouton_ajouter)
+
+        # Empêcher la fermeture du bouton d'ajout
+        self.tabs.setTabEnabled(self.tabs.count() - 1, False)
+
+    def ajouter_onglet(self):
+        nom_onglet = f"Onglet {self.compteur_onglets}"
+        contenu = QWidget()
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel(f"Contenu de {nom_onglet}"))
+        contenu.setLayout(layout)
+
+        # Insérer le nouvel onglet juste avant le bouton "➕"
+        index = self.tabs.count() - 1
+        self.tabs.insertTab(index, contenu, nom_onglet)
+        self.tabs.setCurrentIndex(index)
+
+        self.compteur_onglets += 1
+
+    def fermer_onglet(self, index):
+        if self.tabs.count() <= 2:  # 1 onglet + 1 bouton "ajouter"
+            return  # Ne pas fermer s'il ne reste qu'un onglet réel
+        self.tabs.removeTab(index)
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    fenetre = FenetrePrincipale()
+    fenetre.show()
+    sys.exit(app.exec_())

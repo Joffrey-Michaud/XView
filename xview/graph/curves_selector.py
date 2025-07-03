@@ -36,11 +36,13 @@ class CurvesSelector(QWidget):
         self.btn_widget.setLayout(self.btn_layout)
 
         check_all_btn = QPushButton("Check All")
+        check_all_btn.setFixedWidth(110)
         check_all_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         check_all_btn.clicked.connect(self.check_all_boxes)
         self.btn_layout.addWidget(check_all_btn)
 
         uncheck_all_btn = QPushButton("Uncheck All")
+        uncheck_all_btn.setFixedWidth(110)
         uncheck_all_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         uncheck_all_btn.clicked.connect(self.uncheck_all_boxes)
         self.btn_layout.addWidget(uncheck_all_btn)
@@ -55,11 +57,13 @@ class CurvesSelector(QWidget):
         self.ma_btn_widget.setLayout(self.ma_btn_layout)
 
         check_all_ma_btn = QPushButton("Check All MA")
+        check_all_ma_btn.setFixedWidth(110)
         check_all_ma_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         check_all_ma_btn.clicked.connect(self.check_all_boxes_ma)
         self.ma_btn_layout.addWidget(check_all_ma_btn)
 
         uncheck_all_ma_btn = QPushButton("Uncheck All MA")
+        uncheck_all_ma_btn.setFixedWidth(110)
         uncheck_all_ma_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         uncheck_all_ma_btn.clicked.connect(self.uncheck_all_boxes_ma)
         self.ma_btn_layout.addWidget(uncheck_all_ma_btn)

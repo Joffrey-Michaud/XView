@@ -73,7 +73,8 @@ class Experiment(object):
         # créer le fichier de status
         self.status = "init"
         self.status_file = os.path.join(self.experiment_folder, "status.txt")
-        write_file(self.status_file, self.status, flag="w")
+        if not os.path.exists(self.status_file):
+            write_file(self.status_file, self.status, flag="w")
 
         # fichier de score training
         self.score_file_training = os.path.join(self.experiment_folder, "scores_training.txt")
