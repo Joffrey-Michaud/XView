@@ -48,7 +48,8 @@ class MyTreeWidget(QTreeWidget):
 
     def populate(self, items):
         self.clear()
-        for entry in items:
+        # for entry in items:
+        for entry in sorted(items, key=lambda e: list(e.keys())[0].lower() if isinstance(e, dict) else str(e).lower()):
             self._add_entry(entry, self)
 
     def _add_entry(self, entry, parent_widget):
@@ -62,7 +63,8 @@ class MyTreeWidget(QTreeWidget):
             for key, children in entry.items():
                 item = QTreeWidgetItem([key])
                 matched_children = []
-                for child in children:
+                # for child in children:
+                for child in sorted(children, key=lambda c: list(c.keys())[0].lower() if isinstance(c, dict) else str(c).lower()):
                     added = self._add_entry(child, item)
                     if added:
                         matched_children.append(added)
@@ -150,7 +152,7 @@ class MyTreeWidget(QTreeWidget):
         for i in range(self.topLevelItemCount()):
             recurse(self.topLevelItem(i))
 
-        return groups
+        return sorted(groups)
 
     def show_context_menu(self, pos):
         item = self.itemAt(pos)
