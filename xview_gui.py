@@ -50,6 +50,8 @@ class ExperimentViewer(QMainWindow):
         self.setWindowIcon(QIcon(os.path.join(os.path.dirname(os.path.abspath(__file__)), "xview", "logo_light.png")))
         self.setGeometry(100, 100, 1200, 800)
 
+        self.widget_sizes = get_config_data("widget_sizes")
+
         # region - MAIN WIDGET
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
@@ -86,6 +88,10 @@ class ExperimentViewer(QMainWindow):
         self.refresh_experiments_button = QPushButton("Refresh Experiments")
         self.refresh_experiments_button.clicked.connect(self.update_experiment_list)
         left_layout.addWidget(self.refresh_experiments_button)
+
+        self.screenshot_graph_button = QPushButton("Screenshot graph")
+        self.screenshot_graph_button.clicked.connect(self.screenshot_graph)
+        left_layout.addWidget(self.screenshot_graph_button)
 
         # Bouton Save Graph et Finish exp
         save_finish_widget = QWidget()
@@ -190,6 +196,15 @@ class ExperimentViewer(QMainWindow):
 
         self.set_dark_mode(get_config_file()["dark_mode"])
 
+        # set widget sizes
+        print("DEBUG WIDGET SIZES :", self.widget_sizes)
+        if self.widget_sizes:
+            left_width, plot_width, right_width = self.widget_sizes
+            splitter.setSizes([left_width, plot_width, right_width])
+        else:
+            # Set default sizes if not available
+            splitter.setSizes([200, 400, 200])
+
         # Mise à jour initiale
         self.update_experiment_list()
         self.update_plot()
@@ -289,11 +304,21 @@ class ExperimentViewer(QMainWindow):
         self.training_list.all_items = training_experiments
         self.finished_list.all_items = finished_experiments
 
+        # Populate training list normally
         self.training_list.populate(training_experiments)
-        self.finished_list.populate(finished_experiments)
+
+        # Keep current filter on finished list across updates
+        current_filter = self.search_bar.text().strip()
+        if current_filter:
+            # filter_items repopulates based on all_items
+            self.finished_list.filter_items(current_filter)
+        else:
+            self.finished_list.populate(finished_experiments)
 
         self.training_list.restore_expanded_items(tr_ids)
         self.finished_list.restore_expanded_items(finished_ids)
+
+        
 
     @staticmethod
     def read_scores(file_path):
@@ -472,6 +497,18 @@ class ExperimentViewer(QMainWindow):
         else:
             return None
 
+    def save_widget_sizes(self):
+        """Returns the sizes of the left widget, plot, and right widget from the main splitter."""
+        # Get the sizes from the main splitter
+        sizes = self.centralWidget().layout().itemAt(0).widget().sizes()
+        
+        if len(sizes) == 3:
+            left_width = sizes[0]
+            plot_width = sizes[1]
+            right_width = sizes[2]
+
+            set_config_data("widget_sizes", (left_width, plot_width, right_width))
+
     # region - UPDATE PLOT
     def update_plot(self):
         """Met à jour le graphique avec les données actuelles et les cases cochées."""
@@ -648,6 +685,8 @@ class ExperimentViewer(QMainWindow):
         self.figure.tight_layout()
 
         self.canvas.draw()
+        
+        self.save_widget_sizes()
 
     def refresh_graph(self):
         """Met à jour manuellement le graphique."""
@@ -860,6 +899,15 @@ class ExperimentViewer(QMainWindow):
             if path == self.current_experiment_name:
                 self.display_experiment(new_path)
 
+    def screenshot_graph(self):
+        """Prend une capture d'écran du graphique."""
+        if self.current_experiment_name:
+            # Capture the matplotlib canvas directly (Qt5+ API)
+            pixmap = self.canvas.grab()
+
+            # Save to clipboard
+            clipboard = QApplication.clipboard()
+            clipboard.setPixmap(pixmap)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -872,6 +920,7 @@ if __name__ == "__main__":
     curr_dir = os.path.abspath(os.path.dirname(__file__))
 
     viewer = ExperimentViewer()
+    viewer.showMaximized()
     viewer.show()
 
     sys.exit(app.exec_())

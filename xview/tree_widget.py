@@ -93,10 +93,23 @@ class MyTreeWidget(QTreeWidget):
             elif isinstance(entry, dict):
                 result = {}
                 for key, children in entry.items():
-                    filtered_children = [
-                        c for c in children if filter_entry(c)
-                    ]
-                    if text in key.lower() or filtered_children:
+                    # Filter children recursively and keep transformed filtered nodes
+                    filtered_children = []
+                    for child in children:
+                        child_filtered = filter_entry(child)
+                        if child_filtered:
+                            # If child is a dict, child_filtered is a dict to keep nested filters
+                            if isinstance(child, dict):
+                                filtered_children.append(child_filtered)
+                            else:
+                                # child is a string that matched
+                                filtered_children.append(child)
+
+                    # If the group name matches, keep it and ensure it's expandable
+                    if text in key.lower():
+                        # Prefer filtered children when available; otherwise include all to allow expansion
+                        result[key] = filtered_children if filtered_children else children
+                    elif filtered_children:
                         result[key] = filtered_children
                 return result if result else False
             return False
