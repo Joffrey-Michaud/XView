@@ -1,9 +1,37 @@
 import sys
 from pathlib import Path
 
+# Configure logging early and robustly (works on Ubuntu and WSL2)
 log_file = Path.home() / ".xview" / "xview.log"
-sys.stdout = open(log_file, "w")
-sys.stderr = sys.stdout  # Pour capturer aussi les erreurs
+try:
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    # Line-buffered append to preserve history across runs
+    sys.stdout = open(log_file, "a", buffering=1, encoding="utf-8", errors="backslashreplace")
+    sys.stderr = sys.stdout  # Capture errors too
+except Exception:
+    # Fall back to console if logging cannot be initialized
+    pass
+
+# Print a launch banner with date and version at the top of each run
+try:
+    from datetime import datetime
+    version = "unknown"
+    try:
+        # Try reading from user config first
+        from xview import get_config_file, default_config
+        try:
+            cfg = get_config_file()
+        except Exception:
+            cfg = None
+        version = (cfg and cfg.get("version")) or default_config.get("version") or "unknown"
+    except Exception:
+        pass
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print("#---------------------------------------------------------#")
+    print(f"[XView] Start {ts} | version={version}")
+except Exception:
+    # Ignore banner failures
+    pass
 
 import os
 import shutil
