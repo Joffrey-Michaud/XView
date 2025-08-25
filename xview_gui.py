@@ -10,7 +10,7 @@ import shutil
 import random
 import json
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QPushButton, QSplitter, QTextEdit, QLineEdit, QTableWidget, QTableWidgetItem)
-from PyQt5.QtGui import QColor, QIcon, QPalette
+from PyQt5.QtGui import QColor, QIcon, QPalette, QClipboard
 from PyQt5.QtCore import QDateTime
 from PyQt5.QtCore import QTimer, Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -27,6 +27,9 @@ from xview.settings.settings_window import SettingsWindow
 from xview.graph.range_widget import RangeWidget
 from xview.settings.palette import Palette
 import numpy as np
+import subprocess
+import tempfile
+import platform
 
 
 
@@ -197,7 +200,6 @@ class ExperimentViewer(QMainWindow):
         self.set_dark_mode(get_config_file()["dark_mode"])
 
         # set widget sizes
-        print("DEBUG WIDGET SIZES :", self.widget_sizes)
         if self.widget_sizes:
             left_width, plot_width, right_width = self.widget_sizes
             splitter.setSizes([left_width, plot_width, right_width])
@@ -905,9 +907,68 @@ class ExperimentViewer(QMainWindow):
             # Capture the matplotlib canvas directly (Qt5+ API)
             pixmap = self.canvas.grab()
 
-            # Save to clipboard
+            # Save to Linux clipboard (both Clipboard and Selection where available)
             clipboard = QApplication.clipboard()
-            clipboard.setPixmap(pixmap)
+            try:
+                clipboard.setPixmap(pixmap, QClipboard.Clipboard)
+                clipboard.setPixmap(pixmap, QClipboard.Selection)
+            except Exception:
+                # Fallback: set default mode only
+                clipboard.setPixmap(pixmap)
+
+            # If running under WSL2, also push the image to the Windows clipboard via PowerShell
+            if self._in_wsl():
+                try:
+                    self._copy_pixmap_to_windows_clipboard(pixmap)
+                    print("Screenshot copied to Windows clipboard (WSL).")
+                except Exception as e:
+                    print(f"WSL Windows clipboard fallback failed: {e}")
+
+    def _in_wsl(self):
+        """Detect if running under WSL/WSLg."""
+        try:
+            if os.environ.get("WSL_DISTRO_NAME"):
+                return True
+            return "microsoft" in platform.release().lower()
+        except Exception:
+            return False
+
+    def _copy_pixmap_to_windows_clipboard(self, pixmap):
+        """Save pixmap to a temp file and set the Windows clipboard image via PowerShell.
+
+        Requires WSL with powershell.exe available. Uses wslpath to map the temp path.
+        """
+        # Save to a temporary PNG in WSL filesystem
+        fd, tmp_path = tempfile.mkstemp(suffix=".png")
+        os.close(fd)
+        try:
+            # Save pixmap to file
+            pixmap.save(tmp_path, "PNG")
+
+            # Convert WSL path to Windows path (e.g., /tmp/... -> C:\...)
+            win_path = subprocess.check_output(["wslpath", "-w", tmp_path]).decode().strip()
+
+            # Build PowerShell command to set image clipboard
+            ps_cmd = (
+                "Add-Type -AssemblyName System.Windows.Forms; "
+                "Add-Type -AssemblyName System.Drawing; "
+                f"$img=[System.Drawing.Image]::FromFile(\"{win_path}\"); "
+                "[System.Windows.Forms.Clipboard]::SetImage($img)"
+            )
+            # Run in STA mode as required for Clipboard APIs
+            subprocess.run([
+                "powershell.exe",
+                "-NoProfile",
+                "-STA",
+                "-Command",
+                ps_cmd
+            ], check=True)
+        finally:
+            # Clean up temp file
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
