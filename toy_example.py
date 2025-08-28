@@ -3,34 +3,58 @@ import numpy as np
 import time
 
 
-A1, A2, A3 = np.random.rand(3)
+# -------------------------------------------------------------------------------------
+# Functions to generate random curves
+def get_random_params():
+    return {
+        "amplitude": np.random.uniform(0.5, 3.0, 5),
+        "frequency": np.random.uniform(0.1, 1.0, 5),
+        "phase": np.random.uniform(0, 2 * np.pi, 5)
+    }
 
+
+def compute_y_value(x_t, params):
+    return sum(params["amplitude"][i] * np.sin(params["frequency"][i] * x_t + params["phase"][i]) for i in range(5))
+
+# --------------------------------------------------------------------------------------
+# First step : init experiment
 my_exp = Experiment("toy_example",  # give a name to the experiment
-                    infos={"A1": A1, "A2": A2, "A3": A3},  # you can add any information you want to the experiment in dict format
+                    infos={"Sinusoid per curve": 5, "Amplitude range": (0.5, 3.0), "Frequency range": (0.1, 1.0), "Phase range": (0, 2 * np.pi)},  # you can add any information you want to the experiment in dict format
                     group="examples",  # possible to set a group for the experiment, to group them in one folder
                     clear=True
                     )
 
-# Set the status of the experiment to training (this line is mandatory)
+# Second step : set the status of the experiment to training (this line is mandatory)
 my_exp.set_train_status()
+
 
 points = np.linspace(0, 2 * np.pi, 200)
 
 best_val = 100000
 
 for i, x in enumerate(points):
-    y1 = A1 * np.sin(x + 1)
-    y2 = A2 * np.sin(x + 2)
-    y3 = A3 * np.sin(x + 3)
+    params_1 = get_random_params()
+    params_2 = get_random_params()
+    params_3 = get_random_params()
 
-    # add a score with x and y values. The x value is not mandatory, you can add only y values if you want
-    my_exp.add_score(name="Train_loss", x=x, y=y1)
+    y1 = compute_y_value(x, params_1)
+    y2 = compute_y_value(x, params_2)
+    y3 = compute_y_value(x, params_3)
 
-    # You can add a label_value to the score to display it in the plot's legend, and update it dynamically
-    my_exp.add_score(name="Val_loss", x=x, y=y2, label_value=f"{y2:.3f}")
+    # Add a score to your experiment
+    my_exp.add_score(
+        name="Train_loss",  # Define the name
+        x=x,  # The x value is not mandatory but if your x-Axis doesn't begin at 0, you can specify it
+        y=y1,  # The y value is mandatory
+        monitor="min"  # Specify if you want to monitor the min or the max of the curve (default is max)
+    )
+
+    # You can add as many score as you need
+    my_exp.add_score(name="Val_loss", x=x, y=y2, monitor="max", 
+                     label_value=f"{y2:.3f}")  # You can add a label_value to the score to display it in the plot's legend, and update it dynamically
 
     # If desired, you can also pass plt_args to customize the plot appearance for the score (like marker, color, linestyle, etc.). It has to be a dict.
-    my_exp.add_score(name="Test loss", x=x, y=y3, plt_args={"marker": "x"})
+    my_exp.add_score(name="Test loss", x=x, y=y3, monitor="min,max,med,mean", plt_args={"marker": "x"})
 
     # You can add a flag, which will be displayed in the plot as a vertical line at the x value, with a label_value to display in the legend, and update it dynamically :
     if y2 < best_val:

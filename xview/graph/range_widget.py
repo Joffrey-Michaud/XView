@@ -68,6 +68,17 @@ class RangeWidget(QWidget):
         self.legend_layout.addWidget(self.legend_checkbox)
         self.boxes_layout.addWidget(self.legend_widget)
 
+        # region - max
+        self.optimum_widget = QWidget()
+        self.optimum_layout = QHBoxLayout()
+        self.optimum_widget.setLayout(self.optimum_layout)
+        self.optimum_label = QLabel("Optimum:")
+        self.optimum_layout.addWidget(self.optimum_label)
+        self.optimum_checkbox = QCheckBox()
+        self.optimum_checkbox.setChecked(True)
+        self.optimum_layout.addWidget(self.optimum_checkbox)
+        self.boxes_layout.addWidget(self.optimum_widget)
+
         self.layout.addWidget(self.boxes_widget)
 
         

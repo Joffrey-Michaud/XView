@@ -34,6 +34,7 @@ except Exception:
     pass
 
 import os
+import time
 import shutil
 import random
 import json
@@ -44,6 +45,7 @@ from PyQt5.QtCore import QTimer, Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from xview.utils.utils import read_file, read_json, compute_moving_average, write_file
+from xview.utils.plot_utils import plot_monitoring_lines
 from xview.tree_widget import MyTreeWidget
 from xview.graph.curves_selector import CurvesSelector
 from config import ConfigManager
@@ -539,6 +541,9 @@ class ExperimentViewer(QMainWindow):
 
             set_config_data("widget_sizes", (left_width, plot_width, right_width))
 
+    def get_scores_monitoring(self):
+        return self.get_exp_config_data("scores_monitoring")
+
     # region - UPDATE PLOT
     def update_plot(self):
         """Met à jour le graphique avec les données actuelles et les cases cochées."""
@@ -569,6 +574,17 @@ class ExperimentViewer(QMainWindow):
         flags_colors, flags_ls, flags_alpha = self.get_flags_style()
         _, ma_curves_ls, ma_curves_alpha = self.get_ma_curves_style()
 
+        try:
+            scores_monitoring = self.get_scores_monitoring()  
+        except:
+            scores_monitoring = {}
+
+        # ensure compatibility with older exmperiment
+        if scores_monitoring is None:
+            scores_monitoring = {}
+            for score in self.current_scores:
+                scores_monitoring[score] = "max"
+
         random.seed(159)
 
         #  ----------------------------------------------------------- GET RANDOM COLORS
@@ -591,6 +607,32 @@ class ExperimentViewer(QMainWindow):
 
         x_min, x_max = None, None
         y_min, y_max = None, None
+
+        #  ------------------------------------------- PLOT RANGE
+        # ------------------------------- X AXIS RANGE
+        if self.current_experiment_name is not None:
+            x_min = self.get_exp_config_data("x_min")
+            if x_min == "" or x_min is None:
+                x_min = None
+            else:
+                x_min = float(x_min)
+            x_max = self.get_exp_config_data("x_max")
+            if x_max == "" or x_max is None:
+                x_max = None
+            else:
+                x_max = float(x_max)
+
+            # ------------------------------- Y AXIS RANGE
+            y_min = self.get_exp_config_data("y_min")
+            if y_min == "" or y_min is None:
+                y_min = None
+            else:
+                y_min = float(y_min)
+            y_max = self.get_exp_config_data("y_max")
+            if y_max == "" or y_max is None:
+                y_max = None
+            else:
+                y_max = float(y_max)
 
         for i, score in enumerate(self.current_scores):
             plt_args = self.get_plt_args(score, type="scores")
@@ -631,42 +673,27 @@ class ExperimentViewer(QMainWindow):
                     y_ma = (y_ma - np.min(y_ma)) / (np.max(y_ma) - np.min(y_ma))
 
             #  ----------------------------------------------------------- PLOT CURVES
+            monitoring_modes = scores_monitoring[score]
             if len(x) > 0:
-                if self.curve_selector_widget.boxes[score][0].isChecked():
+                if self.curve_selector_widget.boxes[score][0].isChecked():  # score
                     ax.plot(x, y, label=f"{label_value} {score}", ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
-                if self.curve_selector_widget.boxes[f"{score} (MA)"][0].isChecked():
+                    if self.range_widget.optimum_checkbox.isChecked():
+                        plot_monitoring_lines(ax, x, y, color=curves_colors[i], monitoring_flags=monitoring_modes, ls="-.", alpha=curves_alpha, x_max_range=x_max)
+                if self.curve_selector_widget.boxes[f"{score} (MA)"][0].isChecked():  # score MA
                     ax.plot(x, y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha, **plt_args)
+                    if self.range_widget.optimum_checkbox.isChecked():
+                        plot_monitoring_lines(ax, x, y_ma, color=curves_colors[i], monitoring_flags=monitoring_modes, ls="-.", alpha=ma_curves_alpha, x_max_range=x_max)
             else:
                 if self.curve_selector_widget.boxes[score][0].isChecked():
                     ax.plot(y, label=f"{label_value} {score}", ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
+                    if self.range_widget.optimum_checkbox.isChecked():
+                        xx = np.arange(len(y))
+                        plot_monitoring_lines(ax, xx, y, color=curves_colors[i], monitoring_flags=monitoring_modes, ls="-.", alpha=curves_alpha, x_max_range=x_max)
                 if self.curve_selector_widget.boxes[f"{score} (MA)"][0].isChecked():
                     ax.plot(y_ma, label=f"{score} (MA)", ls=ma_curves_ls, color=curves_colors[i], alpha=ma_curves_alpha, **plt_args)
-
-        #  ------------------------------------------- PLOT RANGE
-        # ------------------------------- X AXIS RANGE
-        if self.current_experiment_name is not None:
-            x_min = self.get_exp_config_data("x_min")
-            if x_min == "" or x_min is None:
-                x_min = None
-            else:
-                x_min = float(x_min)
-            x_max = self.get_exp_config_data("x_max")
-            if x_max == "" or x_max is None:
-                x_max = None
-            else:
-                x_max = float(x_max)
-
-            # ------------------------------- Y AXIS RANGE
-            y_min = self.get_exp_config_data("y_min")
-            if y_min == "" or y_min is None:
-                y_min = None
-            else:
-                y_min = float(y_min)
-            y_max = self.get_exp_config_data("y_max")
-            if y_max == "" or y_max is None:
-                y_max = None
-            else:
-                y_max = float(y_max)
+                    if self.range_widget.optimum_checkbox.isChecked():
+                        xx = np.arange(len(y))
+                        plot_monitoring_lines(ax, xx, y_ma, color=curves_colors[i], monitoring_flags=monitoring_modes, ls="-.", alpha=ma_curves_alpha, x_max_range=x_max)
 
         for i, flag in enumerate(self.current_flags):
             plt_args = self.get_plt_args(flag, type="flags")
@@ -799,7 +826,13 @@ class ExperimentViewer(QMainWindow):
     def get_exp_config_file(self):
         if not os.path.exists(os.path.join(self.experiments_dir, self.current_experiment_name, "config.json")):
             self.set_exp_config_file({})
-        config = json.load(open(os.path.join(self.experiments_dir, self.current_experiment_name, "config.json")))
+        success = False
+        while not success:
+            try:
+                config = json.load(open(os.path.join(self.experiments_dir, self.current_experiment_name, "config.json")))
+                success = True
+            except json.JSONDecodeError:
+                print("Erreur de décodage JSON dans le fichier de configuration. On attend.")
         return config
 
     def get_exp_config_data(self, key):

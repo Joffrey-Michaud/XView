@@ -21,13 +21,28 @@ def install_launcher_linux():
     target_dir = Path.home() / ".local" / "bin"
     target_dir.mkdir(parents=True, exist_ok=True)
 
+    python_cmd = sys.executable  # Use the current Python env (robust for WSL/conda)
     launcher = target_dir / "xview"
     with open(launcher, "w") as f:
-        f.write(f"""#!/bin/bash
-set -e
-mkdir -p "$HOME/.xview" || true
-nohup python3 "{SCRIPT_FILE}" >> "$HOME/.xview/xview.log" 2>&1 &
-""")
+        f.write(
+            f"""#!/usr/bin/env bash
+set -euo pipefail
+
+LOG_DIR="$HOME/.xview"
+LOG_FILE="$LOG_DIR/xview.log"
+mkdir -p "$LOG_DIR"
+touch "$LOG_FILE"
+
+# Start fully detached and append logs (works on Ubuntu & WSL2)
+if command -v setsid >/dev/null 2>&1; then
+    setsid -f "{python_cmd}" "{SCRIPT_FILE}" >> "$LOG_FILE" 2>&1 < /dev/null
+else
+    nohup "{python_cmd}" "{SCRIPT_FILE}" >> "$LOG_FILE" 2>&1 < /dev/null &
+fi
+
+exit 0
+"""
+        )
     launcher.chmod(0o755)
 
     if not is_in_path(target_dir):

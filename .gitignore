@@ -179,3 +179,4 @@ cython_debug/
 /xview/exp_folder
 /xview/config
 /todo.txt
+debug.py

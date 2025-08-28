@@ -91,6 +91,8 @@ class Experiment(object):
         os.makedirs(self.flags_folder, exist_ok=True)
         self.flags = MultiScores(self.flags_folder)
 
+        self.scores_monitoring = {}
+
     def pipe_to(self, other_experiment):
         if hasattr(other_experiment, "__class__") and other_experiment.__class__.__name__ == "Experiment":
             self.pipes.append(other_experiment)
@@ -137,11 +139,13 @@ class Experiment(object):
         self.status = status
         write_file(self.status_file, self.status, flag="w")
 
-    def add_score(self, name, y, x=None, plt_args: dict = None, label_value=None):
-        self.__act_pipe("add_score", name, y, x, plt_args=plt_args, label_value=label_value)
+    def add_score(self, name, y, x=None, plt_args: dict = None, label_value=None, monitor="max,min"):
+        self.__act_pipe("add_score", name, y, x, plt_args=plt_args, label_value=label_value, monitor=monitor)
         if name not in self.scores.scores:
             self.scores.add_score(name, plt_args=plt_args)
         self.scores.add_score_point(name, y, x, label_value=label_value)
+        self.scores_monitoring[name] = monitor
+        self.set_exp_config_data("scores_monitoring", self.scores_monitoring)
 
     def add_flag(self, name, x=None, unique=False, plt_args: dict = None, label_value=None):
         self.__act_pipe("add_flag", name, x, unique=unique, plt_args=plt_args, label_value=label_value)
@@ -156,3 +160,21 @@ class Experiment(object):
 
     def get_folder(self):
         return self.experiment_folder
+    
+    def get_exp_config_file(self):
+        if not os.path.exists(os.path.join(self.experiment_folder, "config.json")):
+            self.set_exp_config_file({})
+        config = json.load(open(os.path.join(self.experiment_folder, "config.json")))
+        return config
+
+    def get_exp_config_data(self, key):
+        return self.get_exp_config_file().get(key, None)
+
+    def set_exp_config_file(self, config):
+        with open(os.path.join(self.experiment_folder, "config.json"), "w") as f:
+            json.dump(config, f, indent=4)
+
+    def set_exp_config_data(self, key, value):
+        config = self.get_exp_config_file()
+        config[key] = value
+        self.set_exp_config_file(config)
