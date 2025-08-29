@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QInputDialog
 from PyQt5.QtCore import Qt
 import os
+from xview.compare_window import ComparisonWindow
 
 
 class MyTreeWidget(QTreeWidget):
@@ -22,6 +23,8 @@ class MyTreeWidget(QTreeWidget):
         # contextual menu on right click
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
+
+        self.comparison_window = None
 
     def on_click_item(self, item, column):
         # Vérifie si l'item a des enfants
@@ -188,12 +191,30 @@ class MyTreeWidget(QTreeWidget):
                 move_menu.addAction(group, lambda g=group: self.move_exp_callback(full_path, g))
         move_menu.addAction("Create new group", lambda: self.move_to_new_group_dialog(full_path))
 
+        # Vérifier si l'item est un groupe ou une expérience
+        if item.childCount() > 0:  # C'est un groupe
+            compare_action = menu.addAction("Compare")
+
         action = menu.exec_(self.mapToGlobal(pos))
 
         if action == action_rm:
             # item.setExpanded(True)
             # self.remove_exp_callback(full_path)
             self.remove_folders_callback(item_data)
+
+        elif action == compare_action:
+            self.compare_exp_from_group(full_path)
+
+    def compare_exp_from_group(self, group_path):
+        # if self.comparison_window is None or not self.comparison_window.isVisible():
+        if self.comparison_window is None:
+            # self.config_window = ConfigManager(self.config_file_path)
+            self.comparison_window = ComparisonWindow(group_path=group_path)
+            self.comparison_window.show()
+        else:
+            self.comparison_window.update_window(group_path)
+            self.comparison_window.activateWindow()
+            self.comparison_window.raise_()
 
     def move_to_new_group_dialog(self, full_path):
         # Open a dialog to create a new group
