@@ -12,6 +12,7 @@ EXEC_DIR = Path(__file__).resolve().parent
 REQUIREMENTS_FILE = EXEC_DIR / "requirements.txt"
 SCRIPT_FILE = EXEC_DIR / "xview_gui.py"
 
+
 def is_in_path(directory):
     path_env = os.environ.get("PATH", "")
     return any(Path(p).resolve() == Path(directory).resolve() for p in path_env.split(os.pathsep))
@@ -57,16 +58,31 @@ def install_launcher_windows():
     fallback_dir.mkdir(exist_ok=True)
 
     log_file = APP_DIR / "xview.log"
-    pythonw = Path(sys.exec_prefix) / "pythonw.exe"  # Python sans console
+    # Resolve a reliable python.exe alongside the current interpreter
+    py_exec = Path(sys.executable)
+    if py_exec.name.lower() == "pythonw.exe":
+        python_exe = py_exec.with_name("python.exe")
+    elif py_exec.name.lower() == "python.exe":
+        python_exe = py_exec
+    else:
+        # Fallback to exec_prefix/python.exe, then plain "python"
+        candidate = Path(sys.exec_prefix) / "python.exe"
+        python_exe = candidate if candidate.exists() else Path("python")
     bat_file = fallback_dir / "xview.bat"
     with open(bat_file, "w") as f:
-        f.write(f"""@echo off
-setlocal ENABLEDELAYEDEXPANSION
-if not exist "{APP_DIR}" mkdir "{APP_DIR}"
-if not exist "{log_file}" type nul > "{log_file}" 2>nul
-start "" "{pythonw}" "{SCRIPT_FILE}" >> "{log_file}" 2>&1
-exit /b 0
-""")
+        # Use start /B to detach without opening a new window, and route stdout/stderr via cmd /c
+        # -u ensures unbuffered output so logs flush promptly
+        f.write(
+            (
+                "@echo off\r\n"
+                "setlocal ENABLEDELAYEDEXPANSION\r\n"
+                f"if not exist \"{APP_DIR}\" mkdir \"{APP_DIR}\"\r\n"
+                f"if not exist \"{log_file}\" type nul > \"{log_file}\" 2>nul\r\n"
+                # The redirection must be inside the quoted cmd string to apply to the child
+                f"start \"\" /B cmd /c \"\"{python_exe}\" -u \"{SCRIPT_FILE}\" >> \"{log_file}\" 2>&1\"\r\n"
+                "exit /b 0\r\n"
+            )
+        )
 
     try:
         if windows_apps.exists():

@@ -1,5 +1,9 @@
 # XView - Release Notes
 
+## [1.0.9] - 2025-08-29
+### Fixed
+- Correction des logs sous Windows
+
 ## [1.0.8] - 2025-08-28
 ### Fixed
 - Tentative de correction du bug où les logs sont écrasés sous WSL2
