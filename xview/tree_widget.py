@@ -206,15 +206,8 @@ class MyTreeWidget(QTreeWidget):
             self.compare_exp_from_group(full_path)
 
     def compare_exp_from_group(self, group_path):
-        # if self.comparison_window is None or not self.comparison_window.isVisible():
-        if self.comparison_window is None:
-            # self.config_window = ConfigManager(self.config_file_path)
-            self.comparison_window = ComparisonWindow(group_path=group_path)
-            self.comparison_window.show()
-        else:
-            self.comparison_window.update_window(group_path)
-            self.comparison_window.activateWindow()
-            self.comparison_window.raise_()
+        comp_window = ComparisonWindow(group_path=group_path)
+        comp_window.exec_()
 
     def move_to_new_group_dialog(self, full_path):
         # Open a dialog to create a new group

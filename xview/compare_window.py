@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import QScrollArea, QApplication, QWidget, QPushButton, QVBoxLayout, QSplitter, QGridLayout, QMainWindow, QHBoxLayout, QComboBox, QLabel, QCheckBox
+from PyQt5.QtWidgets import QScrollArea, QApplication, QWidget, QPushButton, QVBoxLayout, QSplitter, QGridLayout, QMainWindow, QHBoxLayout, QComboBox, QLabel, QCheckBox, QDialog
 from PyQt5.QtGui import QIcon, QPalette, QColor, QClipboard
 from PyQt5.QtCore import Qt, QDateTime
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -28,13 +28,34 @@ class ExperimentPanel(QWidget):
         checkbox.setChecked(True)
         checkbox.stateChanged.connect(self.update_plot_callback)
         label = QLabel(exp_name)
+        label.setAlignment(Qt.AlignLeft)
         h_layout.addWidget(checkbox)
         h_layout.addWidget(label)
+        h_layout.addStretch()
         self.layout.addLayout(h_layout)
 
     def clear_experiments(self):
-        for i in reversed(range(self.layout.count())):
-            self.layout.itemAt(i).widget().deleteLater()
+        while self.layout.count():
+            item = self.layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+            else:
+                child_layout = item.layout()
+                if child_layout is not None:
+                    self._clear_layout(child_layout)
+
+    def _clear_layout(self, layout):
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+            else:
+                child_layout = item.layout()
+                if child_layout is not None:
+                    self._clear_layout(child_layout)
+
 
     def get_checked_experiments(self):
         checked_exps = []
@@ -49,7 +70,8 @@ class ExperimentPanel(QWidget):
 
 # ------------------------------------------------------------------ COMPARISON WINDOW
 # region - ComparisonWindow
-class ComparisonWindow(QMainWindow):
+# class ComparisonWindow(QMainWindow):
+class ComparisonWindow(QDialog):
     def __init__(self, group_path):
         super().__init__()
         
@@ -63,11 +85,8 @@ class ComparisonWindow(QMainWindow):
 
         self.dark_mode_enabled = get_config_data("dark_mode")
 
-        main_widget = QWidget()
-        self.setCentralWidget(main_widget)
-
         layout = QHBoxLayout()
-        main_widget.setLayout(layout)
+        self.setLayout(layout)
 
         self.metrics = None
 
@@ -132,6 +151,7 @@ class ComparisonWindow(QMainWindow):
         # Widget de droite : affichage du graphe
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
+        self.canvas.mpl_connect("resize_event", self._on_resize)
         layout.addWidget(self.canvas)
 
         # Add your UI elements here
@@ -139,6 +159,10 @@ class ComparisonWindow(QMainWindow):
 
         self.set_dark_mode(get_config_data('dark_mode'))
         self.show()
+
+    def _on_resize(self, event):
+        self.figure.tight_layout()
+        self.canvas.draw_idle()
 
     def update_window(self, group_path):
         self.group_path = group_path
@@ -150,6 +174,8 @@ class ComparisonWindow(QMainWindow):
         experiments_folder = get_config_data(key="data_folder")
         group_folder = os.path.join(experiments_folder, self.group_path)
         exps = os.listdir(group_folder)
+        # garder uniquement les dossiers
+        exps = [d for d in sorted(exps) if os.path.isdir(os.path.join(group_folder, d))]
 
         for exp in exps:
             self.exp_panel.add_experiment(exp)
@@ -205,57 +231,58 @@ class ComparisonWindow(QMainWindow):
                     score = self.read_scores(os.path.join(scores_folder, f"{selected_metric}.txt"))
                     best_scores.append(np.min(score) if min_max == "min" else np.max(score))
 
-            # trier les scores par ordre croissant en les gardant alignés avec le nom de l'exp
-            sorted_scores, sorted_exps = zip(*sorted(zip(best_scores, exps), key=lambda x: x[0]))
+            if best_scores:
+                # trier les scores par ordre croissant en les gardant alignés avec le nom de l'exp
+                sorted_scores, sorted_exps = zip(*sorted(zip(best_scores, exps), key=lambda x: x[0]))
 
-            self.figure.clear()
-            ax = self.figure.add_subplot(111)
+                self.figure.clear()
+                ax = self.figure.add_subplot(111)
+                # self.figure.subplots_adjust(left=0.15, right=0.95, top=0.9, bottom=0.1)
 
-            if self.dark_mode_enabled:
-                bg_color = "#191919"
-                text_color = "white"
-                bar_color = "deepskyblue"
+                if self.dark_mode_enabled:
+                    bg_color = "#191919"
+                    text_color = "white"
+                    bar_color = "deepskyblue"
 
-            else:
-                bg_color = "white"
-                text_color = "black"
-                bar_color = "skyblue"
+                else:
+                    bg_color = "white"
+                    text_color = "black"
+                    bar_color = "skyblue"
 
-            ax.set_facecolor(bg_color)
-            self.figure.set_facecolor(bg_color)
-            ax.tick_params(colors=text_color)
-            ax.spines['bottom'].set_color(text_color)
-            ax.spines['top'].set_color(text_color)
-            ax.spines['right'].set_color(text_color)
-            ax.spines['left'].set_color(text_color)
-            ax.xaxis.label.set_color(text_color)
-            ax.yaxis.label.set_color(text_color)
-            ax.title.set_color(text_color)
+                ax.set_facecolor(bg_color)
+                self.figure.set_facecolor(bg_color)
+                ax.tick_params(colors=text_color)
+                ax.spines['bottom'].set_color(text_color)
+                ax.spines['top'].set_color(text_color)
+                ax.spines['right'].set_color(text_color)
+                ax.spines['left'].set_color(text_color)
+                ax.xaxis.label.set_color(text_color)
+                ax.yaxis.label.set_color(text_color)
+                ax.title.set_color(text_color)
 
-            bars = ax.barh(sorted_exps, sorted_scores, color=[bar_color] * len(sorted_exps))
+                bars = ax.barh(sorted_exps, sorted_scores, color=[bar_color] * len(sorted_exps))
 
-            # -- Ajuste l’axe X
-            max_score = max(sorted_scores)
-            ax.set_xlim(0, max_score * 1.05)
+                # -- Ajuste l’axe X
+                max_score = max(sorted_scores)
+                ax.set_xlim(0, max_score * 1.05)
 
-            # -- Texte
-            threshold = 0.15 * max_score      # 15 % du score max
-            for bar, score in zip(bars, sorted_scores):
-                y_center = bar.get_y() + bar.get_height() / 2
-                if score >= threshold:                     # texte à l’intérieur
-                    x_text = score - 0.02 * max_score      # petit retrait vers la gauche
-                    ax.text(x_text, y_center, f"{score:.4f}",
-                            va="center", ha="right", color="white", fontsize=9)
-                else:                                      # texte à l’extérieur
-                    x_text = score + 0.01 * max_score
-                    ax.text(x_text, y_center, f"{score:.4f}",
-                            va="center", ha="left", color="white" if self.dark_mode_enabled else "black", fontsize=9)
-            ax.set_xlabel(f"{selected_metric}")
-            ax.set_ylabel("Experiments")
-            ax.set_title(f"Group : {self.group_path} - Metric : {selected_metric}")
-            ax.grid(axis="x")
-            self.figure.tight_layout()
-            self.canvas.draw()
+                # -- Texte
+                threshold = 0.15 * max_score      # 15 % du score max
+                for bar, score in zip(bars, sorted_scores):
+                    y_center = bar.get_y() + bar.get_height() / 2
+                    if score >= threshold:                     # texte à l’intérieur
+                        x_text = score - 0.02 * max_score      # petit retrait vers la gauche
+                        ax.text(x_text, y_center, f"{score:.4f}",
+                                va="center", ha="right", color="white", fontsize=9)
+                    else:                                      # texte à l’extérieur
+                        x_text = score + 0.01 * max_score
+                        ax.text(x_text, y_center, f"{score:.4f}",
+                                va="center", ha="left", color="white" if self.dark_mode_enabled else "black", fontsize=9)
+                ax.set_xlabel(f"{selected_metric}")
+                ax.set_ylabel("Experiments")
+                ax.set_title(f"Group : {self.group_path} - Metric : {selected_metric}")
+                ax.grid(axis="x")
+                self.canvas.draw()
         else:
             self.figure.clear()
             ax = self.figure.add_subplot(111)
