@@ -1,5 +1,9 @@
 # XView - Release Notes
 
+## [1.0.11] - 2025-08-29
+### Modified
+- Modification de la procédure de suppression d'expériences
+
 ## [1.0.10] - 2025-08-29
 ### Added
 - Ajoute la possibilité de comparer les expériences d'un même groupe.

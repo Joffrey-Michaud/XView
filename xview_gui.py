@@ -918,26 +918,55 @@ class ExperimentViewer(QMainWindow):
         self.settings_window.settings_widgets["Display"].flag_color_widget.colors = dark_colors if self.dark_mode_enabled else light_colors
 
     def remove_folders(self, folders):
-        """Supprime l'expérience sélectionnée."""
-        if len(folders) > 1:  #  on a un groupe
-            for path in folders[:-1]:
-                if os.path.exists(os.path.join(self.experiments_dir, path)):
-                    if path == self.current_experiment_name:
-                        self.current_experiment_name = None
-                        self.current_scores = {}
-                        self.current_flags = {}
-                        self.current_train_loss = []
-                        self.current_val_loss = []
-                        self.update_plot()
-                        self.exp_info_table.clearContents()
-                    shutil.rmtree(os.path.join(self.experiments_dir, path))
-            # si le dossier du groupe est vide, on le supprime aussi
-            if os.path.exists(os.path.join(self.experiments_dir, folders[-1])):
-                if len(os.listdir(os.path.join(self.experiments_dir, folders[-1]))) == 0:
-                    shutil.rmtree(os.path.join(self.experiments_dir, folders[-1]))
-        else:  # on a une expérience
+        """Déplace l'expérience ou le groupe sélectionné dans un dossier Trash avec horodatage."""
+        from datetime import datetime
+        from pathlib import Path
+
+        # Trash path next to xview.log/config files (e.g., ~/.xview/Trash)
+        try:
+            base_dir = Path(log_file).parent  # log_file is defined at module init
+        except Exception:
+            base_dir = Path.home() / ".xview"
+        trash_dir = base_dir / "Trash"
+        trash_dir.mkdir(parents=True, exist_ok=True)
+
+        ts = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
+
+        def move_to_trash(src_abs):
+            """Move a file/dir to Trash with a timestamped name, handling potential collisions."""
+            name = os.path.basename(src_abs.rstrip(os.sep))
+            dest_base = f"{name}_{ts}"
+            dest_path = trash_dir / dest_base
+            suffix = 1
+            # Avoid rare collisions if done within the same second
+            while dest_path.exists():
+                dest_path = trash_dir / f"{dest_base}_{suffix}"
+                suffix += 1
+            shutil.move(src_abs, str(dest_path))
+
+        # If multiple entries provided, treat it as a group (folders[-1] is the group root)
+        if len(folders) > 1:
+            group_rel = folders[-1]
+            group_abs = os.path.join(self.experiments_dir, group_rel)
+            if os.path.exists(group_abs):
+                # Reset selection if current exp is within this group
+                if self.current_experiment_name and (
+                    self.current_experiment_name == group_rel
+                    or self.current_experiment_name.startswith(group_rel + os.sep)
+                ):
+                    self.current_experiment_name = None
+                    self.current_scores = {}
+                    self.current_flags = {}
+                    self.current_train_loss = []
+                    self.current_val_loss = []
+                    self.update_plot()
+                    self.exp_info_table.clearContents()
+                move_to_trash(group_abs)
+        else:
+            # Single experiment
             path = folders[0]
-            if os.path.exists(os.path.join(self.experiments_dir, path)):
+            src_abs = os.path.join(self.experiments_dir, path)
+            if os.path.exists(src_abs):
                 if path == self.current_experiment_name:
                     self.current_experiment_name = None
                     self.current_scores = {}
@@ -946,7 +975,7 @@ class ExperimentViewer(QMainWindow):
                     self.current_val_loss = []
                     self.update_plot()
                     self.exp_info_table.clearContents()
-                shutil.rmtree(os.path.join(self.experiments_dir, path))
+                move_to_trash(src_abs)
 
         self.update_experiment_list()
 

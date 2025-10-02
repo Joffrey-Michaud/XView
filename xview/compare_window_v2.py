@@ -1,10 +1,9 @@
 import sys
 from PyQt5.QtWidgets import QScrollArea, QApplication, QWidget, QPushButton, QVBoxLayout, QSplitter, QGridLayout, QMainWindow, QHBoxLayout, QComboBox, QLabel, QCheckBox, QDialog
 from PyQt5.QtGui import QIcon, QPalette, QColor, QClipboard
-from PyQt5.QtCore import Qt, QDateTime, QTimer
+from PyQt5.QtCore import Qt, QDateTime
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from matplotlib import cm
 from xview import get_config_data
 import os
 from xview.compare_utils import get_metrics
@@ -35,7 +34,7 @@ class ExperimentPanel(QWidget):
         h_layout.addWidget(label)
         h_layout.addStretch()
         self.layout.addLayout(h_layout)
-        self.exps.append(label.text())
+        self.exps.append((checkbox, label))
 
     def clear_experiments(self):
         while self.layout.count():
@@ -158,15 +157,10 @@ class ComparisonWindow(QDialog):
         self.canvas.mpl_connect("resize_event", self._on_resize)
         layout.addWidget(self.canvas)
 
-        # QTimer
-        self.refresh_timer = QTimer(self)
-        self.refresh_timer.timeout.connect(lambda: self.update_window(self.group_path))
-
         # Add your UI elements here
         self.update_window(self.group_path)
 
         self.set_dark_mode(get_config_data('dark_mode'))
-        self.refresh_timer.start(self.get_interval())
         self.show()
 
     def _on_resize(self, event):
@@ -208,7 +202,6 @@ class ComparisonWindow(QDialog):
             else:
                 self.exp_panel.add_experiment(exp, checked=exp in checked_exps)
 
-    # region - UPDATE WINDOW
     def update_window(self, group_path):
         self.group_path = group_path
         self.group_label.setText(f"Group : {self.group_path}")
@@ -218,13 +211,29 @@ class ComparisonWindow(QDialog):
         self.update_exp_panel(exps)
         self.update_metrics(metrics)
 
-        # self.metric_combo.setCurrentIndex(0)
+        # lister les experiences du groupe
+        # experiments_folder = get_config_data(key="data_folder")
+        # group_folder = os.path.join(experiments_folder, self.group_path)
+        # exps = os.listdir(group_folder)
+        # # garder uniquement les dossiers
+        # exps = [d for d in sorted(exps) if os.path.isdir(os.path.join(group_folder, d))]
+
+        # for exp in exps:
+        #     self.exp_panel.add_experiment(exp)
+        #     exp_folder = os.path.join(group_folder, exp)
+        #     if os.path.isdir(exp_folder):
+        #         metrics = get_metrics(exp_folder)
+        #         # on met à jour les valeurs de la combobox
+
+        # # garder uniquement les valeurs uniques de metrics
+        # self.metrics = sorted(list(set(metrics)))
+
+        # self.metric_combo.clear()
+        # self.metric_combo.addItems(self.metrics)
+
+        self.metric_combo.setCurrentIndex(0)
 
         self.update_plot()
-
-    def get_interval(self):
-        interval = get_config_data("update_interval")
-        return int(interval * 1000)
 
     @staticmethod
     def read_scores(file_path):
@@ -265,8 +274,7 @@ class ComparisonWindow(QDialog):
 
             if best_scores:
                 # trier les scores par ordre croissant en les gardant alignés avec le nom de l'exp
-                sorted_scores, sorted_exps = zip(*sorted(zip(best_scores, exps), key=lambda x: x[0],
-                                                         reverse=(min_max == "min")))
+                sorted_scores, sorted_exps = zip(*sorted(zip(best_scores, exps), key=lambda x: x[0]))
 
                 self.figure.clear()
                 ax = self.figure.add_subplot(111)
@@ -275,9 +283,12 @@ class ComparisonWindow(QDialog):
                 if self.dark_mode_enabled:
                     bg_color = "#191919"
                     text_color = "white"
+                    bar_color = "deepskyblue"
+
                 else:
                     bg_color = "white"
                     text_color = "black"
+                    bar_color = "skyblue"
 
                 ax.set_facecolor(bg_color)
                 self.figure.set_facecolor(bg_color)
@@ -290,20 +301,7 @@ class ComparisonWindow(QDialog):
                 ax.yaxis.label.set_color(text_color)
                 ax.title.set_color(text_color)
 
-                # -- Couleurs basées sur les valeurs avec l'échelle 'coolwarm'
-                scores_arr = np.array(sorted_scores, dtype=float)
-                vmin, vmax = float(np.min(scores_arr)), float(np.max(scores_arr))
-                if vmax > vmin:
-                    normed = (scores_arr - vmin) / (vmax - vmin)
-                else:
-                    normed = np.zeros_like(scores_arr)
-
-                # En mode "Min": plus petite valeur -> bleu (coolwarm normal)
-                # En mode "Max": plus grande valeur -> bleu (coolwarm inversé)
-                cmap_name = "coolwarm" if min_max == "min" else "coolwarm_r"
-                colors = cm.get_cmap(cmap_name)(normed)
-
-                bars = ax.barh(sorted_exps, sorted_scores, color=colors)
+                bars = ax.barh(sorted_exps, sorted_scores, color=[bar_color] * len(sorted_exps))
 
                 # -- Ajuste l’axe X
                 max_score = max(sorted_scores)

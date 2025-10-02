@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QInputDialog
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QInputDialog, QMessageBox
 from PyQt5.QtCore import Qt
 import os
 from xview.compare_window import ComparisonWindow
@@ -176,13 +176,16 @@ class MyTreeWidget(QTreeWidget):
             return
 
         item_data = self.get_clicked_item_data(item)
-
         full_path = self.get_full_path(item)
+
+        # Precompute info to avoid accessing a potentially deleted QTreeWidgetItem later
+        item_name = item.text(0)
+        is_group = (item.childCount() > 0) or (len(item_data) > 1)
+        children_to_remove = max(0, len(item_data) - 1)
 
         menu = QMenu(self)
 
         # Ajouter des actions au menu contextuel
-        action_rm = menu.addAction("Remove")
 
         move_menu = menu.addMenu("Move to")
         groups = self.get_group_names()
@@ -191,19 +194,37 @@ class MyTreeWidget(QTreeWidget):
                 move_menu.addAction(group, lambda g=group: self.move_exp_callback(full_path, g))
         move_menu.addAction("Create new group", lambda: self.move_to_new_group_dialog(full_path))
 
-        # Vérifier si l'item est un groupe ou une expérience
-        if item.childCount() > 0:  # C'est un groupe
+        compare_action = None
+        if item.childCount() > 0:
             compare_action = menu.addAction("Compare")
+
+        action_rm = menu.addAction("Remove")
 
         action = menu.exec_(self.mapToGlobal(pos))
 
         if action == action_rm:
-            # item.setExpanded(True)
-            # self.remove_exp_callback(full_path)
-            self.remove_folders_callback(item_data)
-
-        elif action == compare_action:
+            if self.confirm_removal(item_name, is_group, children_to_remove):
+                self.remove_folders_callback(item_data)
+        elif compare_action is not None and action == compare_action:
             self.compare_exp_from_group(full_path)
+
+    def confirm_removal(self, item_name, is_group, children_to_remove=0):
+        """
+        Affiche une boîte de dialogue pour confirmer la suppression sans accéder à l'item Qt.
+        """
+        if is_group:
+            text = f"Supprimer le groupe « {item_name} » et {children_to_remove} élément(s) ?"
+        else:
+            text = f"Supprimer « {item_name} » ?"
+
+        reply = QMessageBox.question(
+            self,
+            "Confirmation",
+            text,
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        return reply == QMessageBox.Yes
 
     def compare_exp_from_group(self, group_path):
         comp_window = ComparisonWindow(group_path=group_path)
