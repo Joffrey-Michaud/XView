@@ -2,15 +2,17 @@ import sys
 from pathlib import Path
 
 # Configure logging early and robustly (works on Ubuntu and WSL2)
-log_file = Path.home() / ".xview" / "xview.log"
-try:
-    log_file.parent.mkdir(parents=True, exist_ok=True)
-    # Line-buffered append to preserve history across runs
-    sys.stdout = open(log_file, "a", buffering=1, encoding="utf-8", errors="backslashreplace")
-    sys.stderr = sys.stdout  # Capture errors too
-except Exception:
-    # Fall back to console if logging cannot be initialized
-    pass
+
+if 'nolog' not in sys.argv:
+    log_file = Path.home() / ".xview" / "xview.log"
+    try:
+        log_file.parent.mkdir(parents=True, exist_ok=True)
+        # Line-buffered append to preserve history across runs
+        sys.stdout = open(log_file, "a", buffering=1, encoding="utf-8", errors="backslashreplace")
+        sys.stderr = sys.stdout  # Capture errors too
+    except Exception:
+        # Fall back to console if logging cannot be initialized
+        pass
 
 # Print a launch banner with date and version at the top of each run
 try:
@@ -60,7 +62,6 @@ import numpy as np
 import subprocess
 import tempfile
 import platform
-
 
 
 class ExperimentViewer(QMainWindow):
@@ -213,12 +214,12 @@ class ExperimentViewer(QMainWindow):
         self.list_update_timer.timeout.connect(self.update_experiment_list)
         # self.list_update_timer.timeout.connect(self.update_plot)  # Mise à jour du graphique en même temps que les listes
         self.list_update_timer.timeout.connect(self.refresh_graph)  # Mise à jour du graphique en même temps que les listes
-        self.list_update_timer.start(self.get_interval())
+        self.list_update_timer.start(0)
 
         self.update_check_timer = QTimer(self)
         self.update_check_timer.timeout.connect(check_for_updates)
+        self.update_check_timer.start(0)
         # vérification toutes les 60 minutes
-        self.update_check_timer.start(60 * 60 * 1000)  # 60 minutes en millisecondes
         # self.update_check_timer.start(5 * 1000)  # 60 minutes en millisecondes
 
         # Variables pour le stockage temporaire
@@ -252,6 +253,12 @@ class ExperimentViewer(QMainWindow):
         #     upd_notif = UpdatedNotification()
         #     upd_notif.exec_()
         #     set_config_data("first_since_update", False)
+
+        self.setup_timers()
+
+    def setup_timers(self):
+        self.list_update_timer.setInterval(max(2000, self.get_interval()))
+        self.update_check_timer.setInterval(60 * 60 * 1000)
 
     def read_dark_mode_state(self):
         """Lit l'état du mode sombre à partir du fichier JSON."""
@@ -349,8 +356,6 @@ class ExperimentViewer(QMainWindow):
 
         self.training_list.restore_expanded_items(tr_ids)
         self.finished_list.restore_expanded_items(finished_ids)
-
-        
 
     @staticmethod
     def read_scores(file_path):
@@ -533,7 +538,7 @@ class ExperimentViewer(QMainWindow):
         """Returns the sizes of the left widget, plot, and right widget from the main splitter."""
         # Get the sizes from the main splitter
         sizes = self.centralWidget().layout().itemAt(0).widget().sizes()
-        
+
         if len(sizes) == 3:
             left_width = sizes[0]
             plot_width = sizes[1]
@@ -575,7 +580,7 @@ class ExperimentViewer(QMainWindow):
         _, ma_curves_ls, ma_curves_alpha = self.get_ma_curves_style()
 
         try:
-            scores_monitoring = self.get_scores_monitoring()  
+            scores_monitoring = self.get_scores_monitoring()
         except:
             scores_monitoring = {}
 
@@ -675,7 +680,7 @@ class ExperimentViewer(QMainWindow):
             #  ----------------------------------------------------------- PLOT CURVES
             monitoring_modes = scores_monitoring[score]
             if len(x) > 0:
-                if self.curve_selector_widget.boxes[score][0].isChecked():  # score
+                if self.curve_selector_widget.boxes[score][0].isChecked():  #  score
                     ax.plot(x, y, label=f"{label_value} {score}", ls=curves_ls, color=curves_colors[i], alpha=curves_alpha, **plt_args)
                     if self.range_widget.optimum_checkbox.isChecked():
                         plot_monitoring_lines(ax, x, y, color=curves_colors[i], monitoring_flags=monitoring_modes, ls="-.", alpha=curves_alpha, x_max_range=x_max)
@@ -742,12 +747,12 @@ class ExperimentViewer(QMainWindow):
         self.figure.tight_layout()
 
         self.canvas.draw()
-        
+
         self.save_widget_sizes()
 
     def refresh_graph(self):
         """Met à jour manuellement le graphique."""
-        self.list_update_timer.setInterval(self.get_interval())
+        self.setup_timers()
         if self.current_experiment_name is not None:
             if os.path.exists(os.path.join(self.experiments_dir, self.current_experiment_name)):
                 self.display_experiment(self.current_experiment_name)
@@ -1059,6 +1064,7 @@ class ExperimentViewer(QMainWindow):
                 os.remove(tmp_path)
             except Exception:
                 pass
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
