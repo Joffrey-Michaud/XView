@@ -1,6 +1,6 @@
 # XView - Release Notes
 
-## [1.0.11] - 2025-08-29
+## [1.0.11] - 2025-10-02
 ### Modified
 - Modification de la procédure de suppression d'expériences
 
