@@ -40,7 +40,7 @@ import time
 import shutil
 import random
 import json
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QPushButton, QSplitter, QTextEdit, QLineEdit, QTableWidget, QTableWidgetItem)
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QPushButton, QSplitter, QTextEdit, QLineEdit, QTableWidget, QTableWidgetItem, QMessageBox)
 from PyQt5.QtGui import QColor, QIcon, QPalette, QClipboard
 from PyQt5.QtCore import QDateTime
 from PyQt5.QtCore import QTimer, Qt
@@ -115,13 +115,13 @@ class ExperimentViewer(QMainWindow):
         splitter.addWidget(left_widget)
 
         # Boutons Refresh (en colonne)
-        self.refresh_graph_button = QPushButton("Refresh Graph")
-        self.refresh_graph_button.clicked.connect(self.refresh_graph)
-        left_layout.addWidget(self.refresh_graph_button)
+        # self.refresh_graph_button = QPushButton("Refresh Graph")
+        # self.refresh_graph_button.clicked.connect(self.refresh_graph)
+        # left_layout.addWidget(self.refresh_graph_button)
 
-        self.refresh_experiments_button = QPushButton("Refresh Experiments")
-        self.refresh_experiments_button.clicked.connect(self.update_experiment_list)
-        left_layout.addWidget(self.refresh_experiments_button)
+        # self.refresh_experiments_button = QPushButton("Refresh Experiments")
+        # self.refresh_experiments_button.clicked.connect(self.update_experiment_list)
+        # left_layout.addWidget(self.refresh_experiments_button)
 
         self.screenshot_graph_button = QPushButton("Screenshot graph")
         self.screenshot_graph_button.clicked.connect(self.screenshot_graph)
@@ -145,8 +145,8 @@ class ExperimentViewer(QMainWindow):
 
         self.config_window = None
 
-        self.training_list = MyTreeWidget(self, display_exp=self.display_experiment, display_range=self.display_exp_range, remove_folders_callback=self.remove_folders, move_exp_callback=self.move_exp)
-        self.finished_list = MyTreeWidget(self, display_exp=self.display_experiment, display_range=self.display_exp_range, remove_folders_callback=self.remove_folders, move_exp_callback=self.move_exp)
+        self.training_list = MyTreeWidget(self, display_exp=self.display_experiment, display_range=self.display_exp_range, remove_folders_callback=self.remove_folders, move_exp_callback=self.move_exp, copy_exp_callback=self.copy_exp)
+        self.finished_list = MyTreeWidget(self, display_exp=self.display_experiment, display_range=self.display_exp_range, remove_folders_callback=self.remove_folders, move_exp_callback=self.move_exp, copy_exp_callback=self.copy_exp)
 
         left_layout.addWidget(QLabel("Experiments in progress"))
         left_layout.addWidget(self.training_list)
@@ -154,7 +154,6 @@ class ExperimentViewer(QMainWindow):
 
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("Search for an experiment...")
-        # self.search_bar.textChanged.connect(self.filter_experiments)
         self.search_bar.textChanged.connect(self.finished_list.filter_items)
         left_layout.addWidget(self.search_bar)  # Ajout sous le titre "Expériences terminées"
 
@@ -995,6 +994,45 @@ class ExperimentViewer(QMainWindow):
             self.update_experiment_list()
             if path == self.current_experiment_name:
                 self.display_experiment(new_path)
+
+    def copy_exp(self, path, new_group):
+        """Copie l'expérience sélectionnée vers un nouveau groupe."""
+        new_path = os.path.join(new_group, path.split(os.sep)[-1])
+        if os.path.exists(os.path.join(self.experiments_dir, path)):  # si l'exp existe
+            if not os.path.exists(os.path.join(self.experiments_dir, new_group)):  # si le nouveau groupe n'existe pas
+                os.makedirs(os.path.join(self.experiments_dir, new_group))
+            
+            source_path = os.path.join(self.experiments_dir, path)
+            dest_path = os.path.join(self.experiments_dir, new_path)
+            
+            # Vérifier si la destination existe déjà
+            if os.path.exists(dest_path):
+                exp_name = path.split(os.sep)[-1]
+                reply = QMessageBox.question(
+                    self,
+                    "Conflit de nom",
+                    f"L'expérience {exp_name} existe déjà dans le groupe {new_group}. Voulez-vous la remplacer ?",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No
+                )
+                
+                if reply == QMessageBox.No:
+                    return  # Annuler la copie
+                
+                # Supprimer la destination existante avant la copie
+                if os.path.isdir(dest_path):
+                    shutil.rmtree(dest_path)
+                else:
+                    os.remove(dest_path)
+            
+            # Utiliser copytree pour copier récursivement le dossier
+            if os.path.isdir(source_path):
+                shutil.copytree(source_path, dest_path)
+            else:
+                # Si c'est un fichier unique, utiliser copy2
+                shutil.copy2(source_path, dest_path)
+
+            self.update_experiment_list()
 
     def screenshot_graph(self):
         """Prend une capture d'écran du graphique."""

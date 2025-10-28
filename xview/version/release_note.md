@@ -1,5 +1,9 @@
 # XView - Release Notes
 
+## [1.0.12] - 2025-10-06
+### Added
+- Possibilité de copier une expérience dans un autre groupe depuis la liste des expériences.
+
 ## [1.0.11] - 2025-10-02
 ### Modified
 - Modification de la procédure de suppression d'expériences

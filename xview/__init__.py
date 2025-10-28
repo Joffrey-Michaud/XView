@@ -25,7 +25,9 @@ default_config = {
     "remind_me_later_date": None,
     "first_since_update": False,
     "auto_update": False,
-    "version": "1.0.11"
+    "trash_capacity": 10,
+    "trash_timer": 30,
+    "version": "1.0.12"
 }
 
 default_palette_config = {

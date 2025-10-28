@@ -25,7 +25,7 @@ class SettingsWindow(QWidget):
 
         # region - TREE
         self.list = QListWidget()
-        self.list.setFixedWidth(100)
+        self.list.setFixedWidth(110)
         self.list.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.list.itemClicked.connect(self.on_item_clicked)
 
