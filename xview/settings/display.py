@@ -240,7 +240,7 @@ class DisplaySettings(QWidget):
 
         # region - left widget
         self.left_widget = QWidget()
-        self.left_widget.setFixedWidth(250)
+        self.left_widget.setFixedWidth(300)
         self.left_layout = QVBoxLayout()
         self.left_widget.setLayout(self.left_layout)
         self.splitter.addWidget(self.left_widget)

@@ -5,13 +5,16 @@ from xview.compare_window import ComparisonWindow
 
 
 class MyTreeWidget(QTreeWidget):
-    def __init__(self, parent=None, display_exp=None, display_range=None, items=None, remove_folders_callback=None, move_exp_callback=None):
+    def __init__(self, parent=None, display_exp=None, display_range=None, items=None, remove_folders_callback=None, move_exp_callback=None, copy_exp_callback=None):
         super().__init__(parent)
         self.setHeaderHidden(True)  # Masque le titre
+        # Rendre explicite le mode de sélection pour éviter les surprises
+        self.setSelectionMode(QTreeWidget.SingleSelection)
         self.display_exp = display_exp
         self.display_range = display_range
         self.remove_folders_callback = remove_folders_callback
         self.move_exp_callback = move_exp_callback
+        self.copy_exp_callback = copy_exp_callback
 
         self.itemClicked.connect(self.on_click_item)
 
@@ -23,7 +26,7 @@ class MyTreeWidget(QTreeWidget):
         # contextual menu on right click
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
-
+        
         self.comparison_window = None
 
     def on_click_item(self, item, column):
@@ -51,7 +54,6 @@ class MyTreeWidget(QTreeWidget):
 
     def populate(self, items):
         self.clear()
-        # for entry in items:
         for entry in sorted(items, key=lambda e: list(e.keys())[0].lower() if isinstance(e, dict) else str(e).lower()):
             self._add_entry(entry, self)
 
@@ -127,8 +129,6 @@ class MyTreeWidget(QTreeWidget):
                 else:
                     filtered.append(entry)
 
-        self.populate(filtered)
-
     def get_expanded_items(self):
         expanded_items = []
 
@@ -156,6 +156,13 @@ class MyTreeWidget(QTreeWidget):
         for i in range(self.topLevelItemCount()):
             recurse(self.topLevelItem(i))
 
+    def get_parent_group_name(self, item):
+        """Retourne le nom du groupe parent d'un item, ou None si c'est un groupe de niveau supérieur."""
+        parent = item.parent()
+        if parent is not None:
+            return parent.text(0)
+        return None
+
     def get_group_names(self):
         groups = []
 
@@ -182,6 +189,7 @@ class MyTreeWidget(QTreeWidget):
         item_name = item.text(0)
         is_group = (item.childCount() > 0) or (len(item_data) > 1)
         children_to_remove = max(0, len(item_data) - 1)
+        current_group = self.get_parent_group_name(item)
 
         menu = QMenu(self)
 
@@ -193,6 +201,14 @@ class MyTreeWidget(QTreeWidget):
             for group in groups:
                 move_menu.addAction(group, lambda g=group: self.move_exp_callback(full_path, g))
         move_menu.addAction("Create new group", lambda: self.move_to_new_group_dialog(full_path))
+
+        copy_menu = menu.addMenu("Copy to")
+        # Pour la copie, exclure le groupe actuel de l'expérience
+        available_groups_for_copy = [g for g in groups if g != current_group] if groups else []
+        if available_groups_for_copy:
+            for group in available_groups_for_copy:
+                copy_menu.addAction(group, lambda g=group: self.copy_exp_callback(full_path, g))
+        copy_menu.addAction("Create new group", lambda: self.copy_to_new_group_dialog(full_path))
 
         compare_action = None
         if item.childCount() > 0:
@@ -235,6 +251,13 @@ class MyTreeWidget(QTreeWidget):
         group_name, ok = QInputDialog.getText(self, 'New Group', 'Enter group name:')
         if ok and group_name:
             return self.move_exp_callback(full_path, group_name)
+        return None
+
+    def copy_to_new_group_dialog(self, full_path):
+        # Open a dialog to create a new group for copying
+        group_name, ok = QInputDialog.getText(self, 'New Group', 'Enter group name:')
+        if ok and group_name:
+            return self.copy_exp_callback(full_path, group_name)
         return None
 
     def get_clicked_item_data(self, item):
