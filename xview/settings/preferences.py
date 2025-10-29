@@ -1,35 +1,7 @@
 from PyQt5.QtWidgets import QFileDialog, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QComboBox, QLabel, QSizePolicy, QSpacerItem, QLineEdit
 from PyQt5.QtCore import QDir, Qt
 from xview import get_config_file, set_config_data, get_config_data
-
-
-class Section(QWidget):
-    def __init__(self, title, parent=None):
-        super().__init__()
-        self.parent = parent
-        self.layout = QVBoxLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.layout)
-
-        self.title_label = QLabel(title)
-        self.title_label.setStyleSheet("font-weight: bold; font-size: 16px;")
-        # si get_config_file()["dark_mode"]: on écrit en blanc, sinon en noir
-        self.title_label.setStyleSheet(
-            "font-weight: bold; font-size: 16px; color: white;" if get_config_file()["dark_mode"] else "font-weight: bold; font-size: 16px; color: black;"
-            )
-        # centrer le titre
-        self.title_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(self.title_label)
-
-        self.container = QWidget()
-        self.container_layout = QVBoxLayout()
-        self.container_layout.setContentsMargins(0, 0, 0, 0)
-        self.container.setLayout(self.container_layout)
-        self.layout.addWidget(self.container)
-
-    def add_widget(self, widget):
-        self.container_layout.addWidget(widget)
-
+from xview.settings.section import Section
 
 
 # ------------------------------------------------------------------ SETTINGS DISPLAY
