@@ -26,7 +26,7 @@ default_config = {
     "first_since_update": False,
     "auto_update": False,
     "trash_dir": None,
-    "trash_max_size": 3,  # in Gb. 0 means no limit
+    "trash_max_size": 10,  # in Gb. 0 means no limit
     "trash_max_days": 30,  # in days. 0 means no limit
     "version": "1.0.12"
 }
