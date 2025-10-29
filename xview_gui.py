@@ -37,9 +37,11 @@ except Exception:
 
 import os
 import time
+import datetime
 import shutil
 import random
 import json
+from pathlib import Path
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QPushButton, QSplitter, QTextEdit, QLineEdit, QTableWidget, QTableWidgetItem, QMessageBox)
 from PyQt5.QtGui import QColor, QIcon, QPalette, QClipboard
 from PyQt5.QtCore import QDateTime
@@ -54,7 +56,7 @@ from config import ConfigManager
 from xview.version.updated_window import UpdatedNotification
 from xview.version.update_project import check_for_updates
 from xview.version.about_window import AboutWindow
-from xview import get_config_file, set_config_data, check_config_integrity, get_config_data
+from xview import get_config_file, set_config_data, check_config_integrity, get_config_data, CONFIG_FILE_DIR
 from xview.settings.settings_window import SettingsWindow
 from xview.graph.range_widget import RangeWidget
 from xview.settings.palette import Palette
@@ -113,15 +115,6 @@ class ExperimentViewer(QMainWindow):
         left_layout = QVBoxLayout()
         left_widget.setLayout(left_layout)
         splitter.addWidget(left_widget)
-
-        # Boutons Refresh (en colonne)
-        # self.refresh_graph_button = QPushButton("Refresh Graph")
-        # self.refresh_graph_button.clicked.connect(self.refresh_graph)
-        # left_layout.addWidget(self.refresh_graph_button)
-
-        # self.refresh_experiments_button = QPushButton("Refresh Experiments")
-        # self.refresh_experiments_button.clicked.connect(self.update_experiment_list)
-        # left_layout.addWidget(self.refresh_experiments_button)
 
         self.screenshot_graph_button = QPushButton("Screenshot graph")
         self.screenshot_graph_button.clicked.connect(self.screenshot_graph)
@@ -207,19 +200,20 @@ class ExperimentViewer(QMainWindow):
         right_widget.setStretchFactor(0, 3)  # Zone du schéma
         right_widget.setStretchFactor(1, 2)  # Zone des infos
 
-        # region - QTIMER
+        # region - QTIMERs
         # Timers pour mise à jour
         self.list_update_timer = QTimer(self)
         self.list_update_timer.timeout.connect(self.update_experiment_list)
-        # self.list_update_timer.timeout.connect(self.update_plot)  # Mise à jour du graphique en même temps que les listes
         self.list_update_timer.timeout.connect(self.refresh_graph)  # Mise à jour du graphique en même temps que les listes
         self.list_update_timer.start(0)
 
         self.update_check_timer = QTimer(self)
         self.update_check_timer.timeout.connect(check_for_updates)
         self.update_check_timer.start(0)
-        # vérification toutes les 60 minutes
-        # self.update_check_timer.start(5 * 1000)  # 60 minutes en millisecondes
+
+        self.trash_cleanup_timer = QTimer(self)
+        self.trash_cleanup_timer.timeout.connect(self.cleanup_trash)
+        self.trash_cleanup_timer.start(0)
 
         # Variables pour le stockage temporaire
         self.current_scores = {}
@@ -240,18 +234,7 @@ class ExperimentViewer(QMainWindow):
         # Mise à jour initiale
         self.update_experiment_list()
         self.update_plot()
-
-        # first_since_update = get_config_file().get("first_since_update", None)
-
-        # if first_since_update is None:
-        #     set_config_data("first_since_update", True)
-        #     upd_notif = UpdatedNotification()
-        #     upd_notif.exec_()
-        #     set_config_data("first_since_update", False)
-        # elif first_since_update:
-        #     upd_notif = UpdatedNotification()
-        #     upd_notif.exec_()
-        #     set_config_data("first_since_update", False)
+        self.cleanup_trash()
 
         self.setup_timers()
 
@@ -259,6 +242,85 @@ class ExperimentViewer(QMainWindow):
         self.list_update_timer.setInterval(max(2000, self.get_interval()))
         self.update_check_timer.setInterval(60 * 60 * 1000)
 
+        # setting up trash clean up timer every 60 minutes
+        self.trash_cleanup_timer.setInterval(60 * 60 * 1000)
+
+    # -----------------------------------------------------------------------------------------
+    # region - TRASH
+    def get_trash_dir(self):
+        trash_dir = get_config_data("trash_dir")
+        if trash_dir is None:
+            trash_dir = os.path.join(CONFIG_FILE_DIR, "Trash")
+            set_config_data("trash_dir", trash_dir)
+        return trash_dir
+
+    def _entry_ctime(self, p):
+        try:
+            return p.stat().st_ctime
+        except Exception:
+            return 0.0
+
+    def _get_dir_size(self, p):
+        total = 0
+        try:
+            if p.is_file():
+                return p.stat().st_size
+            for root, dirs, files in os.walk(p):
+                for f in files:
+                    try:
+                        fp = Path(root) / f
+                        total += fp.stat().st_size
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        return total
+
+    def _remove_path(self, p):
+        try:
+            if p.is_dir():
+                shutil.rmtree(p)
+        except Exception as e:
+            print(f"Error removing {p}: {e}")
+
+    def cleanup_trash(self):
+        """
+        Clean the trash folder
+        """
+        print("CLEANING TRASH DIR")
+        trash_dir = self.get_trash_dir()
+        if not os.path.exists(trash_dir):
+            return
+        
+        trash_dir = Path(trash_dir)
+
+        # 1. Clean the folders if they exceed the max days
+        max_days = get_config_data("trash_max_days")
+        now = time.time()
+        if max_days and max_days > 0:
+            cutoff = now - (max_days * 86400)  # 86400 seconds in a day
+            for item in trash_dir.iterdir():
+                try:
+                    if self._entry_ctime(item) < cutoff:
+                        self._remove_path(item)
+                except Exception as e:
+                    print(f"Error cleaning up {item}: {e}")
+        
+        # 2. Clean the folders if they exceed the max size
+        max_size_gb = get_config_data("trash_max_size")  # taille en Gb
+        if max_size_gb and max_size_gb > 0:
+            limit_bytes = max_size_gb * 1024 * 1024 * 1024
+            total = sum(self._get_dir_size(item) for item in trash_dir.iterdir())
+            if total > limit_bytes:
+                # Sort items by modification time (oldest first)
+                items = sorted(trash_dir.iterdir(), key=self._entry_mtime)
+                for item in items:
+                    if total <= limit_bytes:
+                        break
+                    size = self._get_dir_size(item)
+                    self._remove_path(item)
+                    total -= size
+            
     def read_dark_mode_state(self):
         """Lit l'état du mode sombre à partir du fichier JSON."""
         return get_config_file()["dark_mode"]
@@ -494,23 +556,6 @@ class ExperimentViewer(QMainWindow):
         else:
             self.figure.clear()
             self.canvas.draw()
-
-    # def display_model_image(self):
-    #     if self.model_image_file is not None:
-    #         if os.path.exists(self.model_image_file):
-    #             image = QImage(self.model_image_file)
-    #             if self.dark_mode_enabled:
-    #                 image.invertPixels()
-    #                 self.model_image_label.setStyleSheet("border: 1px solid black; background-color: black")
-    #             else:
-    #                 self.model_image_label.setStyleSheet("border: 1px solid black; background-color: white")
-    #             pixmap = QPixmap.fromImage(image)
-    #             self.model_image_label.setPixmap(pixmap.scaled(self.model_image_label.size(),
-    #                                                            aspectRatioMode=Qt.KeepAspectRatio,
-    #                                                            transformMode=Qt.SmoothTransformation))  # Preserve aspect ratio
-    #         else:
-    #             self.model_image_label.clear()
-    #             self.model_image_label.setText("Image non trouvée")
 
     def get_curves_style(self):
         colors = self.palette.light_mode_curves if not self.dark_mode_enabled else self.palette.dark_mode_curves
@@ -782,6 +827,8 @@ class ExperimentViewer(QMainWindow):
         self.figure.savefig(save_path, dpi=300)  # Enregistrer en haute qualité
         print(f"Graph enregistré dans : {save_path}")
 
+    # -----------------------------------------------------------------------------------------
+    # region - DARK MODE
     def set_dark_mode(self, sett):
         if sett:
             dark_palette = QPalette()
@@ -851,6 +898,8 @@ class ExperimentViewer(QMainWindow):
         config[key] = value
         self.set_exp_config_file(config)
 
+    # -----------------------------------------------------------------------------------------
+    # region - PALETTE EDITOR
     def add_curve_color(self, color):
         """Ajoute une couleur à la liste des couleurs de courbes."""
         dark_colors = get_config_file()["dark_mode_curves"]
@@ -921,6 +970,8 @@ class ExperimentViewer(QMainWindow):
 
         self.settings_window.settings_widgets["Display"].flag_color_widget.colors = dark_colors if self.dark_mode_enabled else light_colors
 
+    # -----------------------------------------------------------------------------------------
+    # region - REMOVE XP
     def remove_folders(self, folders):
         """Déplace l'expérience ou le groupe sélectionné dans un dossier Trash avec horodatage."""
         from datetime import datetime
@@ -983,6 +1034,8 @@ class ExperimentViewer(QMainWindow):
 
         self.update_experiment_list()
 
+    # -----------------------------------------------------------------------------------------
+    # region - MOVE XP
     def move_exp(self, path, new_group):
         """Déplace l'expérience sélectionnée vers un nouveau groupe."""
         new_path = os.path.join(new_group, path.split(os.sep)[-1])
@@ -995,6 +1048,8 @@ class ExperimentViewer(QMainWindow):
             if path == self.current_experiment_name:
                 self.display_experiment(new_path)
 
+    # -----------------------------------------------------------------------------------------
+    # region - COPY XP
     def copy_exp(self, path, new_group):
         """Copie l'expérience sélectionnée vers un nouveau groupe."""
         new_path = os.path.join(new_group, path.split(os.sep)[-1])
@@ -1034,6 +1089,8 @@ class ExperimentViewer(QMainWindow):
 
             self.update_experiment_list()
 
+    # -----------------------------------------------------------------------------------------
+    # region - SCREENSHOT
     def screenshot_graph(self):
         """Prend une capture d'écran du graphique."""
         if self.current_experiment_name:
