@@ -4,6 +4,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QSizePolicy
 from xview.settings.display import DisplaySettings
 from xview.settings.preferences import PreferencesSetting
+from xview.settings.remote_settings import RemoteSettings
 from xview import get_config_file
 
 
@@ -43,6 +44,7 @@ class SettingsWindow(QWidget):
         self.add_list_entry("Display",
                             widget=DisplaySettings(self, palette=self.palette))
         self.add_list_entry("Preferences", widget=PreferencesSetting())
+        self.add_list_entry("Remote configuration", widget=RemoteSettings())
         # self.add_list_entry("Update")
         # self.add_list_entry("Save")
 
