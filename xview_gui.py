@@ -254,9 +254,9 @@ class ExperimentViewer(QMainWindow):
             set_config_data("trash_dir", trash_dir)
         return trash_dir
 
-    def _entry_mtime(self, p):
+    def _entry_ctime(self, p):
         try:
-            return p.stat().st_mtime
+            return p.stat().st_ctime
         except Exception:
             return 0.0
 
@@ -301,7 +301,7 @@ class ExperimentViewer(QMainWindow):
             cutoff = now - (max_days * 86400)  # 86400 seconds in a day
             for item in trash_dir.iterdir():
                 try:
-                    if self._entry_mtime(item) < cutoff:
+                    if self._entry_ctime(item) < cutoff:
                         self._remove_path(item)
                 except Exception as e:
                     print(f"Error cleaning up {item}: {e}")
