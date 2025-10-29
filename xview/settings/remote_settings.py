@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QFileDialog, QWidget, QPushButton, QVBoxLayout, QHBo
 from PyQt5.QtCore import QDir, Qt
 from xview import get_config_file, set_config_data, get_config_data
 from xview.settings.section import Section
-from xview.remote.remote_utils import create_remote_config, get_all_remote_configs, del_remote_config
+from xview.remote.remote_utils import create_remote_config, get_remote_configs, del_remote_config
 
 
 # ------------------------------------------------------------------ REMOTE SETTINGS
@@ -52,7 +52,7 @@ class RemoteSettings(QWidget):
         self.existing_section = Section("Existing remotes")
         self.main_layout.addWidget(self.existing_section)
 
-        
+
 
 
     def add_separator(self):
