@@ -102,7 +102,7 @@ def del_remote_config(remote_name):
         json.dump(existing_configs, f, indent=4)
 
 
-def get_remote_configs():  # retrieve names of remotes
+def get_remote_config_names():  # retrieve names of remotes
     """Retrieve the list of remote configuration names.
 
     Reads the ``remote_config.json`` file and returns a list of all keys
@@ -120,3 +120,148 @@ def get_remote_configs():  # retrieve names of remotes
         existing_configs = {}
 
     return sorted(list(existing_configs.keys()))
+
+
+def get_remote_configs():  # retrieve names of remotes
+    """Retrieve the list of remote configuration names.
+
+    Reads the ``remote_config.json`` file and returns a list of all keys
+    (remote names) present in the file. If the file does not exist, an
+    empty list is returned.
+
+    Returns:
+        A list of strings representing the remote configuration names.
+    """
+    remote_config_file = Path(CONFIG_FILE_DIR) / f"remote_config.json"
+    if remote_config_file.exists():
+        with open(remote_config_file, 'r') as f:
+            existing_configs = json.load(f)
+    else:
+        existing_configs = {}
+
+    return existing_configs
+
+
+def change_remote_name(old_name, new_name):
+    """Change the key of an existing remote configuration.
+
+    This function renames a remote configuration entry from ``old_name``
+    to ``new_name`` in the ``remote_config.json`` file. If ``old_name``
+    does not exist, the function does nothing. If ``new_name`` already
+    exists, it will be overwritten.
+
+    Args:
+        old_name: The current key of the remote configuration.
+        new_name: The new key for the remote configuration.
+    Side Effects:
+        Writes the JSON file at ``CONFIG_FILE_DIR/remote_config.json`` with the
+        updated dictionary of configurations.
+    Raises:
+        json.JSONDecodeError: If the existing JSON file is malformed.
+        OSError: If the configuration file cannot be read or written.
+    """
+    remote_config_file = Path(CONFIG_FILE_DIR) / f"remote_config.json"
+    if remote_config_file.exists():
+        with open(remote_config_file, 'r') as f:
+            existing_configs = json.load(f)
+    else:
+        existing_configs = {}
+
+    if old_name in existing_configs:
+        existing_configs[new_name] = existing_configs.pop(old_name)
+
+    with open(remote_config_file, 'w') as f:
+        json.dump(existing_configs, f, indent=4)
+
+
+def change_remote_key(remote_name, key, new_value):
+    """Change a specific key of an existing remote configuration.
+
+    This function updates a specific key (e.g., 'host_name', 'login',
+    'exp_folder') of a remote configuration entry identified by
+    ``remote_name`` in the ``remote_config.json`` file. If ``remote_name``
+    does not exist or the key is invalid, the function does nothing.
+
+    Args:
+        remote_name: The key of the remote configuration to update.
+        key: The specific key to change ('host_name', 'login', 'exp_folder').
+        new_value: The new value for the specified key.
+    Side Effects:
+        Writes the JSON file at ``CONFIG_FILE_DIR/remote_config.json`` with the
+        updated dictionary of configurations.
+    Raises:
+        json.JSONDecodeError: If the existing JSON file is malformed.
+        OSError: If the configuration file cannot be read or written.
+    """
+    remote_config_file = Path(CONFIG_FILE_DIR) / f"remote_config.json"
+    if remote_config_file.exists():
+        with open(remote_config_file, 'r') as f:
+            existing_configs = json.load(f)
+    else:
+        existing_configs = {}
+
+    if remote_name in existing_configs and key in existing_configs[remote_name]:
+        existing_configs[remote_name][key] = new_value
+
+    with open(remote_config_file, 'w') as f:
+        json.dump(existing_configs, f, indent=4)
+
+
+def change_host_name(remote_name, new_host_name):
+    """Change the host name of an existing remote configuration.
+
+    This function updates the 'host_name' key of a remote configuration
+    entry identified by ``remote_name`` in the ``remote_config.json``
+    file. If ``remote_name`` does not exist, the function does nothing.
+
+    Args:
+        remote_name: The key of the remote configuration to update.
+        new_host_name: The new host name for the remote configuration.
+    Side Effects:
+        Writes the JSON file at ``CONFIG_FILE_DIR/remote_config.json`` with the
+        updated dictionary of configurations.
+    Raises:
+        json.JSONDecodeError: If the existing JSON file is malformed.
+        OSError: If the configuration file cannot be read or written.
+    """
+    change_remote_key(remote_name, "host_name", new_host_name)
+
+
+def change_login(remote_name, new_login):
+    """Change the login of an existing remote configuration.
+
+    This function updates the 'login' key of a remote configuration
+    entry identified by ``remote_name`` in the ``remote_config.json``
+    file. If ``remote_name`` does not exist, the function does nothing.
+
+    Args:
+        remote_name: The key of the remote configuration to update.
+        new_login: The new login for the remote configuration.
+    Side Effects:
+        Writes the JSON file at ``CONFIG_FILE_DIR/remote_config.json`` with the
+        updated dictionary of configurations.
+    Raises:
+        json.JSONDecodeError: If the existing JSON file is malformed.
+        OSError: If the configuration file cannot be read or written.
+    """
+    change_remote_key(remote_name, "login", new_login)
+
+
+def change_exp_folder(remote_name, new_exp_folder):
+    """Change the experiment folder of an existing remote configuration.
+
+    This function updates the 'exp_folder' key of a remote configuration
+    entry identified by ``remote_name`` in the ``remote_config.json``
+    file. If ``remote_name`` does not exist, the function does nothing.
+
+    Args:
+        remote_name: The key of the remote configuration to update.
+        new_exp_folder: The new experiment folder for the remote configuration.
+    Side Effects:
+        Writes the JSON file at ``CONFIG_FILE_DIR/remote_config.json`` with the
+        updated dictionary of configurations.
+    Raises:
+        json.JSONDecodeError: If the existing JSON file is malformed.
+        OSError: If the configuration file cannot be read or written.
+    """
+    change_remote_key(remote_name, "exp_folder", new_exp_folder)
