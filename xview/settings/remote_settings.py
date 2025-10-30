@@ -1,8 +1,8 @@
-from PyQt5.QtWidgets import QFileDialog, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QComboBox, QLabel, QSizePolicy, QSpacerItem, QLineEdit
+from PyQt5.QtWidgets import QFileDialog, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QComboBox, QLabel, QSizePolicy, QSpacerItem, QLineEdit, QMessageBox, QCheckBox
 from PyQt5.QtCore import QDir, Qt
 from xview import get_config_file, set_config_data, get_config_data
 from xview.settings.section import Section
-from xview.remote.remote_utils import get_remote_configs, get_remote_config_names, del_remote_config, change_exp_folder, change_host_name, change_login, change_remote_name
+from xview.remote.remote_utils import get_remote_configs, get_remote_config_names, del_remote_config, change_exp_folder, change_host_name, change_login, change_remote_name, change_enabled_status
 from xview.remote.add_remote_window import AddRemoteWindow
 
 
@@ -71,6 +71,10 @@ class RemoteSettings(QWidget):
         print("opening dialog window")
         dlg = AddRemoteWindow(self)
         dlg.exec_()  # ouvre la boîte en modal (bloque jusqu’à fermeture)
+        # mettre à jour la combo box des remotes
+        self.combo_box_remotes.clear()
+        self.combo_box_remotes.addItems(get_remote_config_names())
+        self.remote_display.init_ui(self.combo_box_remotes.currentText())
 
 
 class RemoteDisplay(QWidget):
@@ -92,7 +96,7 @@ class RemoteDisplay(QWidget):
 
         self.remote_name = remote_name
         if self.remote_name == "":
-            self.main_layout.addWidget(QLabel("No remote selected"))
+            self.main_layout.addWidget(QLabel("No remote configuration available."))
             return
 
         # --------------------------------------------------- REMOTE NAME
@@ -159,10 +163,29 @@ class RemoteDisplay(QWidget):
         exp_folder_layout.addWidget(exp_folder_input)
         exp_folder_layout.addWidget(exp_folder_save_button)
 
+        # --------------------------------------------------- ENABLE REMOTE TOGGLE
+        enable_remote_widget = QWidget()
+        enable_remote_layout = QHBoxLayout()
+        enable_remote_layout.setContentsMargins(0, 0, 0, 0)
+        enable_remote_widget.setLayout(enable_remote_layout)
+
+        enable_remote_checkbox = QCheckBox("Enable Remote")
+        enable_remote_checkbox.setChecked(get_remote_configs()[remote_name]["enabled"])
+        enable_remote_checkbox.toggled.connect(lambda checked: self.change_remote_enabled(checked))
+
+        enable_remote_layout.addWidget(enable_remote_checkbox)
+
+        # --------------------------------------------------- DELETE REMOTE BUTTON
+        delete_remote_button = QPushButton("Delete Remote Configuration")
+        delete_remote_button.setStyleSheet("QPushButton { background-color: red; color: white; }")
+        delete_remote_button.clicked.connect(self.delete_remote)
+
         self.main_layout.addWidget(remote_name_widget)
         self.main_layout.addWidget(host_name_widget)
         self.main_layout.addWidget(user_name_widget)
         self.main_layout.addWidget(exp_folder_widget)
+        self.main_layout.addWidget(enable_remote_widget)
+        self.main_layout.addWidget(delete_remote_button)
 
     def change_login(self, new_login):
         change_login(self.remote_name, new_login)
@@ -186,3 +209,25 @@ class RemoteDisplay(QWidget):
             self.parent.combo_box_remotes.setCurrentIndex(index)
         self.remote_name = new_remote_name
         self.init_ui(new_remote_name)
+
+    def change_remote_enabled(self, enabled):
+        change_enabled_status(self.remote_name, enabled)
+        self.init_ui(self.remote_name)
+
+    def delete_remote(self):
+        # boite de dialogue de confirmation
+        reply = QMessageBox.question(self, 'Confirmation', 'Are you sure you want to delete this remote configuration?',
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            del_remote_config(self.remote_name)
+            # mettre à jour la combo box des remotes dans RemoteSettings
+            if self.parent is not None:
+                index = self.parent.combo_box_remotes.findText(self.remote_name)
+                self.parent.combo_box_remotes.removeItem(index)
+            # afficher le premier élément de la liste
+            if self.parent.combo_box_remotes.count() > 0:
+                first_remote = self.parent.combo_box_remotes.itemText(0)
+                self.parent.combo_box_remotes.setCurrentIndex(0)
+                self.init_ui(first_remote)
+            else:
+                self.init_ui("")

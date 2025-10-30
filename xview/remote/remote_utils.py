@@ -13,7 +13,8 @@ File layout example::
         "my_remote": {
             "host_name": "gpu.example.com",
             "login": "alice",
-            "exp_folder": "/data/experiments"
+            "exp_folder": "/data/experiments",
+            "enabled": true
         }
     }
 
@@ -53,7 +54,8 @@ def create_remote_config(remote_name, host_name, login, exp_folder):
     config_dict = {
         "host_name": host_name,
         "login": login,
-        "exp_folder": exp_folder
+        "exp_folder": exp_folder,
+        "enabled": True
     }
 
     remote_config_file = Path(CONFIG_FILE_DIR) / f"remote_config.json"
@@ -265,3 +267,18 @@ def change_exp_folder(remote_name, new_exp_folder):
         OSError: If the configuration file cannot be read or written.
     """
     change_remote_key(remote_name, "exp_folder", new_exp_folder)
+
+
+def change_enabled_status(remote_name, enabled):
+    """Enable or disable an existing remote configuration.
+
+    This function updates the 'enabled' key of a remote configuration
+    entry identified by ``remote_name`` in the ``remote_config.json``
+    file. If ``remote_name`` does not exist, the function does nothing.
+
+    Args:
+        remote_name: The key of the remote configuration to update.
+        enabled: Boolean indicating whether to enable (True) or disable (False)
+                 the remote configuration.
+    """
+    change_remote_key(remote_name, "enabled", enabled)
