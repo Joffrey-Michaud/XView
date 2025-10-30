@@ -1,3 +1,9 @@
+"""Fenêtre de dialogue pour ajouter une configuration distante (remote) à XView.
+
+Ce module définit une boîte de dialogue PyQt5 permettant de saisir un nom de remote,
+un hôte, un utilisateur et le chemin du dossier d'expériences, puis d'enregistrer
+la configuration.
+"""
 # code for a dialog window to add a remote server in the xview application
 from PyQt5.QtWidgets import QWidget, QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QSpacerItem, QPushButton, QApplication
 from PyQt5.QtGui import QColor, QIcon, QPalette
@@ -14,7 +20,17 @@ import os
 
 
 class AddRemoteWindow(QDialog):
+    """Boîte de dialogue pour créer et enregistrer une configuration distante.
+
+    Saisie: nom du remote, hôte, utilisateur et dossier d'expériences.
+    """
+
     def __init__(self, parent: QWidget = None):
+        """Initialise la fenêtre et construit l'interface.
+
+        Args:
+            parent: Widget parent optionnel.
+        """
         super().__init__(parent)
         self.setWindowTitle("Add Remote Configuration")
         self.setModal(True)
@@ -105,6 +121,11 @@ class AddRemoteWindow(QDialog):
         self.set_dark_mode(get_config_data("dark_mode"))
 
     def confirm_callback(self):
+        """Valide les champs et enregistre la configuration distante.
+
+        Affiche un message d'erreur si un champ est vide, sinon crée la
+        configuration et ferme la boîte de dialogue avec accept().
+        """
         # check if all fields are filled
         if (not self.remote_name_input.text() or
                 not self.host_name_input.text() or
@@ -154,6 +175,11 @@ class AddRemoteWindow(QDialog):
         self.accept()
 
     def set_dark_mode(self, dark_mode):
+        """Applique le thème sombre ou clair à la fenêtre.
+
+        Args:
+            dark_mode: True pour activer le mode sombre, False pour le désactiver.
+        """
         if dark_mode:
             dark_palette = QPalette()
             dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))

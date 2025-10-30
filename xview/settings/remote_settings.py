@@ -1,3 +1,9 @@
+"""Settings section to manage remote configurations used by XView.
+
+Allows adding, selecting, editing, enabling/disabling, and deleting remote
+connection entries stored in the remote configuration file.
+"""
+
 from PyQt5.QtWidgets import QFileDialog, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QComboBox, QLabel, QSizePolicy, QSpacerItem, QLineEdit, QMessageBox, QCheckBox
 from PyQt5.QtCore import QDir, Qt
 from xview import get_config_file, set_config_data, get_config_data
@@ -9,6 +15,8 @@ from xview.remote.add_remote_window import AddRemoteWindow
 # ------------------------------------------------------------------ REMOTE SETTINGS
 # region - RemoteSettings
 class RemoteSettings(QWidget):
+    """Top-level panel to add and manage remote configurations."""
+
     def __init__(self, parent=None):
         super().__init__()
         self.parent = parent
@@ -56,18 +64,26 @@ class RemoteSettings(QWidget):
         self.combo_box_remotes = QComboBox()
         # lister les remote existants et les afficher dans un combo box
         self.combo_box_remotes.addItems(get_remote_config_names())
+        self.combo_box_remotes.currentIndexChanged.connect(self.on_remote_selection_changed)
         self.existing_section.add_widget(self.combo_box_remotes)
 
         self.remote_display = RemoteDisplay(self.combo_box_remotes.currentText(), parent=self)
         self.existing_section.add_widget(self.remote_display)
 
     def add_separator(self):
+        """Insert a horizontal line separator in the layout."""
         separator = QFrame()
         separator.setFrameShape(QFrame.HLine)
         separator.setFrameShadow(QFrame.Sunken)
         self.main_layout.addWidget(separator)
 
+    def on_remote_selection_changed(self, index):
+        """Refresh the details panel when a different remote is selected."""
+        remote_name = self.combo_box_remotes.itemText(index)
+        self.remote_display.init_ui(remote_name)
+
     def open_add_remote_dialog(self):
+        """Open the dialog to create a new remote, then refresh the list."""
         print("opening dialog window")
         dlg = AddRemoteWindow(self)
         dlg.exec_()  # ouvre la boîte en modal (bloque jusqu’à fermeture)
@@ -78,6 +94,8 @@ class RemoteSettings(QWidget):
 
 
 class RemoteDisplay(QWidget):
+    """Editor for a single remote configuration entry."""
+
     def __init__(self, remote_name, parent=None):
         super().__init__()
         self.main_layout = QVBoxLayout(self)
@@ -90,6 +108,7 @@ class RemoteDisplay(QWidget):
         self.init_ui(remote_name)
 
     def init_ui(self, remote_name):
+        """Rebuild the UI for the provided remote name."""
         # clear layout
         for i in reversed(range(self.main_layout.count())):
             self.main_layout.itemAt(i).widget().setParent(None)
@@ -188,18 +207,22 @@ class RemoteDisplay(QWidget):
         self.main_layout.addWidget(delete_remote_button)
 
     def change_login(self, new_login):
+        """Persist a new login for the active remote and refresh UI."""
         change_login(self.remote_name, new_login)
         self.init_ui(self.remote_name)
 
     def change_host_name(self, new_host_name):
+        """Persist a new host name for the active remote and refresh UI."""
         change_host_name(self.remote_name, new_host_name)
         self.init_ui(self.remote_name)
 
     def change_exp_folder(self, new_exp_folder):
+        """Persist a new experiment folder for the active remote and refresh UI."""
         change_exp_folder(self.remote_name, new_exp_folder)
         self.init_ui(self.remote_name)
 
     def change_remote_name(self, new_remote_name):
+        """Rename the active remote and update parent selectors accordingly."""
         change_remote_name(self.remote_name, new_remote_name)
         # mettre à jour la combo box des remotes dans RemoteSettings
         # on veut aussi remettre la combobox sur l item qui vient d etre renommé
@@ -211,10 +234,12 @@ class RemoteDisplay(QWidget):
         self.init_ui(new_remote_name)
 
     def change_remote_enabled(self, enabled):
+        """Enable/disable the active remote and refresh UI."""
         change_enabled_status(self.remote_name, enabled)
         self.init_ui(self.remote_name)
 
     def delete_remote(self):
+        """Confirm and delete the active remote configuration entry."""
         # boite de dialogue de confirmation
         reply = QMessageBox.question(self, 'Confirmation', 'Are you sure you want to delete this remote configuration?',
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)

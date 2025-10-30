@@ -1,3 +1,9 @@
+"""Widget to select which curves and flags are displayed in plots.
+
+Provides bulk check/uncheck actions and a scrollable list of items, with
+basic light/dark mode support.
+"""
+
 from PyQt5.QtWidgets import QScrollArea, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QCheckBox, QSpacerItem, QPushButton
 from PyQt5.QtGui import QIcon, QPalette, QColor, QCursor
 from PyQt5.QtCore import Qt, QPoint
@@ -6,6 +12,8 @@ import os
 
 
 class CurvesSelector(QWidget):
+    """UI component listing curve/flag items with selection controls."""
+
     def __init__(self, parent=None, update_plot_callback=None,
                  #  curves_list=None, flags_list=None
                  ):
@@ -17,6 +25,7 @@ class CurvesSelector(QWidget):
         self.setMaximumHeight(400)
 
     def initUI(self):
+        """Initialize layouts, controls, and scrollable container."""
         self.setWindowTitle('Curves Selector')
 
         self.boxes = {}
@@ -81,28 +90,33 @@ class CurvesSelector(QWidget):
         self.boxes_container_layout.addItem(self.spacer)
 
     def uncheck_all_boxes(self):
+        """Uncheck all items and refresh the plot."""
         for checkbox, _ in self.boxes.values():
             checkbox.setChecked(False)
         self.update_plot_callback()
 
     def check_all_boxes(self):
+        """Check all items and refresh the plot."""
         for checkbox, _ in self.boxes.values():
             checkbox.setChecked(True)
         self.update_plot_callback()
 
     def uncheck_all_boxes_ma(self):
+        """Uncheck only Moving Average items and refresh the plot."""
         for curve_name, (checkbox, _) in self.boxes.items():
             if curve_name.endswith(" (MA)"):
                 checkbox.setChecked(False)
         self.update_plot_callback()
 
     def check_all_boxes_ma(self):
+        """Check only Moving Average items and refresh the plot."""
         for curve_name, (checkbox, _) in self.boxes.items():
             if curve_name.endswith(" (MA)"):
                 checkbox.setChecked(True)
         self.update_plot_callback()
 
     def reset_window(self, path=None):
+        """Clear UI elements if the underlying path changes."""
         if path != self.current_path:
             # ...
             # supprimer les boxes
@@ -114,6 +128,7 @@ class CurvesSelector(QWidget):
             self.current_path = path
 
     def init_boxes(self, curves_list=None, flags_list=None, path=None):
+        """Populate initial items for curves and flags."""
         if curves_list is not None:
             for curve_name in curves_list:
                 self.add_line_box(curve_name)
@@ -123,6 +138,7 @@ class CurvesSelector(QWidget):
                 self.add_line_box(flag)
 
     def update_boxes(self, curves_list=None, flags_list=None):
+        """Add any new items not already present in the list."""
         if curves_list is not None:
             for curve_name in curves_list:
                 if curve_name not in self.boxes:
@@ -135,6 +151,7 @@ class CurvesSelector(QWidget):
                     self.add_line_box(flag)
 
     def add_line_box(self, curve_name):
+        """Add a single checkbox row for the given item name."""
         container = QWidget()
         h_layout = QHBoxLayout()
         h_layout.setSpacing(10)
@@ -157,6 +174,7 @@ class CurvesSelector(QWidget):
         self.boxes[curve_name] = (checkbox, container)
 
     def toggle_dark_mode(self):
+        """Switch between light and dark palettes for the widget."""
         if not self.dark_mode_enabled:
             self.dark_mode_enabled = True
             self.set_dark_mode()
@@ -168,6 +186,7 @@ class CurvesSelector(QWidget):
         # self.display_model_image()
 
     def set_dark_mode(self):
+        """Apply a dark theme palette."""
         dark_palette = QPalette()
         dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
         dark_palette.setColor(QPalette.WindowText, Qt.white)
@@ -185,9 +204,11 @@ class CurvesSelector(QWidget):
         self.setPalette(dark_palette)
 
     def set_light_mode(self):
+        """Restore the default palette."""
         self.setPalette(QApplication.style().standardPalette())
 
     def move_to_cursor_bottom_left(self):
+        """Position the widget above the mouse cursor bottom-left."""
         mouse_pos = QCursor.pos()
         window_size = self.size()
         new_pos = QPoint(mouse_pos.x(), mouse_pos.y() - window_size.height())

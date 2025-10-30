@@ -1,3 +1,9 @@
+"""Settings window hosting multiple settings panels.
+
+Contains a simple list to switch between settings sections like Display,
+Preferences, and Remote configuration.
+"""
+
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QListWidget, QListWidgetItem
 from PyQt5.QtGui import QIcon, QPalette, QColor
 from PyQt5.QtCore import Qt
@@ -9,6 +15,8 @@ from xview import get_config_file
 
 
 class SettingsWindow(QWidget):
+    """Container for settings pages with a left-side list selector."""
+
     def __init__(self, main_gui, palette, parent=None):
         super().__init__(parent)
         self.main_gui = main_gui
@@ -18,6 +26,7 @@ class SettingsWindow(QWidget):
         self.initUI()
 
     def initUI(self):
+        """Create the list and stack of settings widgets and wire selection."""
         self.main_layout = QHBoxLayout(self)
         self.setLayout(self.main_layout)
 
@@ -54,6 +63,7 @@ class SettingsWindow(QWidget):
         self.current_widget = self.settings_widgets["Display"]
 
     def add_list_entry(self, label, widget=None):
+        """Add a labeled entry to the list and register its widget."""
         item = QListWidgetItem(label)
         self.list.addItem(item)
         self.settings_widgets[label] = widget
@@ -61,6 +71,7 @@ class SettingsWindow(QWidget):
         self.setting_layout.addWidget(widget)
 
     def on_item_clicked(self, item):
+        """Show the selected settings widget and hide the previous one."""
         label = item.text()
         if label in self.settings_widgets:
             widget = self.settings_widgets[label]
@@ -70,6 +81,7 @@ class SettingsWindow(QWidget):
             self.current_widget = widget
 
     def set_dark_mode(self, dark_mode):
+        """Apply dark or light palette and propagate to main GUI."""
         if dark_mode:
             dark_palette = QPalette()
             dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))

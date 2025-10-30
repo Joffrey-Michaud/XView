@@ -1,3 +1,5 @@
+"""Convenience entrypoint to report whether the local XView repo is up to date."""
+
 from xview.version.update_project import is_up_to_date
 
 

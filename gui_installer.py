@@ -1,3 +1,9 @@
+"""Installer helpers to add an xview launcher to PATH and ensure config exists.
+
+Creates a lightweight launcher script on Linux (~/.local/bin/xview) or Windows
+(xview.bat) that starts the GUI and appends logs to ~/.xview/xview.log.
+"""
+
 import os
 import platform
 import shutil
@@ -14,11 +20,13 @@ SCRIPT_FILE = EXEC_DIR / "xview_gui.py"
 
 
 def is_in_path(directory):
+    """Return True if the given directory is present in PATH (resolved)."""
     path_env = os.environ.get("PATH", "")
     return any(Path(p).resolve() == Path(directory).resolve() for p in path_env.split(os.pathsep))
 
 
 def install_launcher_linux():
+    """Install an 'xview' launcher under ~/.local/bin and print PATH hint."""
     target_dir = Path.home() / ".local" / "bin"
     target_dir.mkdir(parents=True, exist_ok=True)
 
@@ -53,6 +61,7 @@ exit 0
 
 
 def install_launcher_windows():
+    """Create xview.bat in a PATH-able dir and start the GUI detached with logs."""
     windows_apps = Path(os.environ["USERPROFILE"]) / "AppData" / "Local" / "Microsoft" / "WindowsApps"
     fallback_dir = Path(os.environ["USERPROFILE"]) / "xview_launcher"
     fallback_dir.mkdir(exist_ok=True)
@@ -96,6 +105,7 @@ def install_launcher_windows():
 
 
 def is_wsl():
+    """Best-effort check for WSL environment (Linux kernel with Microsoft tag)."""
     try:
         with open("/proc/version", "r") as f:
             return "microsoft" in f.read().lower()
@@ -104,6 +114,7 @@ def is_wsl():
 
 
 def main():
+    """Entry point: install launcher, ensure config exists, then exit with hints."""
     current_os = platform.system()
     if current_os == "Linux":
         install_launcher_linux()
