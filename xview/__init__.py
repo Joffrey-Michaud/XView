@@ -1,3 +1,9 @@
+"""XView configuration helpers and defaults.
+
+This module reads and writes the JSON config under ~/.xview/config.json and
+ensures missing keys are populated from defaults. Also ships default palettes.
+"""
+
 import os
 import json
 
@@ -108,10 +114,15 @@ default_palette_config = {
 
 
 def config_exists():
+    """Return True if the user config file exists."""
     return os.path.exists(CONFIG_FILE_PATH)
 
 
 def get_config_file():
+    """Load and return the entire config JSON as a dict.
+
+    Raises FileNotFoundError if the config does not exist.
+    """
     if not os.path.exists(CONFIG_FILE_PATH):
         raise FileNotFoundError(f"No config file found, launch config.py before running any xview functions.")
     config = json.load(open(CONFIG_FILE_PATH))
@@ -119,24 +130,28 @@ def get_config_file():
 
 
 def get_config_data(key):
+    """Convenience accessor to read a single key from the config (or None)."""
     return get_config_file().get(key, None)
 
 
 def set_config_file(config):
+    """Write the full config dict to disk with indentation."""
     with open(CONFIG_FILE_PATH, 'w') as f:
         json.dump(config, f, indent=4)
 
 
 def set_config_data(key, value):
+    """Update a single key in the config file and save it."""
     config = get_config_file()
     config[key] = value
     set_config_file(config)
 
 
 def check_config_integrity():
-    """
-    Check if the config file has all required keys.
-    If not, it will create a new config file with default values.
+    """Ensure config has all required keys and write missing defaults.
+
+    Also writes the default palette file if missing and bumps the stored version
+    to the default version to keep the UI in sync.
     """
     # required_keys = ["data_folder", "dark_mode_curves", "dark_mode_flags", "light_mode_curves", "light_mode_flags", "curves_ls", "curves_alpha", "flags_ls", "flags_alpha", "ma_curves_ls", "ma_curves_alpha", "update_interval", "dark_mode", "remind_me_later_date", "first_since_update", "auto_update"]
     required_keys = default_config.keys()  # Use the keys from the default config

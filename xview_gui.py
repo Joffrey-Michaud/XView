@@ -1,3 +1,5 @@
+"""Main XView GUI to browse experiments, plot scores, and manage settings."""
+
 import sys
 from pathlib import Path
 
@@ -67,6 +69,8 @@ import platform
 
 
 class ExperimentViewer(QMainWindow):
+    """Primary window showing experiment lists, plots, and info panels."""
+
     def __init__(self):
         super().__init__()
 
@@ -239,6 +243,7 @@ class ExperimentViewer(QMainWindow):
         self.setup_timers()
 
     def setup_timers(self):
+        """Configure periodic timers for list updates, updates check, and trash cleanup."""
         self.list_update_timer.setInterval(max(2000, self.get_interval()))
         self.update_check_timer.setInterval(60 * 60 * 1000)
 
@@ -248,6 +253,7 @@ class ExperimentViewer(QMainWindow):
     # -----------------------------------------------------------------------------------------
     # region - TRASH
     def get_trash_dir(self):
+        """Return the configured Trash directory (default ~/.xview/Trash)."""
         trash_dir = get_config_data("trash_dir")
         if trash_dir is None:
             trash_dir = os.path.join(CONFIG_FILE_DIR, "Trash")
@@ -255,12 +261,14 @@ class ExperimentViewer(QMainWindow):
         return trash_dir
 
     def _entry_ctime(self, p):
+        """Safe creation time for a path, returning 0 on failure."""
         try:
             return p.stat().st_ctime
         except Exception:
             return 0.0
 
     def _get_dir_size(self, p):
+        """Recursively compute directory size in bytes; ignore unreadable files."""
         total = 0
         try:
             if p.is_file():
@@ -277,6 +285,7 @@ class ExperimentViewer(QMainWindow):
         return total
 
     def _remove_path(self, p):
+        """Remove a directory tree; log errors but continue."""
         try:
             if p.is_dir():
                 shutil.rmtree(p)
@@ -284,14 +293,12 @@ class ExperimentViewer(QMainWindow):
             print(f"Error removing {p}: {e}")
 
     def cleanup_trash(self):
-        """
-        Clean the trash folder
-        """
+        """Clean the Trash folder based on max days and max size limits."""
         print("CLEANING TRASH DIR")
         trash_dir = self.get_trash_dir()
         if not os.path.exists(trash_dir):
             return
-        
+
         trash_dir = Path(trash_dir)
 
         # 1. Clean the folders if they exceed the max days
@@ -305,7 +312,7 @@ class ExperimentViewer(QMainWindow):
                         self._remove_path(item)
                 except Exception as e:
                     print(f"Error cleaning up {item}: {e}")
-        
+
         # 2. Clean the folders if they exceed the max size
         max_size_gb = get_config_data("trash_max_size")  # taille en Gb
         if max_size_gb and max_size_gb > 0:
@@ -320,16 +327,18 @@ class ExperimentViewer(QMainWindow):
                     size = self._get_dir_size(item)
                     self._remove_path(item)
                     total -= size
-            
+
     def read_dark_mode_state(self):
-        """Lit l'état du mode sombre à partir du fichier JSON."""
+        """Return dark mode boolean from the config file."""
         return get_config_file()["dark_mode"]
 
     def get_interval(self):
+        """Get list/plot refresh interval in seconds as an int milliseconds value."""
         interval = get_config_file()["update_interval"]
         return int(interval * 1000)
 
     def open_config_panel(self):
+        """Open the legacy config panel window (if not already visible)."""
         if self.config_window is None or not self.config_window.isVisible():
             # self.config_window = ConfigManager(self.config_file_path)
             self.config_window = ConfigManager()
@@ -339,6 +348,7 @@ class ExperimentViewer(QMainWindow):
             self.config_window.raise_()
 
     def open_settings_window(self):
+        """Open the settings window for palettes and preferences."""
         if self.settings_window is None or not self.settings_window.isVisible():
             # self.config_window = ConfigManager(self.config_file_path)
             self.settings_window = SettingsWindow(main_gui=self, palette=self.palette)
@@ -348,7 +358,7 @@ class ExperimentViewer(QMainWindow):
             self.settings_window.raise_()
 
     def toggle_model_image(self):
-        """Affiche ou masque l'image du modèle et les infos en fonction de l'état de la case à cocher."""
+        """Show or hide the model image and info based on a checkbox state."""
         if self.show_network_cb.isChecked():
             self.model_image_label.show()
             self.exp_info_text.show()
@@ -357,6 +367,7 @@ class ExperimentViewer(QMainWindow):
             self.exp_info_text.hide()
 
     def filter_experiments(self):
+        """Filter finished experiments list using the search bar text."""
         search_text = self.search_bar.text().lower()
         self.finished_list.clear()
         for exp_name in self.full_experiment_list:
@@ -390,7 +401,7 @@ class ExperimentViewer(QMainWindow):
         return build(path)
 
     def update_experiment_list(self):
-        """Met à jour les listes des expériences affichées."""
+        """Refresh training and finished experiments trees and preserve expansion."""
         self.experiments_dir = get_config_file()["data_folder"]
 
         tr_ids = self.training_list.get_expanded_items()
@@ -420,7 +431,7 @@ class ExperimentViewer(QMainWindow):
 
     @staticmethod
     def read_scores(file_path):
-        """Lit les scores à partir d'un fichier et retourne une liste de tuples (x, y)."""
+        """Read score file and return (x, y) arrays; supports one- or two-column format."""
         if os.path.exists(file_path):
             with open(file_path, "r") as f:
                 lines = f.readlines()
@@ -462,6 +473,7 @@ class ExperimentViewer(QMainWindow):
                     self.current_flags[flag] = x
 
     def display_exp_range(self):
+        """Populate the range widget with the current experiment's stored bounds."""
         x_min = self.get_exp_config_data("x_min")
         if x_min is None:
             x_min = ""
@@ -498,13 +510,13 @@ class ExperimentViewer(QMainWindow):
         self.range_widget.normalize_checkbox.stateChanged.connect(self.normalized_state_changed)
 
     def normalized_state_changed(self):
-        """Gère le changement d'état de la case à cocher de normalisation."""
+        """Handle normalize checkbox toggling and persist the new value."""
         normalize = self.range_widget.normalize_checkbox.isChecked()
         self.set_exp_config_data("normalize", normalize)
 
     # region - display_experiment
     def display_experiment(self, path):
-        """Affiche le graphique de l'expérience sélectionnée."""
+        """Load scores/flags for the selected experiment and redraw the plot."""
         self.current_experiment_name = path
 
         exp_path = os.path.join(self.experiments_dir, path)
@@ -579,7 +591,7 @@ class ExperimentViewer(QMainWindow):
             return None
 
     def save_widget_sizes(self):
-        """Returns the sizes of the left widget, plot, and right widget from the main splitter."""
+        """Save current splitter sizes (left/plot/right) into config for persistence."""
         # Get the sizes from the main splitter
         sizes = self.centralWidget().layout().itemAt(0).widget().sizes()
 
@@ -595,7 +607,7 @@ class ExperimentViewer(QMainWindow):
 
     # region - UPDATE PLOT
     def update_plot(self):
-        """Met à jour le graphique avec les données actuelles et les cases cochées."""
+        """Update the Matplotlib plot based on selected scores, flags, and options."""
         self.figure.clear()
         ax = self.figure.add_subplot(111)
 
@@ -795,7 +807,7 @@ class ExperimentViewer(QMainWindow):
         self.save_widget_sizes()
 
     def refresh_graph(self):
-        """Met à jour manuellement le graphique."""
+        """Manually refresh the plot and selection if current experiment changed."""
         self.setup_timers()
         if self.current_experiment_name is not None:
             if os.path.exists(os.path.join(self.experiments_dir, self.current_experiment_name)):
@@ -809,7 +821,7 @@ class ExperimentViewer(QMainWindow):
         #     print("Aucune expérience sélectionnée. Veuillez en sélectionner une dans la liste.")
 
     def save_graph(self):
-        """Enregistre le graphe actuel dans le dossier de l'expérience sélectionnée."""
+        """Save the current plot as a PNG under the experiment's figures folder."""
         if not self.current_experiment_name:
             # print("Aucune expérience sélectionnée. Veuillez en sélectionner une.")
             return
@@ -830,6 +842,7 @@ class ExperimentViewer(QMainWindow):
     # -----------------------------------------------------------------------------------------
     # region - DARK MODE
     def set_dark_mode(self, sett):
+        """Apply dark or light palette and refresh the plot and icon."""
         if sett:
             dark_palette = QPalette()
             dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
@@ -859,11 +872,13 @@ class ExperimentViewer(QMainWindow):
         set_config_data("dark_mode", sett)
 
     def toggle_dark_mode(self):
+        """Invert dark mode setting and apply it."""
         self.set_dark_mode(not get_config_file()["dark_mode"])
         # self.update_plot()
         # self.display_model_image()
 
     def finish_experiment(self):
+        """Mark the current experiment as finished by writing its status file."""
         exp_path = os.path.join(self.experiments_dir, self.current_experiment_name)
         status_file = os.path.join(exp_path, "status.txt")
         if os.path.exists(status_file):
@@ -875,6 +890,7 @@ class ExperimentViewer(QMainWindow):
         self.update_experiment_list()
 
     def get_exp_config_file(self):
+        """Load or init the per-experiment JSON config and return it."""
         if not os.path.exists(os.path.join(self.experiments_dir, self.current_experiment_name, "config.json")):
             self.set_exp_config_file({})
         success = False
@@ -887,13 +903,16 @@ class ExperimentViewer(QMainWindow):
         return config
 
     def get_exp_config_data(self, key):
+        """Return a value from the per-experiment config by key (or None)."""
         return self.get_exp_config_file().get(key, None)
 
     def set_exp_config_file(self, config):
+        """Write the full per-experiment config dict to disk."""
         with open(os.path.join(self.experiments_dir, self.current_experiment_name, "config.json"), "w") as f:
             json.dump(config, f, indent=4)
 
     def set_exp_config_data(self, key, value):
+        """Update one key in the per-experiment config file."""
         config = self.get_exp_config_file()
         config[key] = value
         self.set_exp_config_file(config)
@@ -901,7 +920,7 @@ class ExperimentViewer(QMainWindow):
     # -----------------------------------------------------------------------------------------
     # region - PALETTE EDITOR
     def add_curve_color(self, color):
-        """Ajoute une couleur à la liste des couleurs de courbes."""
+        """Append a color to curve palettes (light and dark coordinated)."""
         dark_colors = get_config_file()["dark_mode_curves"]
         light_colors = get_config_file()["light_mode_curves"]
 
@@ -936,7 +955,7 @@ class ExperimentViewer(QMainWindow):
         self.settings_window.settings_widgets["Display"].curve_color_widget.colors = dark_colors if self.dark_mode_enabled else light_colors
 
     def add_flag_color(self, color):
-        """Ajoute une couleur à la liste des couleurs de courbes."""
+        """Append a color to flag palettes (light and dark coordinated)."""
         dark_colors = get_config_file()["dark_mode_flags"]
         light_colors = get_config_file()["light_mode_flags"]
 
@@ -973,7 +992,7 @@ class ExperimentViewer(QMainWindow):
     # -----------------------------------------------------------------------------------------
     # region - REMOVE XP
     def remove_folders(self, folders):
-        """Déplace l'expérience ou le groupe sélectionné dans un dossier Trash avec horodatage."""
+        """Move selected experiment or group to Trash with a timestamp suffix."""
         from datetime import datetime
         from pathlib import Path
 
@@ -1037,7 +1056,7 @@ class ExperimentViewer(QMainWindow):
     # -----------------------------------------------------------------------------------------
     # region - MOVE XP
     def move_exp(self, path, new_group):
-        """Déplace l'expérience sélectionnée vers un nouveau groupe."""
+        """Move a selected experiment into a new or existing group."""
         new_path = os.path.join(new_group, path.split(os.sep)[-1])
         if os.path.exists(os.path.join(self.experiments_dir, path)):  #  si l exp existe
             if not os.path.exists(os.path.join(self.experiments_dir, new_group)):  # si le nouveau groupe n'existe pas
@@ -1051,15 +1070,15 @@ class ExperimentViewer(QMainWindow):
     # -----------------------------------------------------------------------------------------
     # region - COPY XP
     def copy_exp(self, path, new_group):
-        """Copie l'expérience sélectionnée vers un nouveau groupe."""
+        """Copy a selected experiment into another group; prompt on conflicts."""
         new_path = os.path.join(new_group, path.split(os.sep)[-1])
         if os.path.exists(os.path.join(self.experiments_dir, path)):  # si l'exp existe
             if not os.path.exists(os.path.join(self.experiments_dir, new_group)):  # si le nouveau groupe n'existe pas
                 os.makedirs(os.path.join(self.experiments_dir, new_group))
-            
+
             source_path = os.path.join(self.experiments_dir, path)
             dest_path = os.path.join(self.experiments_dir, new_path)
-            
+
             # Vérifier si la destination existe déjà
             if os.path.exists(dest_path):
                 exp_name = path.split(os.sep)[-1]
@@ -1070,16 +1089,16 @@ class ExperimentViewer(QMainWindow):
                     QMessageBox.Yes | QMessageBox.No,
                     QMessageBox.No
                 )
-                
+
                 if reply == QMessageBox.No:
                     return  # Annuler la copie
-                
+
                 # Supprimer la destination existante avant la copie
                 if os.path.isdir(dest_path):
                     shutil.rmtree(dest_path)
                 else:
                     os.remove(dest_path)
-            
+
             # Utiliser copytree pour copier récursivement le dossier
             if os.path.isdir(source_path):
                 shutil.copytree(source_path, dest_path)

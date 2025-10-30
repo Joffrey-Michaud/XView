@@ -1,3 +1,5 @@
+"""Alternative comparison dialog layout for experiments in a group."""
+
 import sys
 from PyQt5.QtWidgets import QScrollArea, QApplication, QWidget, QPushButton, QVBoxLayout, QSplitter, QGridLayout, QMainWindow, QHBoxLayout, QComboBox, QLabel, QCheckBox, QDialog
 from PyQt5.QtGui import QIcon, QPalette, QColor, QClipboard
@@ -16,6 +18,8 @@ import platform
 # classe qui contient des lignes de type : checkbox puis label contenant le nom de l'exp cote à cote.
 # doit avoir une méthode pour ajouter des expériences, une méthode pour enlever toutes les lignes, une méthodes pour savoir quelles sont les expériences cochées
 class ExperimentPanel(QWidget):
+    """List experiments with checkboxes to include/exclude from plot."""
+
     def __init__(self, update_plot_callback):
         super().__init__()
         self.layout = QVBoxLayout()
@@ -59,7 +63,6 @@ class ExperimentPanel(QWidget):
                 if child_layout is not None:
                     self._clear_layout(child_layout)
 
-
     def get_checked_experiments(self):
         checked_exps = []
         for i in range(self.layout.count()):
@@ -74,10 +77,14 @@ class ExperimentPanel(QWidget):
 # ------------------------------------------------------------------ COMPARISON WINDOW
 # region - ComparisonWindow
 # class ComparisonWindow(QMainWindow):
+
+
 class ComparisonWindow(QDialog):
+    """Modal dialog showing a simple horizontal bar comparison plot."""
+
     def __init__(self, group_path):
         super().__init__()
-        
+
         self.group_path = group_path
         self.initUI()
 
@@ -164,10 +171,12 @@ class ComparisonWindow(QDialog):
         self.show()
 
     def _on_resize(self, event):
+        """Keep plot layout tight on resize."""
         self.figure.tight_layout()
         self.canvas.draw_idle()
 
     def list_exp_and_metrics(self):
+        """List experiments and available metric names for the group."""
         experiments_folder = get_config_data(key="data_folder")
         group_folder = os.path.join(experiments_folder, self.group_path)
         exps = os.listdir(group_folder)
@@ -179,8 +188,9 @@ class ComparisonWindow(QDialog):
             if os.path.isdir(exp_folder):
                 metrics = get_metrics(exp_folder)
         return exps, metrics
-    
+
     def update_metrics(self, metrics):
+        """Populate the metric combo box while preserving selection."""
         # ajouter les metriques mais on veut que la valeur sélectionnée sur la combobox reste la meme
         current_metric = self.metric_combo.currentText()
         self.metrics = sorted(list(set(metrics)))
@@ -192,6 +202,7 @@ class ComparisonWindow(QDialog):
             self.metric_combo.setCurrentIndex(index)
 
     def update_exp_panel(self, exps):
+        """Refresh left panel with experiments and keep previous checks."""
         # on veut ajouter les expériences nouvelles. SI nouvelle exp, on la coche, et si elle était déjà là, on la décoche
         checked_exps = self.exp_panel.get_checked_experiments()
         available_exps = self.exp_panel.exps
@@ -237,7 +248,7 @@ class ComparisonWindow(QDialog):
 
     @staticmethod
     def read_scores(file_path):
-        """Lit les scores à partir d'un fichier et retourne une liste de tuples (x, y)."""
+        """Read scores from a .txt file; lines are either 'y' or 'x,y'."""
         if os.path.exists(file_path):
             with open(file_path, "r") as f:
                 lines = f.readlines()
@@ -256,6 +267,7 @@ class ComparisonWindow(QDialog):
 
     # region - update plot
     def update_plot(self):
+        """Render a horizontal bar chart of best scores across experiments."""
         selected_metric = self.metric_combo.currentText()
         min_max = "min" if self.min_max_combo.currentIndex() == 0 else "max"
 
@@ -330,6 +342,7 @@ class ComparisonWindow(QDialog):
             self.canvas.draw()
 
     def set_dark_mode(self, dark_mode):
+        """Apply theme and refresh the plot."""
         if dark_mode:
             dark_palette = QPalette()
             dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
@@ -351,10 +364,10 @@ class ComparisonWindow(QDialog):
         else:
             self.setPalette(QApplication.style().standardPalette())
             self.setWindowIcon(QIcon("logo_light.png"))
-        
+
         self.dark_mode_enabled = get_config_data("dark_mode")
         self.update_plot()
-    
+
     # region - SCREENSHOT
     def screenshot_graph(self):
         """Prend une capture d'écran du graphique."""
@@ -423,7 +436,7 @@ class ComparisonWindow(QDialog):
                 os.remove(tmp_path)
             except Exception:
                 pass
-    
+
     # region - SAVE
     def save_graph(self):
         """Enregistre le graphe actuel dans le dossier de l'expérience sélectionnée."""
@@ -437,4 +450,3 @@ class ComparisonWindow(QDialog):
 
         self.figure.savefig(save_path, dpi=300)  # Enregistrer en haute qualité
         print(f"Graph enregistré dans : {save_path}")
-
