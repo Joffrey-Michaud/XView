@@ -91,7 +91,7 @@ class RemoteDisplay(QWidget):
             self.main_layout.itemAt(i).widget().setParent(None)
 
         self.remote_name = remote_name
-        if self.remote_name is None:
+        if self.remote_name == "":
             self.main_layout.addWidget(QLabel("No remote selected"))
             return
 
