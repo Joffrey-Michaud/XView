@@ -1,3 +1,9 @@
+"""Helpers to check for updates and prompt the user when XView is outdated.
+
+Includes a lightweight check comparing local and upstream Git revisions and a
+function to show the update dialog or auto-update depending on preferences.
+"""
+
 import subprocess
 import functools
 import os
@@ -9,8 +15,9 @@ import sys
 
 _warned_once = False
 
+
 def is_up_to_date() -> bool:
-    """Vérifie si le dépôt local est à jour avec la branche distante."""
+    """Return True if the local repo is up to date with its upstream branch."""
     REPO_DIR = os.path.dirname(os.path.abspath(__file__))
     try:
         subprocess.run(["git", "fetch"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, cwd=REPO_DIR)
@@ -30,6 +37,7 @@ def is_up_to_date() -> bool:
 
 
 def warn_if_outdated(obj):
+    """Decorator that prints a one-time warning if the repo is outdated."""
     @functools.wraps(obj)
     def wrapper(*args, **kwargs):
         global _warned_once
@@ -53,9 +61,9 @@ def warn_if_outdated(obj):
 
 
 def check_for_updates():
-    """Vérifie si une mise à jour est disponible et affiche une fenêtre de mise à jour si nécessaire."""
+    """Check for available updates and prompt or auto-update as configured."""
     if not is_up_to_date():
-        # si pas auto-update
+        #  si pas auto-update
         if not get_config_file().get("auto_update", False):  # pas d'auto-update
             last_reminder = get_config_file().get("remind_me_later_date", None)
 

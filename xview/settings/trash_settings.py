@@ -1,3 +1,5 @@
+"""Placeholder for trash folder settings UI (capacity/timer)."""
+
 from PyQt5.QtWidgets import QFileDialog, QWidget, QPushButton, QVBoxLayout, QHBoxLayout
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtCore import Qt, QDir
@@ -7,6 +9,8 @@ from xview import get_config_file, set_config_data
 # ------------------------------------------------------------------ SETTINGS TRASH FOLDER
 # region - TrashFolderSettings
 class TrashFolderSettings(QWidget):
+    """UI to configure trash capacity and retention (not fully implemented)."""
+
     def __init__(self, parent=None):
         super().__init__()
         self.parent = parent
@@ -39,6 +43,7 @@ class TrashFolderSettings(QWidget):
         self.main_layout.addWidget(exp_btn)
 
     def change_exp_folder(self):
+        """Open a directory picker and store the selected experiments path."""
 
         dialog = QFileDialog(self, 'Select Folder')
         dialog.setFileMode(QFileDialog.Directory)
