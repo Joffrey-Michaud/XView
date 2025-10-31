@@ -44,7 +44,7 @@ class RemoteSettings(QWidget):
                                       "- Host name: The IP address or domain name of the remote server.\n"
                                       "- User name: Your username on the remote server.\n"
                                       "- The experiment folder path on the remote server.\n\n"
-                                      "Once you have this information, click the 'Add Remote' button below to proceed.\n\n"
+                                      "Once you have this informations, click the 'Add Remote' button below to proceed.\n\n"
                                       "Please ensure that you have configured SSH key-based authentication."
                                       )
         self.add_indications.setWordWrap(True)

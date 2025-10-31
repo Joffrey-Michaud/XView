@@ -27,6 +27,7 @@ default_config = {
     "palette_name": "default",
     "ma_window_size": 15,
     "update_interval": 60,
+    "remote_fetch_interval": 10,
     "dark_mode": False,
     "remind_me_later_date": None,
     "first_since_update": False,
