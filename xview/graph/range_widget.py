@@ -1,12 +1,17 @@
+"""Small widget to set X/Y axis ranges and basic plot options."""
+
 from PyQt5.QtWidgets import QCheckBox, QWidget, QHBoxLayout, QLabel, QVBoxLayout, QLineEdit
 
 
 class RangeWidget(QWidget):
+    """Inputs for axis ranges plus switches for normalize, legend, and markers."""
+
     def __init__(self, parent=None):
         super().__init__()
         self.init_ui()
 
     def init_ui(self):
+        """Create all fields and checkboxes."""
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
@@ -45,7 +50,6 @@ class RangeWidget(QWidget):
         self.boxes_widget = QWidget()
         self.boxes_layout = QHBoxLayout()
         self.boxes_widget.setLayout(self.boxes_layout)
-        
 
         # region - normalize
         self.normalize_widget = QWidget()
@@ -80,5 +84,3 @@ class RangeWidget(QWidget):
         self.boxes_layout.addWidget(self.optimum_widget)
 
         self.layout.addWidget(self.boxes_widget)
-
-        

@@ -1,3 +1,9 @@
+"""Display settings widgets and live preview plot for XView.
+
+Provides color pickers, style selectors, and global display parameters with a
+live Matplotlib preview that respects dark/light themes.
+"""
+
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QColorDialog, QComboBox, QLineEdit, QSplitter, QHBoxLayout, QMenu, QInputDialog, QDialog
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor
@@ -11,7 +17,11 @@ import time
 
 # ------------------------------------------------------------------------- ColorPickerWidget
 # region - COLOR PICKER
+
+
 class ColorPickerWidget(QWidget):
+    """Inline palette editor for curve or flag colors."""
+
     def __init__(self, palette, type, update_plot_ex=None):
         super().__init__()
         assert type in ["curve", "flag"], "Type must be either 'curve' or 'flag'."
@@ -33,6 +43,7 @@ class ColorPickerWidget(QWidget):
 
     # region - add
     def add_color_click(self):
+        """Open a color dialog and append the selected color to the palette."""
         new_color = QColorDialog.getColor(parent=self)  #  sélectionner une couleur
         if new_color.isValid():
             new_color_name = new_color.name()
@@ -45,6 +56,7 @@ class ColorPickerWidget(QWidget):
             self.update_plot_ex()  # Mettre à jour le graphique si nécessaire
 
     def get_colors(self):
+        """Return the active list of colors based on type and theme."""
         if self.type == "curve":
             return self.palette.light_mode_curves if not self.dark_mode_enabled else self.palette.dark_mode_curves
         elif self.type == "flag":
@@ -52,6 +64,7 @@ class ColorPickerWidget(QWidget):
 
     # region - init btns
     def init_btns(self):
+        """Create one clickable swatch button per color in the palette."""
         colors = self.get_colors()
         for i, color in enumerate(colors):
             btn = QPushButton()
@@ -69,6 +82,7 @@ class ColorPickerWidget(QWidget):
         self.layout.addWidget(self.add_btn)
 
     def reset_buttons(self):
+        """Rebuild the swatch buttons to reflect the current palette."""
         for btn in self.color_buttons:
             self.layout.removeWidget(btn)
             btn.deleteLater()  # Nettoyage mémoire
@@ -79,6 +93,7 @@ class ColorPickerWidget(QWidget):
 
     # region - left click
     def open_color_dialog(self, index):
+        """Edit an existing color in the palette via a dialog."""
         sender = self.sender()
         current_color = sender.palette().button().color()
         color = QColorDialog.getColor(initial=current_color, parent=self)
@@ -101,6 +116,7 @@ class ColorPickerWidget(QWidget):
 
     # region - right click
     def show_context_menu(self, pos, index, button):
+        """Show context menu to change or remove a color swatch."""
         context_menu = QMenu(self)
         change_action = context_menu.addAction("Change")
         remove_action = context_menu.addAction("Remove")
@@ -119,6 +135,7 @@ class ColorPickerWidget(QWidget):
             self.update_plot_ex()  # Mettre à jour le graphique si nécessaire
 
     def update_colors(self):
+        """Refresh swatch appearance after a theme change."""
         self.dark_mode_enabled = get_config_file()["dark_mode"]
         colors = self.get_colors()
         for btn, color in zip(self.color_buttons, colors):
@@ -128,6 +145,8 @@ class ColorPickerWidget(QWidget):
 # ------------------------------------------------------------------------- StyleSetter
 # region - STYLE SETTER
 class StyleSetter(QWidget):
+    """Selector for line style and alpha for curves/MA curves/flags."""
+
     def __init__(self, palette, type, update_plot_ex=None):
         super().__init__()
         assert type in ["curve", "ma_curve", "flag"], "Type must be either 'curve' or 'flag'."
@@ -168,14 +187,17 @@ class StyleSetter(QWidget):
         self.setLayout(self.layout)
 
     def init_values(self):
+        """Sync UI with current palette style settings."""
         self.combo_box.setCurrentIndex(self.style_map[self.get_ls()])
         self.alpha_input.setText(str(self.get_alpha()))
 
     def select_ls_callback(self, index):
+        """Handle line-style selection change."""
         self.set_ls(self.inverted_style_map[index])
         self.update_plot_ex()
 
     def select_alpha_callback(self):
+        """Handle alpha field edit and update palette."""
         alpha = self.alpha_input.text()
         self.set_alpha(float(alpha))
         self.update_plot_ex()
@@ -220,6 +242,8 @@ class StyleSetter(QWidget):
 
 
 class DisplaySettings(QWidget):
+    """Full display settings panel with live Matplotlib preview."""
+
     def __init__(self, parent, palette):
         super().__init__()
         self.parent = parent
@@ -369,7 +393,7 @@ class DisplaySettings(QWidget):
 
     # region - select_palette
     def select_palette(self, palette_name):
-        """Select a palette by name and update the colors and styles."""
+        """Select a palette by name and refresh UI and preview."""
         self.palette.set_palette(palette_name)
         self.curve_color_widget.reset_buttons()
         self.flag_color_widget.reset_buttons()
@@ -382,6 +406,7 @@ class DisplaySettings(QWidget):
 
     # region - plot_example
     def plot_example(self):
+        """Render a small synthetic plot using current display settings."""
         curve_colors = self.get_curve_colors()
         flags_colors = self.get_flag_colors()
 
@@ -435,6 +460,7 @@ class DisplaySettings(QWidget):
         self.canvas.draw()
 
     def set_dark_mode(self, dark_mode):
+        """Toggle dark/light theme and update preview and widgets."""
         set_config_data('dark_mode', dark_mode)
         if dark_mode:
             dark_palette = QPalette()
@@ -478,22 +504,26 @@ class DisplaySettings(QWidget):
         self.plot_example()
 
     def toggle_dark_mode(self):
+        """Invert the current theme and notify the parent."""
         self.set_dark_mode(not self.dark_mode_enabled)
         self.parent.set_dark_mode(self.dark_mode_enabled)  # Notify parent if needed
 
     def get_curve_colors(self):
+        """Return the active curve colors for the current theme."""
         if self.dark_mode_enabled:
             return self.palette.dark_mode_curves
         else:
             return self.palette.light_mode_curves
 
     def get_flag_colors(self):
+        """Return the active flag colors for the current theme."""
         if self.dark_mode_enabled:
             return self.palette.dark_mode_flags
         else:
             return self.palette.light_mode_flags
 
     def get_color_theme(self, color_section="curves", dark_mode=False):
+        """Deprecated helper kept for compatibility; prefer palette accessors."""
         config = get_config_file()
         if color_section == "curves":
             if dark_mode:
@@ -507,29 +537,36 @@ class DisplaySettings(QWidget):
                 return config.get("light_mode_flags", ["#000000", "#000000", "#000000"])
 
     def get_curves_style(self):
+        """Return (line_style, alpha) for raw curves."""
         return self.palette.curves_ls, self.palette.curves_alpha
 
     def get_ma_curves_style(self):
+        """Return (line_style, alpha) for moving-average curves."""
         return self.palette.ma_curves_ls, self.palette.ma_curves_alpha
 
     def get_flags_style(self):
+        """Return (line_style, alpha) for flags (vertical lines)."""
         return self.palette.flags_ls, self.palette.flags_alpha
 
     def get_interval(self):
+        """Read the graph update interval (seconds) from config."""
         config = get_config_file()
         return config["update_interval"]
 
     def set_interval(self):
+        """Persist the update interval from the UI field to config."""
         interval = self.interval_input.text()
         self.interval = float(interval)
         set_config_data('update_interval', self.interval)
 
     def set_ma_window_size(self):
+        """Persist the MA window size from the UI field to config."""
         ma_window_size = self.ma_window_input.text()
         self.ma_window_size = int(ma_window_size)
         set_config_data('ma_window_size', self.ma_window_size)
 
     def add_palette(self):
+        """Create a new named palette and select it."""
         new_palette_name, ok = QInputDialog.getText(self, "Add Palette", "Enter new palette name:")
         if ok and new_palette_name not in self.palette.get_palette_names():
             self.palette.add_palette(new_palette_name)
@@ -548,8 +585,8 @@ class DisplaySettings(QWidget):
             existing_palette_diag.layout().addWidget(existing_palette_label)
             existing_palette_diag.exec_()
 
-
     def rm_palette(self):
+        """Remove current palette and switch to a remaining or default palette."""
         self.palette_combo.blockSignals(True)  #  bloquer les signaux pour éviter les boucles infinies
         # enelevr la palette actuelle
         palette_list = self.palette.get_palette_names()
@@ -569,4 +606,3 @@ class DisplaySettings(QWidget):
         self.palette_combo.setCurrentText(new_palette_name)
         self.palette_combo.blockSignals(False)
         self.select_palette(new_palette_name)
-

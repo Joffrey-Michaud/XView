@@ -1,3 +1,5 @@
+"""Tree widget to browse experiment groups and items with context actions."""
+
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QInputDialog, QMessageBox
 from PyQt5.QtCore import Qt
 import os
@@ -5,6 +7,8 @@ from xview.compare_window import ComparisonWindow
 
 
 class MyTreeWidget(QTreeWidget):
+    """QTreeWidget with helpers to populate, filter, and context-menu actions."""
+
     def __init__(self, parent=None, display_exp=None, display_range=None, items=None, remove_folders_callback=None, move_exp_callback=None, copy_exp_callback=None):
         super().__init__(parent)
         self.setHeaderHidden(True)  # Masque le titre
@@ -26,10 +30,11 @@ class MyTreeWidget(QTreeWidget):
         # contextual menu on right click
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
-        
+
         self.comparison_window = None
 
     def on_click_item(self, item, column):
+        """Select-only items (leaf nodes) trigger the display callbacks."""
         # Vérifie si l'item a des enfants
         if item.childCount() == 0:
             # vérifier si il y a un parent
@@ -38,12 +43,14 @@ class MyTreeWidget(QTreeWidget):
             self.display_range()
 
     def expand_parents(self, item):
+        """Expand all parents up to the root for a given item."""
         parent = item.parent()
         while parent:
             parent.setExpanded(True)
             parent = parent.parent()
 
     def get_full_path(self, item):
+        """Build the relative path represented by a tree node."""
         parts = []
         while item:
             parts.insert(0, item.text(0))
@@ -53,11 +60,13 @@ class MyTreeWidget(QTreeWidget):
         return "/".join(parts)
 
     def populate(self, items):
+        """Fill the tree from a nested list/dict structure (groups and names)."""
         self.clear()
         for entry in sorted(items, key=lambda e: list(e.keys())[0].lower() if isinstance(e, dict) else str(e).lower()):
             self._add_entry(entry, self)
 
     def _add_entry(self, entry, parent_widget):
+        """Recursive helper to add items and groups to the tree."""
         if isinstance(entry, str):
             item = QTreeWidgetItem([entry])
             if parent_widget == self:
@@ -86,10 +95,7 @@ class MyTreeWidget(QTreeWidget):
         return item if isinstance(entry, str) else None
 
     def filter_items(self, text):
-        """
-        Affiche uniquement les éléments (et leurs parents) qui correspondent au texte.
-        Seuls les enfants correspondants sont inclus.
-        """
+        """Filter items to show only matches (and their parents) for the text."""
         text = text.lower()
 
         def filter_entry(entry):
@@ -130,6 +136,7 @@ class MyTreeWidget(QTreeWidget):
                     filtered.append(entry)
 
     def get_expanded_items(self):
+        """Return identifiers of currently expanded items (for later restore)."""
         expanded_items = []
 
         def recurse(item):
@@ -143,10 +150,12 @@ class MyTreeWidget(QTreeWidget):
         return expanded_items
 
     def get_item_identifier(self, item):
+        """Build a stable identifier tuple using the item texts."""
         # Ex: return a tuple with column texts
         return tuple(item.text(i) for i in range(item.columnCount()))
 
     def restore_expanded_items(self, expanded_ids):
+        """Expand back the items whose identifiers appear in expanded_ids."""
         def recurse(item):
             if self.get_item_identifier(item) in expanded_ids:
                 item.setExpanded(True)
@@ -157,13 +166,14 @@ class MyTreeWidget(QTreeWidget):
             recurse(self.topLevelItem(i))
 
     def get_parent_group_name(self, item):
-        """Retourne le nom du groupe parent d'un item, ou None si c'est un groupe de niveau supérieur."""
+        """Return the immediate parent group name, or None for top-level groups."""
         parent = item.parent()
         if parent is not None:
             return parent.text(0)
         return None
 
     def get_group_names(self):
+        """Return all group names by traversing the tree recursively."""
         groups = []
 
         def recurse(item):
@@ -178,6 +188,7 @@ class MyTreeWidget(QTreeWidget):
         return sorted(groups)
 
     def show_context_menu(self, pos):
+        """Display a context menu to move/copy/compare or remove items."""
         item = self.itemAt(pos)
         if item is None:
             return
@@ -225,9 +236,7 @@ class MyTreeWidget(QTreeWidget):
             self.compare_exp_from_group(full_path)
 
     def confirm_removal(self, item_name, is_group, children_to_remove=0):
-        """
-        Affiche une boîte de dialogue pour confirmer la suppression sans accéder à l'item Qt.
-        """
+        """Ask for confirmation before removing an experiment or a group."""
         if is_group:
             text = f"Supprimer le groupe « {item_name} » et {children_to_remove} élément(s) ?"
         else:
@@ -243,10 +252,12 @@ class MyTreeWidget(QTreeWidget):
         return reply == QMessageBox.Yes
 
     def compare_exp_from_group(self, group_path):
+        """Open a comparison window for all experiments inside the group."""
         comp_window = ComparisonWindow(group_path=group_path)
         comp_window.exec_()
 
     def move_to_new_group_dialog(self, full_path):
+        """Prompt for a new group name and move the selected item to it."""
         # Open a dialog to create a new group
         group_name, ok = QInputDialog.getText(self, 'New Group', 'Enter group name:')
         if ok and group_name:
@@ -254,6 +265,7 @@ class MyTreeWidget(QTreeWidget):
         return None
 
     def copy_to_new_group_dialog(self, full_path):
+        """Prompt for a new group name and copy the selected item to it."""
         # Open a dialog to create a new group for copying
         group_name, ok = QInputDialog.getText(self, 'New Group', 'Enter group name:')
         if ok and group_name:
@@ -261,7 +273,8 @@ class MyTreeWidget(QTreeWidget):
         return None
 
     def get_clicked_item_data(self, item):
-        """
+        """Return selected data paths for use by callbacks.
+
         Returns:
         - A list of subfolders if the item is a group (has children).
         - A list containing a single element (the full path) if the item is an experience (has no children).
