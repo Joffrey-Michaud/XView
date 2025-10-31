@@ -1,40 +1,16 @@
+"""Preferences panel for general settings such as folders and auto-update."""
+
 from PyQt5.QtWidgets import QFileDialog, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QComboBox, QLabel, QSizePolicy, QSpacerItem, QLineEdit
 from PyQt5.QtCore import QDir, Qt
 from xview import get_config_file, set_config_data, get_config_data
-
-
-class Section(QWidget):
-    def __init__(self, title, parent=None):
-        super().__init__()
-        self.parent = parent
-        self.layout = QVBoxLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.layout)
-
-        self.title_label = QLabel(title)
-        self.title_label.setStyleSheet("font-weight: bold; font-size: 16px;")
-        # si get_config_file()["dark_mode"]: on écrit en blanc, sinon en noir
-        self.title_label.setStyleSheet(
-            "font-weight: bold; font-size: 16px; color: white;" if get_config_file()["dark_mode"] else "font-weight: bold; font-size: 16px; color: black;"
-            )
-        # centrer le titre
-        self.title_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(self.title_label)
-
-        self.container = QWidget()
-        self.container_layout = QVBoxLayout()
-        self.container_layout.setContentsMargins(0, 0, 0, 0)
-        self.container.setLayout(self.container_layout)
-        self.layout.addWidget(self.container)
-
-    def add_widget(self, widget):
-        self.container_layout.addWidget(widget)
-
+from xview.settings.section import Section
 
 
 # ------------------------------------------------------------------ SETTINGS DISPLAY
 # region - PreferencesSetting
 class PreferencesSetting(QWidget):
+    """General application preferences section."""
+
     def __init__(self, parent=None):
         super().__init__()
         self.parent = parent
@@ -55,7 +31,7 @@ class PreferencesSetting(QWidget):
         self.folder_layout = QHBoxLayout()
         self.folder_layout.setContentsMargins(0, 0, 0, 0)
         self.folder_widget.setLayout(self.folder_layout)
-        
+
         exp_btn = QPushButton('Choose Exp. Folder', self)
         # taille du bouton fixée
         exp_btn.setFixedSize(200, 20)
@@ -74,7 +50,7 @@ class PreferencesSetting(QWidget):
         # --------------------------------------------------------------------------- Auto Update
         self.auto_upd_section = Section("Auto Update")
         self.main_layout.addWidget(self.auto_upd_section)
-        
+
         self.auto_upd_widget = QWidget()
         self.auto_upd_layout = QHBoxLayout()
         self.auto_upd_layout.setContentsMargins(0, 0, 0, 0)
@@ -108,7 +84,7 @@ class PreferencesSetting(QWidget):
         # self.trash_widget.setLayout(self.trash_layout)
         # # enlever les marges du trash layout
         # self.trash_layout.setContentsMargins(0, 0, 0, 0)
-        
+
         # ------------------------------------------ TRASH SIZE SETTINGS
         self.trash_size_widget = QWidget()
         self.trash_size_layout = QHBoxLayout()
@@ -147,7 +123,7 @@ class PreferencesSetting(QWidget):
         self.trash_days_input.editingFinished.connect(self.update_trash_days)
         self.trash_days_input.setFixedWidth(100)
         self.trash_days_layout.addWidget(self.trash_days_input)
-        
+
         self.trash_days_layout.addWidget(QLabel("(0 means no limit)"))
         self.trash_days_layout.addItem(QSpacerItem(10, 10, QSizePolicy.Expanding, QSizePolicy.Minimum))  # to the left
 
@@ -155,6 +131,7 @@ class PreferencesSetting(QWidget):
         self.main_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
     def change_exp_folder(self):
+        """Open a folder dialog and save the chosen experiments directory."""
 
         dialog = QFileDialog(self, 'Select Folder')
         dialog.setFileMode(QFileDialog.Directory)
@@ -172,6 +149,7 @@ class PreferencesSetting(QWidget):
             set_config_data('data_folder', folder_path)
 
     def change_auto_update(self, text):
+        """Enable or disable auto-update based on combo selection."""
         if text == "Enabled":
             set_config_data('auto_update', True)
         else:
@@ -179,15 +157,18 @@ class PreferencesSetting(QWidget):
         self.global_config = get_config_file()
 
     def add_separator(self):
+        """Insert a horizontal separator line in the layout."""
         separator = QFrame()
         separator.setFrameShape(QFrame.HLine)
         separator.setFrameShadow(QFrame.Sunken)
         self.main_layout.addWidget(separator)
 
     def update_trash_size(self):
+        """Persist the maximum trash size (GB); 0 means unlimited."""
         size = float(self.trash_size_input.text())
         set_config_data('trash_max_size', size)
 
     def update_trash_days(self):
+        """Persist the maximum trash retention (days); 0 means unlimited."""
         days = int(self.trash_days_input.text())
         set_config_data('trash_max_days', days)

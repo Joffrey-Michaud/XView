@@ -1,3 +1,9 @@
+"""XView configuration GUI to edit colors, styles, and folders.
+
+Provides a PyQt5 window to manage palettes (light/dark), line styles, alpha,
+and the experiments folder. Persists values in the XView config JSON.
+"""
+
 import sys
 from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget, QPushButton, QVBoxLayout, QSplitter, QGridLayout, QMainWindow, QHBoxLayout, QColorDialog, QComboBox, QLineEdit
 from PyQt5.QtWidgets import QLabel
@@ -14,6 +20,8 @@ from xview import get_config_file, set_config_file, set_config_data, config_exis
 # ------------------------------------------------------------------ COLOR PICKER
 # region - ColorPickerWidget
 class ColorPickerWidget(QWidget):
+    """Compact row of color buttons that opens a QColorDialog on click."""
+
     def __init__(self, colors=["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF"], on_color_change=None):
         super().__init__()
         self.on_color_change = on_color_change
@@ -40,6 +48,7 @@ class ColorPickerWidget(QWidget):
         self.setLayout(self.layout)
 
     def open_color_dialog(self, index):
+        """Open color picker for the selected swatch and update callback."""
         sender = self.sender()
         current_color = sender.palette().button().color()
         color = QColorDialog.getColor(initial=current_color, parent=self)
@@ -52,6 +61,7 @@ class ColorPickerWidget(QWidget):
                 self.on_color_change(index, color.name())  # Call the callback
 
     def update_colors(self, colors):
+        """Replace all swatch colors and refresh button styles."""
         self.colors = colors
         for btn, color in zip(self.color_buttons, colors):
             btn.setStyleSheet(f"background-color: {color}; border: 1px solid black;")
@@ -60,7 +70,9 @@ class ColorPickerWidget(QWidget):
 # ------------------------------------------------------------------ STYLE SETTER
 # region - StyleSetter
 class StyleSetter(QWidget):
+    """Picker for Matplotlib line style and opacity (alpha)."""
     # widget pour choisir le style de ligne plt, et le alpha
+
     def __init__(self, ls, alpha, set_ls_callbak, set_alpha_callback):
         super().__init__()
         self.ls = ls
@@ -105,9 +117,11 @@ class StyleSetter(QWidget):
         self.setLayout(self.layout)
 
     def select_ls_callback(self, index):
+        """Map combo index to matplotlib linestyle and notify parent."""
         self.set_ls_callbak(self.inverted_style_map[index])
 
     def select_alpha_callback(self):
+        """Parse alpha input and notify parent setter."""
         alpha = self.alpha_input.text()
         self.set_alpha_callback(float(alpha))
 
@@ -115,12 +129,15 @@ class StyleSetter(QWidget):
 # ------------------------------------------------------------------ CONFIG MANAGER
 # region - ConfigManager
 class ConfigManager(QMainWindow):
+    """Standalone window to configure XView appearance and defaults."""
+
     def __init__(self):
         super().__init__()
         self.global_config = get_config_file()
         self.initUI()
 
     def initUI(self):
+        """Build the UI and load current settings from the config file."""
         self.setWindowTitle("XView - Config")
         self.setWindowIcon(QIcon("logo_light.png"))
         self.setGeometry(300, 300, 1500, 750)
@@ -262,6 +279,7 @@ class ConfigManager(QMainWindow):
         self.show()
 
     def change_exp_folder(self):
+        """Prompt user to pick the experiments folder and persist it."""
 
         dialog = QFileDialog(self, 'Select Folder')
         dialog.setFileMode(QFileDialog.Directory)
@@ -280,6 +298,7 @@ class ConfigManager(QMainWindow):
 
     # region - plot_example
     def plot_example(self):
+        """Render a small demo plot using the current palette and styles."""
         if self.dark_mode_enabled:
             curves_colors = self.dark_mode_curves
             flags_colors = self.dark_mode_flags
@@ -313,14 +332,14 @@ class ConfigManager(QMainWindow):
         amplitudes = [1, 2, 0.5, 1.5, 0.8]
         for i, (color, amp) in enumerate(zip(curves_colors, amplitudes)):
             y = amp * np.sin(x + i) + np.random.normal(0, 0.05, len(x))
-            ax.plot(x, y, color=color, label=f"Curve {i+1}", ls=self.curves_ls, alpha=self.curves_alpha)
+            ax.plot(x, y, color=color, label=f"Curve {i + 1}", ls=self.curves_ls, alpha=self.curves_alpha)
 
-            ax.plot(x, compute_moving_average(y, 10), color=color, label=f"MA Curve {i+1}", ls=self.ma_curves_ls, alpha=self.ma_curves_alpha)
+            ax.plot(x, compute_moving_average(y, 10), color=color, label=f"MA Curve {i + 1}", ls=self.ma_curves_ls, alpha=self.ma_curves_alpha)
 
         coords = np.linspace(0, 2 * np.pi, 5)
         for i, (color, x) in enumerate(zip(flags_colors, coords[1:-1])):
             y = amp * np.sin(x + i)
-            ax.axvline(x, color=color, label=f"Flag {i+1}", ls=self.flags_ls, alpha=self.flags_alpha)
+            ax.axvline(x, color=color, label=f"Flag {i + 1}", ls=self.flags_ls, alpha=self.flags_alpha)
 
         # x = np.linspace(0, 2 * np.pi, 200)
         # for i, color in enumerate(curves_colors):
@@ -335,6 +354,7 @@ class ConfigManager(QMainWindow):
         self.canvas.draw()
 
     def set_dark_mode(self, dark_mode):
+        """Switch between dark/light palettes and update preview plot."""
         if dark_mode:
             dark_palette = QPalette()
             dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
@@ -370,9 +390,11 @@ class ConfigManager(QMainWindow):
         set_config_data('dark_mode', dark_mode)
 
     def toggle_dark_mode(self):
+        """Invert the dark mode toggle and apply."""
         self.set_dark_mode(not self.dark_mode_enabled)
 
     def get_color_theme(self, color_section="curves", dark_mode=False):
+        """Return list of colors for curves or flags in given mode."""
         config = get_config_file()
         if color_section == "curves":
             if dark_mode:
@@ -386,61 +408,74 @@ class ConfigManager(QMainWindow):
                 return config.get("light_mode_flags", ["#000000", "#000000", "#000000"])
 
     def get_curves_style(self):
+        """Read curves linestyle and alpha from config."""
         config = get_config_file()
         return config["curves_ls"], config["curves_alpha"]
 
     def get_ma_curves_style(self):
+        """Read moving-average linestyle and alpha from config."""
         config = get_config_file()
         return config["ma_curves_ls"], config["ma_curves_alpha"]
 
     def get_flags_style(self):
+        """Read flags linestyle and alpha from config."""
         config = get_config_file()
         return config["flags_ls"], config["flags_alpha"]
 
     def get_interval(self):
+        """Return graph update interval (seconds)."""
         config = get_config_file()
         return config["update_interval"]
 
     def set_interval(self):
+        """Persist update interval from the input field and refresh preview."""
         interval = self.interval_input.text()
         self.interval = float(interval)
         set_config_data('update_interval', self.interval)
 
     def set_curves_ls(self, ls):
+        """Update curves linestyle and refresh preview plot."""
         self.curves_ls = ls
         set_config_data('curves_ls', ls)
         self.plot_example()
 
     def set_ma_curves_ls(self, ls):
+        """Update moving-average linestyle and refresh preview plot."""
         self.ma_curves_ls = ls
         set_config_data('ma_curves_ls', ls)
         self.plot_example()
 
     def set_flags_ls(self, ls):
+        """Update flags linestyle and refresh preview plot."""
         self.flags_ls = ls
         set_config_data('flags_ls', ls)
         self.plot_example()
 
     def set_curves_alpha(self, alpha):
+        """Update curves opacity and refresh preview plot."""
         self.curves_alpha = alpha
         set_config_data('curves_alpha', alpha)
         self.plot_example()
 
     def set_ma_curves_alpha(self, alpha):
+        """Update moving-average opacity and refresh preview plot."""
         self.ma_curves_alpha = alpha
         set_config_data('ma_curves_alpha', alpha)
         self.plot_example()
 
     def set_flags_alpha(self, alpha):
+        """Update flags opacity and refresh preview plot."""
         self.flags_alpha = alpha
         set_config_data('flags_alpha', alpha)
         self.plot_example()
 
     def get_current_exps_folder(self):
+        """Return the current experiments root folder from config."""
         config = get_config_file()
         return config["data_folder"]
 
     def update_curves_colors(self, index, new_color):
+        """Persist a color change for curves (light or dark mode)."""
         if self.dark_mode_enabled:
             self.dark_mode_curves[index] = new_color
             set_config_data('dark_mode_curves', self.dark_mode_curves)
@@ -451,6 +486,7 @@ class ConfigManager(QMainWindow):
         self.plot_example()
 
     def update_flags_colors(self, index, new_color):
+        """Persist a color change for flags (light or dark mode)."""
         if self.dark_mode_enabled:
             self.dark_mode_flags[index] = new_color
             set_config_data('dark_mode_flags', self.dark_mode_flags)

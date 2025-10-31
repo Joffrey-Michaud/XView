@@ -1,3 +1,9 @@
+"""About dialog for XView.
+
+Displays application version information and release notes rendered from
+Markdown, adapting to light/dark mode automatically.
+"""
+
 import os
 import markdown
 from PyQt5.QtWidgets import (
@@ -7,12 +13,16 @@ from PyQt5.QtGui import QPixmap, QPalette, QColor, QIcon
 from PyQt5.QtCore import Qt
 from xview import get_config_file
 
+
 class AboutWindow(QDialog):
+    """Simple modal dialog showing version and release notes."""
+
     def __init__(self):
         super().__init__()
         self.init_ui()
 
     def init_ui(self):
+        """Build the UI, load release notes, and apply theme."""
         self.setWindowTitle("About XView")
         self.setGeometry(100, 100, 600, 400)
 
@@ -106,6 +116,7 @@ class AboutWindow(QDialog):
             self.set_light_mode()
 
     def set_dark_mode(self):
+        """Apply a dark color palette to the dialog."""
         dark_palette = QPalette()
         dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
         dark_palette.setColor(QPalette.WindowText, Qt.white)
@@ -122,4 +133,5 @@ class AboutWindow(QDialog):
         self.setPalette(dark_palette)
 
     def set_light_mode(self):
+        """Restore the default (light) palette."""
         self.setPalette(QApplication.style().standardPalette())
