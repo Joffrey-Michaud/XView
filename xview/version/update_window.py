@@ -1,3 +1,9 @@
+"""Update prompt dialog and helper to pull latest project changes.
+
+Provides a small dialog to notify the user when XView is outdated and to
+trigger a project update via Git.
+"""
+
 from PyQt5.QtWidgets import QDialog, QWidget, QMainWindow, QHBoxLayout, QLabel, QVBoxLayout, QPushButton, QApplication
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPalette, QColor, QIcon
@@ -9,7 +15,7 @@ from datetime import datetime, timedelta
 
 
 def pull_latest_changes():
-    """Effectue un git pull pour récupérer les dernières modifications."""
+    """Run ``git pull`` in the repository to fetch and merge latest changes."""
     try:
         REPO_DIR = os.path.dirname(os.path.abspath(__file__))
         subprocess.run(["git", "pull"], check=True, cwd=REPO_DIR)
@@ -19,11 +25,14 @@ def pull_latest_changes():
 
 
 class UpdateWindow(QDialog):
+    """Modal dialog warning that a newer version is available."""
+
     def __init__(self):
         super().__init__()
         self.init_ui()
 
     def init_ui(self):
+        """Construct the dialog layout and wire actions."""
         self.setWindowTitle("Update Warning")
         self.setWindowIcon(QIcon("logo_light.png"))
         self.setGeometry(100, 100, 150, 100)
@@ -50,7 +59,6 @@ class UpdateWindow(QDialog):
         self.layout.addWidget(self.label_2)
         self.layout.addLayout(self.btn_layout)
 
-
         # self.central_widget.setLayout(self.layout)
         self.setLayout(self.layout)
 
@@ -70,11 +78,13 @@ class UpdateWindow(QDialog):
         self.show()
 
     def do_nothing(self):
+        """Dismiss the dialog and remind again later."""
         # remind me later
         set_config_data("remind_me_later_date", datetime.now().isoformat())
         self.close()
 
     def pull_project(self):
+        """Update the project and restart the application."""
         pull_latest_changes()
         self.close()
         set_config_data("remind_me_later_date", datetime.now().isoformat())
@@ -82,6 +92,7 @@ class UpdateWindow(QDialog):
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
     def set_dark_mode(self):
+        """Apply the dark theme to the dialog."""
         dark_palette = QPalette()
         dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
         dark_palette.setColor(QPalette.WindowText, Qt.white)
@@ -99,4 +110,5 @@ class UpdateWindow(QDialog):
         self.setPalette(dark_palette)
 
     def set_light_mode(self):
+        """Restore the default (light) palette."""
         self.setPalette(QApplication.style().standardPalette())

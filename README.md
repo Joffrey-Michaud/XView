@@ -1,7 +1,7 @@
 # XView
 Python library to help visualize your learning processes experiments.
 
-## install
+## Install
 
 ### BASE
 
@@ -25,7 +25,12 @@ sudo apt install build-essential libgl1-mesa-glx libx11-xcb1 libfontconfig1 libd
 chmod 0700 /run/user/$(id -u)
 ```
 
-## First use
+## Install the GUI
 
 Run gui_installer.py, configure your experiment folder, and modify the graph style if you want. Then you'll be able to enter "xview" in your terminal and the GUI will open.
+
+## Install on remote 
+
+To be able to automatically pull your experiments ran on distant machines, you can follow the BASE steps on this machine, then run remote_installer.py.
+To complete this step, go into the remote parameters on your local computer and click the "Add remote" button. 
 

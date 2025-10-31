@@ -1,3 +1,5 @@
+"""Experiment abstraction to create, track, and log metrics/flags on disk."""
+
 import os
 from xview.utils.utils import *
 from xview.score import MultiScores
@@ -8,6 +10,13 @@ from xview import get_config_data
 
 @warn_if_outdated
 class Experiment(object):
+    """Create and manage an on-disk experiment with scores and flags.
+
+    Folder layout under data_folder/group/name includes JSON infos, status,
+    per-metric score files, and flag files. Provides helpers to append points
+    and keep a small JSON config for per-experiment settings.
+    """
+
     def __init__(self, name, infos=None, group=None, clear=None, check_exists=False):
         """Object to manage an experiment folder.
         This class creates a folder for the experiment, manages its status, scores, and flags.
@@ -94,12 +103,14 @@ class Experiment(object):
         self.scores_monitoring = {}
 
     def pipe_to(self, other_experiment):
+        """Forward write operations to another Experiment instance."""
         if hasattr(other_experiment, "__class__") and other_experiment.__class__.__name__ == "Experiment":
             self.pipes.append(other_experiment)
         else:
             raise TypeError("other_experiment must be an instance of Experiment")
 
     def pipe_break(self, other_experiment):
+        """Stop forwarding to the provided Experiment instance."""
         if other_experiment in self.pipes:
             self.pipes.remove(other_experiment)
         else:
@@ -110,6 +121,7 @@ class Experiment(object):
             getattr(pipe, method)(*args, **kwargs)
 
     def get_infos(self):
+        """Return experiment metadata dict, creating an empty file if missing."""
         if os.path.exists(self.infos_path):
             self.infos = read_json(self.infos_path)
         else:
@@ -118,28 +130,34 @@ class Experiment(object):
         return self.infos
 
     def set_infos(self, infos):
+        """Overwrite experiment metadata JSON with the provided dict."""
         self.__act_pipe("set_infos", infos)
         self.infos = infos
         if infos is not None:
             write_json(self.infos_path, infos)
 
     def set_info(self, key, value):
+        """Set a single metadata key and persist to JSON."""
         self.__act_pipe("set_info", key, value)
         self.infos[key] = value
         write_json(self.infos_path, self.infos)
 
     def set_train_status(self):
+        """Mark experiment status as 'training'."""
         self.update_status("training")
 
     def set_finished_status(self):
+        """Mark experiment status as 'finished'."""
         self.update_status("finished")
 
     def update_status(self, status):
+        """Write the status string to the status file and propagate to pipes."""
         self.__act_pipe("update_status", status)
         self.status = status
         write_file(self.status_file, self.status, flag="w")
 
     def add_score(self, name, y, x=None, plt_args: dict = None, label_value=None, monitor="max,min"):
+        """Append a score point and ensure its Score exists with optional args."""
         self.__act_pipe("add_score", name, y, x, plt_args=plt_args, label_value=label_value, monitor=monitor)
         if name not in self.scores.scores:
             self.scores.add_score(name, plt_args=plt_args)
@@ -148,6 +166,7 @@ class Experiment(object):
         self.set_exp_config_data("scores_monitoring", self.scores_monitoring)
 
     def add_flag(self, name, x=None, unique=False, plt_args: dict = None, label_value=None):
+        """Append a flag event (vertical line) to the flags collection."""
         self.__act_pipe("add_flag", name, x, unique=unique, plt_args=plt_args, label_value=label_value)
         if name not in self.flags.scores:
             self.flags.add_score(name, plt_args=plt_args)
@@ -159,22 +178,27 @@ class Experiment(object):
         return self.scores.get_score(name, get_x=get_x, ma=ma)
 
     def get_folder(self):
+        """Return the absolute path to the experiment folder."""
         return self.experiment_folder
-    
+
     def get_exp_config_file(self):
+        """Load or create the per-experiment config JSON."""
         if not os.path.exists(os.path.join(self.experiment_folder, "config.json")):
             self.set_exp_config_file({})
         config = json.load(open(os.path.join(self.experiment_folder, "config.json")))
         return config
 
     def get_exp_config_data(self, key):
+        """Read a single key from the per-experiment config JSON."""
         return self.get_exp_config_file().get(key, None)
 
     def set_exp_config_file(self, config):
+        """Write the per-experiment config JSON dict to disk."""
         with open(os.path.join(self.experiment_folder, "config.json"), "w") as f:
             json.dump(config, f, indent=4)
 
     def set_exp_config_data(self, key, value):
+        """Update a single key in the per-experiment config file."""
         config = self.get_exp_config_file()
         config[key] = value
         self.set_exp_config_file(config)
