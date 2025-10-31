@@ -1,7 +1,8 @@
 # XView - Release Notes
-## [1.0.13] - 2025-10-29
+## [1.1.0] - 2025-10-31
 ### Added
 - Added automatic management to empty the trash folder.
+- Automatic experiments pull from remote servers.
 
 ## [1.0.12] - 2025-10-06
 ### Added
