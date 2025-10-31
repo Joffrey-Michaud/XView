@@ -219,6 +219,10 @@ class ExperimentViewer(QMainWindow):
         self.trash_cleanup_timer.timeout.connect(self.cleanup_trash)
         self.trash_cleanup_timer.start(0)
 
+        self.remote_fetch_timer = QTimer(self)
+        self.remote_fetch_timer.timeout.connect(self.fetch_remote_data)
+        self.remote_fetch_timer.start(0)
+
         # Variables pour le stockage temporaire
         self.current_scores = {}
         self.current_flags = {}
@@ -249,6 +253,8 @@ class ExperimentViewer(QMainWindow):
 
         # setting up trash clean up timer every 60 minutes
         self.trash_cleanup_timer.setInterval(60 * 60 * 1000)
+
+        self.remote_fetch_timer.setInterval(1000 * int(get_config_data("remote_fetch_interval")))
 
     # -----------------------------------------------------------------------------------------
     # region - TRASH
