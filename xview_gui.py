@@ -62,6 +62,8 @@ from xview import get_config_file, set_config_data, check_config_integrity, get_
 from xview.settings.settings_window import SettingsWindow
 from xview.graph.range_widget import RangeWidget
 from xview.settings.palette import Palette
+from xview.remote.remote_utils import get_enabled_remotes
+from xview.remote.fetcher import RemoteFetcher
 import numpy as np
 import subprocess
 import tempfile
@@ -922,6 +924,16 @@ class ExperimentViewer(QMainWindow):
         config = self.get_exp_config_file()
         config[key] = value
         self.set_exp_config_file(config)
+
+    def fetch_remote_data(self):
+        enabled_remotes_dict = get_enabled_remotes()
+        for remote_name, remote_infos in enabled_remotes_dict.items():
+            fetcher = RemoteFetcher(
+                host_name=remote_infos["host_name"],
+                login=remote_infos["login"],
+                exp_folder=remote_infos["exp_folder"]
+            )
+            fetcher.sync_folders()
 
     # -----------------------------------------------------------------------------------------
     # region - PALETTE EDITOR

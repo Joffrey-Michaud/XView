@@ -4,8 +4,8 @@ Allows adding, selecting, editing, enabling/disabling, and deleting remote
 connection entries stored in the remote configuration file.
 """
 
-from PyQt5.QtWidgets import QFileDialog, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QComboBox, QLabel, QSizePolicy, QSpacerItem, QLineEdit, QMessageBox, QCheckBox
-from PyQt5.QtCore import QDir, Qt
+from PyQt5.QtWidgets import QFileDialog, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QComboBox, QLabel, QSizePolicy, QSpacerItem, QLineEdit, QMessageBox, QCheckBox, QScrollArea
+from PyQt5.QtCore import QDir, Qt, QTimer
 from xview import get_config_file, set_config_data, get_config_data
 from xview.settings.section import Section
 from xview.remote.remote_utils import get_remote_configs, get_remote_config_names, del_remote_config, change_exp_folder, change_host_name, change_login, change_remote_name, change_enabled_status
@@ -25,13 +25,26 @@ class RemoteSettings(QWidget):
 
         self.current_exp_folder = get_config_file()["data_folder"]
 
+        # Layout principal + ScrollArea
         self.main_layout = QVBoxLayout(self)
         self.setLayout(self.main_layout)
+
+        self.scroll_area = QScrollArea(self)
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setFrameShape(QFrame.NoFrame)  # hide frame
+        # self.scroll_area.setStyleSheet("QScrollArea { border: none; }")  # optional hardening
+        self.main_layout.addWidget(self.scroll_area)
+
+        self.content_widget = QWidget()
+        self.content_layout = QVBoxLayout()
+        self.content_layout.setContentsMargins(0, 0, 0, 0)
+        self.content_widget.setLayout(self.content_layout)
+        self.scroll_area.setWidget(self.content_widget)
 
         # region - Add remote
         # --------------------------------------------------------------------------- Add remote
         self.add_section = Section("Add remote")
-        self.main_layout.addWidget(self.add_section)
+        self.content_layout.addWidget(self.add_section)
 
         self.add_widget = QWidget()
         self.add_layout = QVBoxLayout()
@@ -56,10 +69,26 @@ class RemoteSettings(QWidget):
 
         self.add_separator()
 
+        # region - Interval
+        # --------------------------------------------------------------------------- Interval
+        self.interval_section = Section("Remote fetch interval")
+        self.content_layout.addWidget(self.interval_section)
+
+        self.interval_label = QLabel("Fetch interval (seconds):")
+        self.interval_section.add_widget(self.interval_label)
+
+        self.interval_input = QLineEdit()
+        self.interval_input.setText(str(get_config_data("remote_fetch_interval")))
+        self.interval_section.add_widget(self.interval_input)
+
+        self.interval_button = QPushButton("Set Interval")
+        self.interval_button.clicked.connect(self.set_fetch_interval)
+        self.interval_section.add_widget(self.interval_button)
+
         # region - Existing remotes
         # --------------------------------------------------------------------------- Existing remotes
         self.existing_section = Section("Existing remotes")
-        self.main_layout.addWidget(self.existing_section)
+        self.content_layout.addWidget(self.existing_section)
 
         self.combo_box_remotes = QComboBox()
         # lister les remote existants et les afficher dans un combo box
@@ -75,7 +104,7 @@ class RemoteSettings(QWidget):
         separator = QFrame()
         separator.setFrameShape(QFrame.HLine)
         separator.setFrameShadow(QFrame.Sunken)
-        self.main_layout.addWidget(separator)
+        self.content_layout.addWidget(separator)
 
     def on_remote_selection_changed(self, index):
         """Refresh the details panel when a different remote is selected."""
@@ -91,6 +120,11 @@ class RemoteSettings(QWidget):
         self.combo_box_remotes.clear()
         self.combo_box_remotes.addItems(get_remote_config_names())
         self.remote_display.init_ui(self.combo_box_remotes.currentText())
+
+    def set_fetch_interval(self):
+        """Persist the remote fetch interval from the input field."""
+        interval = int(self.interval_input.text())
+        set_config_data("remote_fetch_interval", interval)
 
 
 class RemoteDisplay(QWidget):
@@ -108,10 +142,14 @@ class RemoteDisplay(QWidget):
         self.init_ui(remote_name)
 
     def init_ui(self, remote_name):
+        print("ON INIT L UI")
         """Rebuild the UI for the provided remote name."""
         # clear layout
         for i in reversed(range(self.main_layout.count())):
-            self.main_layout.itemAt(i).widget().setParent(None)
+            item = self.main_layout.takeAt(i)
+            w = item.widget()
+            if w is not None:
+                w.deleteLater()
 
         self.remote_name = remote_name
         if self.remote_name == "":
@@ -190,7 +228,7 @@ class RemoteDisplay(QWidget):
 
         enable_remote_checkbox = QCheckBox("Enable Remote")
         enable_remote_checkbox.setChecked(get_remote_configs()[remote_name]["enabled"])
-        enable_remote_checkbox.toggled.connect(lambda checked: self.change_remote_enabled(checked))
+        enable_remote_checkbox.toggled.connect(self.change_remote_enabled)
 
         enable_remote_layout.addWidget(enable_remote_checkbox)
 
@@ -205,6 +243,7 @@ class RemoteDisplay(QWidget):
         self.main_layout.addWidget(exp_folder_widget)
         self.main_layout.addWidget(enable_remote_widget)
         self.main_layout.addWidget(delete_remote_button)
+        print("C EST BON C EST INITED")
 
     def change_login(self, new_login):
         """Persist a new login for the active remote and refresh UI."""
@@ -235,8 +274,9 @@ class RemoteDisplay(QWidget):
 
     def change_remote_enabled(self, enabled):
         """Enable/disable the active remote and refresh UI."""
-        change_enabled_status(self.remote_name, enabled)
-        self.init_ui(self.remote_name)
+        change_enabled_status(self.remote_name, bool(enabled))
+        # Defer UI rebuild to avoid deleting the sender in the signal handler
+        QTimer.singleShot(0, lambda rn=self.remote_name: self.init_ui(rn))
 
     def delete_remote(self):
         """Confirm and delete the active remote configuration entry."""
