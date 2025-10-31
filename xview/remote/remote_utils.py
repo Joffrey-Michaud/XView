@@ -282,3 +282,34 @@ def change_enabled_status(remote_name, enabled):
                  the remote configuration.
     """
     change_remote_key(remote_name, "enabled", enabled)
+
+def get_enabled_remotes():
+    """Retrieve the list of enabled remote configurations.
+
+    Reads the ``remote_config.json`` file and returns a list of remote names
+    that are marked as enabled. If the file does not exist, an empty list
+    is returned.
+
+    Returns:
+        A list of strings representing the names of enabled remote configurations.
+    """
+    remote_config_file = Path(CONFIG_FILE_DIR) / f"remote_config.json"
+    if remote_config_file.exists():
+        with open(remote_config_file, 'r') as f:
+            existing_configs = json.load(f)
+    else:
+        existing_configs = {}
+
+    enabled_remotes = {}
+    for name, config in existing_configs.items():
+        if config.get("enabled", False):
+            enabled_remotes[name] = config
+
+    return enabled_remotes
+
+if __name__ == "__main__":
+    a = get_enabled_remotes()
+    for remote_name, remote_info in a.items():
+        print(f"Remote Name: {remote_name}")
+        print(f"Remote Info: {remote_info}")
+    print(a)
