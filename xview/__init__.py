@@ -8,9 +8,16 @@ import os
 import json
 
 # /home/<username>/.xview/config.json
-CONFIG_FILE_DIR = os.path.dirname(f"{os.path.expanduser('~')}/.xview/")
+ENVIRON_CONFIG_PATH = os.getenv("XVIEW_PATH", None)
+DEFAULT_CONFIG_FILE_DIR = f"{os.path.expanduser('~')}"
+
+CONFIG_DIR = ENVIRON_CONFIG_PATH if ENVIRON_CONFIG_PATH is not None else DEFAULT_CONFIG_FILE_DIR
+CONFIG_FILE_DIR = os.path.dirname(CONFIG_DIR + "/.xview/")
+
 os.makedirs(CONFIG_FILE_DIR, exist_ok=True)
 CONFIG_FILE_PATH = f"{CONFIG_FILE_DIR}/config.json"
+
+print(CONFIG_FILE_PATH)
 
 default_config = {
     "data_folder": None,
