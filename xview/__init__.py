@@ -42,7 +42,7 @@ default_config = {
     "trash_dir": None,
     "trash_max_size": 10,  # in Gb. 0 means no limit
     "trash_max_days": 30,  # in days. 0 means no limit
-    "version": "1.1.0"
+    "version": "1.1.1"
 }
 
 default_palette_config = {
