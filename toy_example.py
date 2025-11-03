@@ -16,6 +16,7 @@ def get_random_params():
 def compute_y_value(x_t, params):
     return sum(params["amplitude"][i] * np.sin(params["frequency"][i] * x_t + params["phase"][i]) for i in range(5))
 
+
 # --------------------------------------------------------------------------------------
 # First step : init experiment
 my_exp = Experiment("toy_example",  # give a name to the experiment
@@ -26,6 +27,7 @@ my_exp = Experiment("toy_example",  # give a name to the experiment
 
 # Second step : set the status of the experiment to training (this line is mandatory)
 my_exp.set_train_status()
+print('start training')
 
 
 points = np.linspace(0, 2 * np.pi, 200)
@@ -33,6 +35,7 @@ points = np.linspace(0, 2 * np.pi, 200)
 best_val = 100000
 
 for i, x in enumerate(points):
+    print(f"Iteration {i + 1}/{len(points)}")
     params_1 = get_random_params()
     params_2 = get_random_params()
     params_3 = get_random_params()
@@ -50,7 +53,7 @@ for i, x in enumerate(points):
     )
 
     # You can add as many score as you need
-    my_exp.add_score(name="Val_loss", x=x, y=y2, monitor="max", 
+    my_exp.add_score(name="Val_loss", x=x, y=y2, monitor="max",
                      label_value=f"{y2:.3f}")  # You can add a label_value to the score to display it in the plot's legend, and update it dynamically
 
     # If desired, you can also pass plt_args to customize the plot appearance for the score (like marker, color, linestyle, etc.). It has to be a dict.
