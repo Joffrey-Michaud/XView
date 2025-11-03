@@ -302,7 +302,6 @@ class ExperimentViewer(QMainWindow):
 
     def cleanup_trash(self):
         """Clean the Trash folder based on max days and max size limits."""
-        print("CLEANING TRASH DIR")
         trash_dir = self.get_trash_dir()
         if not os.path.exists(trash_dir):
             return
@@ -926,6 +925,7 @@ class ExperimentViewer(QMainWindow):
         self.set_exp_config_file(config)
 
     def fetch_remote_data(self):
+        print("Fetching remote data...")
         enabled_remotes_dict = get_enabled_remotes()
         for remote_name, remote_infos in enabled_remotes_dict.items():
             fetcher = RemoteFetcher(

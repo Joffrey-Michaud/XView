@@ -15,6 +15,7 @@ class RemoteFetcher:
         self.login = login
         self.remote_exp_folder = exp_folder
         self.local_exp_folder = get_config_data("data_folder")
+        print("Init fetcher for remote:", host_name)
 
     def sync_folders(self):
         rsync_command = [
@@ -23,6 +24,7 @@ class RemoteFetcher:
             f"{self.login}@{self.host_name}:{self.remote_exp_folder}/",
             f"{self.local_exp_folder}/"
         ]
+        print("Running rsync command:", ' '.join(rsync_command))
         subprocess.run(rsync_command, check=True)
 
     # def get_remote_exp_mtime(self, exp_path):
@@ -70,7 +72,3 @@ class RemoteFetcher:
     #     exp_paths = [p for p in exp_folder.glob('**/status.txt')]
     #     exp_paths = [p.parent for p in exp_paths]
     #     return exp_paths
-
-if __name__ == "__main__":
-    fetcher = RemoteFetcher("1.1.1.1", "jofmic", "/work/jofmic/exps_xview")
-    fetcher.sync_folders()

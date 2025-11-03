@@ -142,7 +142,6 @@ class RemoteDisplay(QWidget):
         self.init_ui(remote_name)
 
     def init_ui(self, remote_name):
-        print("ON INIT L UI")
         """Rebuild the UI for the provided remote name."""
         # clear layout
         for i in reversed(range(self.main_layout.count())):
@@ -243,7 +242,6 @@ class RemoteDisplay(QWidget):
         self.main_layout.addWidget(exp_folder_widget)
         self.main_layout.addWidget(enable_remote_widget)
         self.main_layout.addWidget(delete_remote_button)
-        print("C EST BON C EST INITED")
 
     def change_login(self, new_login):
         """Persist a new login for the active remote and refresh UI."""
