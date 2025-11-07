@@ -17,8 +17,6 @@ CONFIG_FILE_DIR = os.path.dirname(CONFIG_DIR + "/.xview/")
 os.makedirs(CONFIG_FILE_DIR, exist_ok=True)
 CONFIG_FILE_PATH = f"{CONFIG_FILE_DIR}/config.json"
 
-print(CONFIG_FILE_PATH)
-
 default_config = {
     "data_folder": None,
     "dark_mode_curves": ["#A2D2DF", "#F6EFBD", "#E4C087", "#BC7C7C", "#FF00FF"],
