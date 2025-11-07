@@ -70,7 +70,3 @@ class RemoteFetcher:
     #     exp_paths = [p for p in exp_folder.glob('**/status.txt')]
     #     exp_paths = [p.parent for p in exp_paths]
     #     return exp_paths
-
-if __name__ == "__main__":
-    fetcher = RemoteFetcher("192.168.186.194", "jofmic", "/work/jofmic/exps_xview")
-    fetcher.sync_folders()
