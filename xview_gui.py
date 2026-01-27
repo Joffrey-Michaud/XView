@@ -462,7 +462,7 @@ class ExperimentViewer(QMainWindow):
         self.current_scores = {}
         if os.path.exists(scores_folder_path):
             for file_name in os.listdir(scores_folder_path):
-                score = file_name.split(".")[0]
+                score = file_name.split(".txt")[0]
                 if file_name.endswith(".txt") and not score.endswith("_label_value"):
                     file_path = os.path.join(scores_folder_path, file_name)
                     x, y = self.read_scores(file_path)
@@ -473,7 +473,7 @@ class ExperimentViewer(QMainWindow):
         self.current_flags = {}
         if os.path.exists(flags_folder_path):
             for file_name in os.listdir(flags_folder_path):
-                flag = file_name.split(".")[0]
+                flag = file_name.split(".txt")[0]
                 if file_name.endswith(".txt") and not flag.endswith("_label_value"):
                     file_path = os.path.join(flags_folder_path, file_name)
                     _, x = self.read_scores(file_path)

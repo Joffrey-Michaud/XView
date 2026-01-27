@@ -27,6 +27,9 @@ class ExperimentPanel(QWidget):
         self.setLayout(self.layout)
         self.update_plot_callback = update_plot_callback
         self.exps = []
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(2)
+        self.setMinimumHeight(600)
 
     def add_experiment(self, exp_name, checked=True):
         """Append a row with a checkbox and experiment name."""
@@ -158,6 +161,8 @@ class ComparisonWindow(QDialog):
         self.exp_panel = ExperimentPanel(update_plot_callback=self.update_plot)
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll_area.setWidget(self.exp_panel)
         self.left_layout.addWidget(self.scroll_area)
 
@@ -211,17 +216,65 @@ class ComparisonWindow(QDialog):
         if index != -1:
             self.metric_combo.setCurrentIndex(index)
 
+    # def update_exp_panel(self, exps):
+    #     """Refresh the left panel with current experiments, preserving checks."""
+    #     # on veut ajouter les expériences nouvelles. SI nouvelle exp, on la coche, et si elle était déjà là, on la décoche
+    #     checked_exps = self.exp_panel.get_checked_experiments()
+    #     available_exps = self.exp_panel.exps
+    #     self.exp_panel.clear_experiments()
+    #     for exp in exps:
+    #         if exp not in available_exps:
+    #             self.exp_panel.add_experiment(exp, checked=True)
+    #         else:
+    #             self.exp_panel.add_experiment(exp, checked=exp in checked_exps)
+
     def update_exp_panel(self, exps):
-        """Refresh the left panel with current experiments, preserving checks."""
-        # on veut ajouter les expériences nouvelles. SI nouvelle exp, on la coche, et si elle était déjà là, on la décoche
-        checked_exps = self.exp_panel.get_checked_experiments()
-        available_exps = self.exp_panel.exps
+        """Refresh the left panel with current experiments, preserving checks.
+
+        - Au premier appel (panel vide) : toutes les cases sont cochées.
+        - Aux appels suivants : on garde l'état des cases existantes et
+          on coche automatiquement uniquement les nouvelles expériences.
+        """
+        # état actuel (avant reset)
+        checked_exps = set(self.exp_panel.get_checked_experiments())
+        existing_exps = list(self.exp_panel.exps)
+
+        # on vide et on reconstruit proprement
         self.exp_panel.clear_experiments()
+
         for exp in exps:
-            if exp not in available_exps:
+            if not existing_exps:
+                # premier appel : tout coché par défaut
                 self.exp_panel.add_experiment(exp, checked=True)
             else:
-                self.exp_panel.add_experiment(exp, checked=exp in checked_exps)
+                # après : garder choix utilisateur, nouvelles exps cochées
+                is_new = exp not in existing_exps
+                checked = is_new or (exp in checked_exps)
+                self.exp_panel.add_experiment(exp, checked=checked)
+
+    # def update_exp_panel(self, exps):
+    #     """Refresh the left panel with current experiments, preserving checks.
+
+    #     - Au premier appel (panel vide) : toutes les cases sont cochées.
+    #     - Aux appels suivants : on garde l'état des cases existantes et
+    #       on coche automatiquement uniquement les nouvelles expériences.
+    #     """
+    #     # état actuel (avant reset)
+    #     checked_exps = set(self.exp_panel.get_checked_experiments())
+    #     existing_exps = list(self.exp_panel.exps)
+
+    #     # on vide et on reconstruit proprement
+    #     self.exp_panel.clear_experiments()
+
+    #     for exp in exps:
+    #         if not existing_exps:
+    #             # premier appel : tout coché par défaut
+    #             self.exp_panel.add_experiment(exp, checked=True)
+    #         else:
+    #             # après : garder choix utilisateur, nouvelles exps cochées
+    #             is_new = exp not in existing_exps
+    #             checked = is_new or (exp in checked_exps)
+    #             self.exp_panel.add_experiment(exp, checked=checked)
 
     # region - UPDATE WINDOW
     def update_window(self, group_path):
